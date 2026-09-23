@@ -1,0 +1,40 @@
+{
+  "name": "to-the-crown",
+  "private": true,
+  "version": "0.1.0",
+  "description": "To The Crown — grand jeu de stratégie dynastique médiévale multijoueur.",
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @ttc/server --filter @ttc/web dev",
+    "dev:server": "pnpm --filter @ttc/server dev",
+    "dev:web": "pnpm --filter @ttc/web dev",
+    "build": "pnpm -r --filter ./packages/** --filter ./apps/** run build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "test": "pnpm -r run test",
+    "test:e2e": "pnpm --filter @ttc/e2e test",
+    "world:generate": "pnpm --filter @ttc/content world:generate",
+    "world:validate": "pnpm --filter @ttc/content world:validate",
+    "simulate": "pnpm --filter @ttc/game-core simulate",
+    "db:generate": "pnpm --filter @ttc/server db:generate",
+    "db:migrate": "pnpm --filter @ttc/server db:migrate",
+    "db:seed": "pnpm --filter @ttc/server db:seed",
+    "start": "pnpm --filter @ttc/server start"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.6",
+    "eslint": "10.11.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.12.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.1",
+    "vitest": "5.0.1"
+  }
+}

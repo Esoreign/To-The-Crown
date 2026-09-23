@@ -1,0 +1,5 @@
+pnpm-lock.yaml
+dist
+coverage
+packages/content/data/*.json
+database/migrations

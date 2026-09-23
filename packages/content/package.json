@@ -1,0 +1,24 @@
+{
+  "name": "@ttc/content",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "world:generate": "tsx scripts/generate-world.ts",
+    "world:validate": "tsx scripts/validate-world.ts"
+  },
+  "dependencies": {
+    "@ttc/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "d3-delaunay": "6.0.4",
+    "@types/d3-delaunay": "6.0.4",
+    "simplex-noise": "4.0.3",
+    "tsx": "4.23.15"
+  }
+}
