@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "simulate": "tsx scripts/simulate.ts",
-    "scenario:generate": "tsx scripts/generate-scenario.ts"
+    "scenario:generate": "tsx scripts/generate-scenario.ts",
+    "check:events": "tsx scripts/check-events.ts"
   },
   "dependencies": {
     "@ttc/content": "workspace:*",

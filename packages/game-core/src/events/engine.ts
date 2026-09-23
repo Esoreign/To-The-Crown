@@ -113,7 +113,7 @@ export function aiChoose(ctx: Ctx, root: Character, choices: EventChoiceDef[]): 
   return ctx.rng.weighted(pool, (c) => aiChoiceWeight(root, c) + 0.1) ?? pool[0]!;
 }
 
-function resolveChoice(ctx: Ctx, def: EventDef, choice: EventChoiceDef, scope: EventScope): void {
+export function resolveChoice(ctx: Ctx, def: EventDef, choice: EventChoiceDef, scope: EventScope): void {
   const root = ctx.s.characters[scope.root]!;
   if (choice.cost) {
     if (!canAfford(root, choice)) {

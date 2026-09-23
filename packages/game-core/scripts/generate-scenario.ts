@@ -500,8 +500,8 @@ const majorHouse = (k: string) => {
   const spec = MAJOR[k]!;
   return state.houses[spec.id] ?? makeHouse(spec, true);
 };
-// Les branches cadettes nécessitent leur dynastie parente.
-majorHouse('valorie');
+// Toutes les maisons majeures existent avant toute maison mineure (noms réservés).
+for (const key of Object.keys(MAJOR)) majorHouse(key);
 
 function populateKingdom(
   kingdomId: string,
