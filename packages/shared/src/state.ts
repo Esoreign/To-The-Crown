@@ -408,7 +408,7 @@ export interface ScheduledEvent {
   at: number;
 }
 
-export type ProposalKind = 'marriage' | 'alliance' | 'vassalize';
+export type ProposalKind = 'marriage' | 'alliance' | 'vassalize' | 'war_call' | 'white_peace' | 'faction_demand';
 
 /** Proposition entre deux joueurs humains, en attente de réponse. */
 export interface Proposal {
@@ -416,8 +416,10 @@ export interface Proposal {
   kind: ProposalKind;
   fromId: string;
   toId: string;
-  /** Personnages concernés (mariage : [prétendant, candidat]). */
+  /** Personnages concernés (mariage : [prétendant, candidat]) ou [guerre] / [faction]. */
   subjects: string[];
+  /** Levier consommé si la proposition est acceptée. */
+  hookId?: string | null;
   createdAt: number;
   expiresAt: number;
 }

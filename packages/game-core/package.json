@@ -9,7 +9,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "simulate": "tsx scripts/simulate.ts"
+    "simulate": "tsx scripts/simulate.ts",
+    "scenario:generate": "tsx scripts/generate-scenario.ts"
   },
   "dependencies": {
     "@ttc/content": "workspace:*",

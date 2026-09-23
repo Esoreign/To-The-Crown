@@ -80,6 +80,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('character.designateHeir'), payload: z.object({ heirId: id.nullable() }) }),
   z.object({ type: z.literal('prisoner.ransom'), payload: z.object({ prisonerId: id }) }),
   z.object({ type: z.literal('succession.vote'), payload: z.object({ titleId: id, candidateId: id }) }),
+  z.object({ type: z.literal('secret.expose'), payload: z.object({ secretId: id }) }),
   z.object({ type: z.literal('faction.join'), payload: z.object({ factionId: id }) }),
   z.object({ type: z.literal('faction.leave'), payload: z.object({ factionId: id }) }),
   z.object({ type: z.literal('realm.crownAuthority'), payload: z.object({ level: z.number().int().min(0).max(3) }) }),
