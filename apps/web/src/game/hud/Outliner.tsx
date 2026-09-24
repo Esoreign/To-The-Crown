@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { EVENT_BY_ID, PROVINCE_GEO, armyMen, domainProvinceIds, factionRatio, schemeSuccessChance, sideOf, warsOf } from '@ttc/game-core';
+import { EVENT_BY_ID, PROVINCE_GEO, SCHEME_DEFS, armyMen, domainProvinceIds, factionRatio, schemeSuccessChance, sideOf, warsOf } from '@ttc/game-core';
 import type { Character, GameView } from '@ttc/shared';
 import { useUi } from '../../state/ui';
 import { useSettings } from '../../state/settings';
@@ -50,7 +50,7 @@ export function Outliner({ view, me }: { view: GameView; me: Character }) {
     const wars = warsOf(view, me.id);
     const armies = Object.values(view.armies).filter((a) => a.ownerId === me.id);
     const schemes = Object.values(view.schemes).filter((s) => s.ownerId === me.id && s.status === 'active');
-    const threats = Object.values(view.schemes).filter((s) => s.targetId === me.id && s.status === 'active' && s.discoveredBy.includes(me.id));
+    const threats = Object.values(view.schemes).filter((s) => s.targetId === me.id && s.status === 'active' && SCHEME_DEFS[s.type].hostile && s.discoveredBy.includes(me.id));
     const battles = Object.values(view.battles).filter((b) => b.phase !== 'ended' && [b.attacker.ownerId, b.defender.ownerId].some((o) => wars.some((w) => sideOf(w, o) !== null)));
     const sieges = Object.values(view.sieges).filter((s) => wars.some((w) => w.id === s.warId));
     const builds = domainProvinceIds(me).filter((p) => view.provinces[p]?.construction);

@@ -1,4 +1,4 @@
-import { schemeDiscoveryChance, schemeSuccessChance, knownSecretsOf } from '@ttc/game-core';
+import { SCHEME_DEFS, schemeDiscoveryChance, schemeSuccessChance, knownSecretsOf } from '@ttc/game-core';
 import type { Character, GameView } from '@ttc/shared';
 import { fmt, t } from '../../lib/i18n';
 import { charName, formatDateFr } from '../../lib/format';
@@ -9,7 +9,9 @@ import { ScreenFrame } from './ScreenHost';
 
 export function IntrigueScreen({ view, me }: { view: GameView; me: Character }) {
   const mine = Object.values(view.schemes).filter((s) => s.ownerId === me.id && s.status === 'active');
-  const against = Object.values(view.schemes).filter((s) => s.targetId === me.id && s.status === 'active' && s.discoveredBy.includes(me.id));
+  const noticed = Object.values(view.schemes).filter((s) => s.targetId === me.id && s.status === 'active' && s.discoveredBy.includes(me.id));
+  const against = noticed.filter((s) => SCHEME_DEFS[s.type].hostile);
+  const approaches = noticed.filter((s) => !SCHEME_DEFS[s.type].hostile);
   const known = knownSecretsOf(view, me.id).filter((s) => s.ownerId !== me.id);
   const own = Object.values(view.secrets).filter((s) => s.ownerId === me.id);
   const hooks = Object.values(view.hooks).filter((h) => h.ownerId === me.id);
@@ -60,6 +62,19 @@ export function IntrigueScreen({ view, me }: { view: GameView; me: Character }) 
               </div>
             );
           })}
+          {approaches.length > 0 && (
+            <>
+              <h3 className="section-title">On cherche à vous plaire</h3>
+              {approaches.map((s) => (
+                <div key={s.id} className="info-line">
+                  <button className="link-btn" onClick={() => openCharacter(s.ownerId)}>
+                    {charName(view, view.characters[s.ownerId])}
+                  </button>
+                  <span className="soft">{t(`scheme.${s.type}`)}</span>
+                </div>
+              ))}
+            </>
+          )}
           <h3 className="section-title">Complots découverts contre vous</h3>
           {against.length === 0 && <p className="muted">Votre maître-espion {spymaster ? `(${spymaster.firstName})` : ''} n’a rien découvert.</p>}
           {against.map((s) => (
