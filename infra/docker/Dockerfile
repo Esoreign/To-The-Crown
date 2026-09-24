@@ -49,3 +49,9 @@ COPY infra/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=5s --retries=5 CMD wget -qO- http://127.0.0.1:8080/ >/dev/null || exit 1
+
+# --- Tout-en-un (cible par défaut : hébergeurs qui construisent la dernière
+#     étape, ex. Render) : le serveur de jeu sert aussi le client web.
+FROM server AS app
+COPY --from=build --chown=ttc:ttc /repo/apps/web/dist /app/web
+ENV SERVE_WEB_DIST=/app/web TRUST_PROXY=true

@@ -27,6 +27,8 @@ Sauvegarde automatique : chaque 1er du mois de jeu (au plus une fois toutes les 
 
 ## Sécurité des données
 
+- Row Level Security activée sur toutes les tables (migration `0001_enable_rls`) : sur Supabase, l'API publique (`anon`, `authenticated`) n'a aucun accès. Le serveur utilise le rôle propriétaire, non soumis à la RLS. Toute nouvelle table doit l'activer aussi.
+
 - Mots de passe : Argon2id uniquement (`password_hash`), jamais journalisés.
 - Sessions : seul le HMAC du jeton est stocké (`token_hash`), expiration et révocation.
 - Aucune donnée secrète dans les journaux applicatifs.

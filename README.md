@@ -48,6 +48,10 @@ docker compose up --build
 
 Le jeu est servi sur http://localhost:8080 (nginx → serveur de jeu, PostgreSQL et Redis inclus, migrations et données de référence appliquées au démarrage). Pour créer les comptes de démonstration : `SEED_DEMO_USERS=true` dans `.env`.
 
+## Mettre le jeu en ligne
+
+Supabase (base de données) + Render (serveur et site) : guide pas à pas dans [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Commandes
 
 | Commande | Rôle |
@@ -85,6 +89,7 @@ docs             Conception, architecture, multijoueur, base de données, direct
 - [Base de données et sauvegardes](docs/DATABASE.md)
 - [Direction artistique](docs/ART_DIRECTION.md)
 - [Tests](docs/TESTING.md)
+- [Mise en ligne](docs/DEPLOYMENT.md)
 - [Écrire des événements](docs/EVENTS.md)
 
 ## Licence et crédits

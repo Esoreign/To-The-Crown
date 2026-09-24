@@ -1,0 +1,21 @@
+# Déploiement Render (Blueprint) : un seul service web qui héberge le serveur
+# de jeu et le client. Base de données : Supabase (voir docs/DEPLOYMENT.md).
+services:
+  - type: web
+    name: to-the-crown
+    runtime: docker
+    dockerfilePath: ./infra/docker/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: APP_ORIGIN
+        sync: false
+      - key: TRUST_PROXY
+        value: 'true'
