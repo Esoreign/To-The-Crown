@@ -6,7 +6,7 @@ import { TITLE_DEFS, ageOf, fullName, primaryTitleId, rankName } from '@ttc/game
 import { formatDateFr, type Character, type GameView } from '@ttc/shared';
 import { t } from './i18n';
 
-const VOWEL = /^[aeiouyàâäéèêëîïôöûüœh]/i;
+const VOWEL = /^[aeiouyàâäéèêëîïôöûüœ]/i;
 
 /** « de Valorie » / « d’Aurevanne ». */
 export function deName(name: string): string {

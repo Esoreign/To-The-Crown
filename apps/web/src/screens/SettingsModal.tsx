@@ -96,8 +96,11 @@ export function SettingsModal({ onClose }: { onClose(): void }) {
                   ['M', 'Mode politique'],
                   ['Q W E R T Y U', 'Modes de carte'],
                   ['Origine', 'Centrer sur la capitale'],
-                  ['Flèches / ZQSD', 'Déplacer la caméra'],
-                  ['C · K · D · I · L · H', 'Conseil, royaume, dynastie, intrigue, armées, chronique'],
+                  ['Flèches / Z S', 'Déplacer la caméra'],
+                  ['+ / −', 'Zoom'],
+                  ['C · K · D · I · L', 'Conseil, royaume, dynastie, intrigue, armées'],
+                  ['G · N · H', 'Mariages, décisions, chronique'],
+                  ['Clic droit', 'Interagir / déplacer l’armée sélectionnée'],
                 ].map(([k, v]) => (
                   <tr key={k}>
                     <td>

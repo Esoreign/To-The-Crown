@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
     "@ttc/content": "workspace:*",
-    "@ttc/shared": "workspace:*"
+    "@ttc/shared": "workspace:*",
+    "@types/node": "24.13.6"
   }
 }
