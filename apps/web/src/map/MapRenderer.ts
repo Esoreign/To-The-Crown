@@ -15,6 +15,8 @@
  * mode ne modifie que des teintes. Les frontières politiques sont
  * reconstruites uniquement lorsque la structure des royaumes change.
  */
+// Variante sans eval() : compatible avec une politique CSP stricte (script-src 'self').
+import 'pixi.js/unsafe-eval';
 import {
   Application,
   ColorMatrixFilter,

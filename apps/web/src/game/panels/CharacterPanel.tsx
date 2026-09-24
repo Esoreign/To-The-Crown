@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CULTURE_BY_ID, FAITH_BY_ID } from '@ttc/content';
 import {
+  BALANCE,
   TITLE_DEFS,
   ageOf,
   childrenOf,
@@ -164,11 +165,11 @@ export function CharacterPanel({ view, me, c }: { view: GameView; me: Character;
                   <span className={health < 3 ? 'neg' : health >= 6 ? 'pos' : ''}>{t(`health.${healthLabel(health)}`)}</span>
                 </div>
               </Tip>
-              <Tip content={() => <div>Stress : {Math.round(c.stress)} / 100. Au-delà de 25, 50 et 75, crises et séquelles.</div>}>
+              <Tip content={() => <div>Stress : {Math.round(c.stress)} / {BALANCE.stress.max}. À chaque palier ({BALANCE.stress.levels.join(', ')}), une crise et ses séquelles.</div>}>
                 <div className="vital" tabIndex={0}>
                   <span className="muted">Stress</span>
                   <span className={stress >= 2 ? 'neg' : ''}>{t(`stress.${stress}`)}</span>
-                  <ProgressBar value={c.stress} danger={stress >= 2} />
+                  <ProgressBar value={c.stress} max={BALANCE.stress.max} danger={stress >= 2} />
                 </div>
               </Tip>
               <div className="vital">

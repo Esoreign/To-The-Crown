@@ -50,7 +50,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
       ...(config.isProd || config.isTest ? {} : { transport: { target: 'pino-pretty', options: { translateTime: 'HH:MM:ss', ignore: 'pid,hostname' } } }),
     },
     genReqId: () => crypto.randomUUID(),
-    trustProxy: true,
+    trustProxy: config.TRUST_PROXY,
     bodyLimit: 256 * 1024,
   });
 

@@ -105,7 +105,8 @@ export function describeEffects(view: View, effects: Effect[], scope: EventScope
     else if ('addHealth' in e) push(`${subject(e.who)}${num(e.addHealth, 1)} santé`, e.addHealth);
     else if ('addOpinion' in e) {
       const o = e.addOpinion;
-      push(`Opinion de ${who(view, scope, e.who)} envers ${who(view, scope, o.towards)} : ${num(o.value)}${o.months ? ` (${o.months} mois)` : ''}`, o.value);
+      const holder = (e.who ?? 'root') === 'root' ? 'Votre opinion' : `Opinion ${deName(who(view, scope, e.who))}`;
+      push(`${holder} envers ${who(view, scope, o.towards)} : ${num(o.value)}${o.months ? ` (${o.months} mois)` : ''}`, o.value);
     } else if ('addMutualOpinion' in e) {
       const o = e.addMutualOpinion;
       push(`Opinion mutuelle entre ${who(view, scope, e.who)} et ${who(view, scope, o.with)} : ${num(o.value)}`, o.value);
@@ -123,8 +124,8 @@ export function describeEffects(view: View, effects: Effect[], scope: EventScope
       push(`${subject(e.who)}« ${tOr(`modifier.${e.addModifier.id}`, e.addModifier.id.replace(/_/g, ' '))} »${e.addModifier.months ? ` pendant ${e.addModifier.months} mois` : ''} : ${vals}`);
     } else if ('removeModifier' in e) push(`${subject(e.who)}fin de « ${tOr(`modifier.${e.removeModifier}`, e.removeModifier.replace(/_/g, ' '))} »`);
     else if ('createSecret' in e) push(`${subject(e.who)}un secret naît : ${t(`secret.${e.createSecret.type}`)}`, -1);
-    else if ('discoverSecret' in e) push(`${subject(e.who)}découvre un secret de ${who(view, scope, e.discoverSecret.of)}`, 1);
-    else if ('exposeSecret' in e) push(`Un secret de ${who(view, scope, e.exposeSecret.of)} est révélé`);
+    else if ('discoverSecret' in e) push(`${subject(e.who)}découvre un secret ${deName(who(view, scope, e.discoverSecret.of))}`, 1);
+    else if ('exposeSecret' in e) push(`Un secret ${deName(who(view, scope, e.exposeSecret.of))} est révélé`);
     else if ('createHook' in e) push(`${subject(e.who)}obtient un levier ${e.createHook.strong ? 'fort ' : ''}sur ${who(view, scope, e.createHook.on)}`, 1);
     else if ('addClaim' in e) push(`${subject(e.who)}obtient une revendication`, 1);
     else if ('startScheme' in e) push(`${subject(e.who)}lance un complot : ${t(`scheme.${e.startScheme.type}`)} contre ${who(view, scope, e.startScheme.target)}`);
@@ -161,4 +162,3 @@ export function describeEffects(view: View, effects: Effect[], scope: EventScope
   return out;
 }
 
-export { deName };

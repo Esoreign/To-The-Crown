@@ -22,6 +22,8 @@ const schema = z.object({
   SERVE_WEB_DIST: z.string().default(''),
   SOCKET_REDIS_ADAPTER: bool,
   COOKIE_SECURE: z.enum(['auto', 'true', 'false']).default('auto'),
+  /** Faire confiance à X-Forwarded-For (uniquement derrière un proxy inverse maîtrisé). */
+  TRUST_PROXY: bool,
   /** Durée d'un jour de jeu en ms pour chaque vitesse (1x, 2x, 3x). */
   TICK_MS: z.string().default('600,250,90'),
   AUTOSAVE_MIN_SECONDS: z.coerce.number().int().min(1).default(20),
