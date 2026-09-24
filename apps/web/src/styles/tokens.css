@@ -1,0 +1,117 @@
+/* ==========================================================================
+   To The Crown — jetons de design « manuscrit royal sombre »
+   ========================================================================== */
+:root {
+  /* Fonds */
+  --color-bg-deep: #0b0908;
+  --color-bg: #13100d;
+  --color-bg-raised: #1b1612;
+
+  /* Panneaux obsidienne translucides */
+  --color-panel: rgba(20, 16, 13, 0.92);
+  --color-panel-solid: #17120e;
+  --color-panel-alt: rgba(30, 24, 19, 0.94);
+  --color-panel-inset: rgba(8, 6, 5, 0.55);
+  --color-panel-hover: rgba(58, 44, 30, 0.55);
+
+  /* Bronze et or */
+  --color-bronze-900: #2a1f14;
+  --color-bronze-700: #4a3620;
+  --color-bronze-500: #7a5a32;
+  --color-bronze-400: #9a7641;
+  --color-gold-500: #c9a24b;
+  --color-gold-400: #d9b865;
+  --color-gold-300: #ead08f;
+  --color-gold-glow: rgba(234, 208, 143, 0.35);
+
+  /* Parchemin */
+  --color-parchment-100: #f4ead3;
+  --color-parchment-200: #e8d9b5;
+  --color-parchment-300: #d8c294;
+  --color-parchment-ink: #2c2016;
+  --color-parchment-ink-soft: #5a4630;
+
+  /* Texte */
+  --color-text: #eadfca;
+  --color-text-soft: #b9a98c;
+  --color-text-muted: #8a7b64;
+  --color-text-disabled: #5c5244;
+
+  /* Sémantique */
+  --color-danger: #9e2f2f;
+  --color-danger-bright: #d1504a;
+  --color-success: #3f6b3a;
+  --color-success-bright: #7fb069;
+  --color-diplomacy: #2c3e64;
+  --color-diplomacy-bright: #6f8fd0;
+  --color-warning: #c88a2c;
+  --color-positive: #8fc47a;
+  --color-negative: #e2766b;
+
+  /* Ombres */
+  --shadow-panel: 0 18px 50px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.6);
+  --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --shadow-inset: inset 0 1px 0 rgba(255, 230, 180, 0.06), inset 0 0 22px rgba(0, 0, 0, 0.45);
+  --shadow-gold: 0 0 0 1px rgba(201, 162, 75, 0.45), 0 0 18px rgba(201, 162, 75, 0.18);
+
+  /* Bordures */
+  --border-bronze: 1px solid rgba(154, 118, 65, 0.55);
+  --border-bronze-strong: 1px solid rgba(201, 162, 75, 0.75);
+  --border-subtle: 1px solid rgba(154, 118, 65, 0.22);
+  --border-parchment: 1px solid rgba(90, 70, 48, 0.45);
+
+  /* Rayons */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-round: 999px;
+
+  /* Durées */
+  --duration-fast: 120ms;
+  --duration-ui: 200ms;
+  --duration-panel: 280ms;
+  --duration-slow: 600ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Typographie */
+  --font-display: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --font-narrative: 'Cormorant Garamond', Georgia, serif;
+  --font-ui: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --text-xs: 11px;
+  --text-sm: 12.5px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+  --text-3xl: 34px;
+
+  /* Échelle z-index */
+  --z-map: 0;
+  --z-map-overlay: 10;
+  --z-hud: 100;
+  --z-panel: 200;
+  --z-screen: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 410;
+  --z-toast: 500;
+  --z-tooltip: 600;
+
+  --ui-scale: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-ui: 0ms;
+    --duration-panel: 0ms;
+    --duration-slow: 0ms;
+  }
+}
+
+:root[data-reduced-motion='true'] {
+  --duration-fast: 0ms;
+  --duration-ui: 0ms;
+  --duration-panel: 0ms;
+  --duration-slow: 0ms;
+}
