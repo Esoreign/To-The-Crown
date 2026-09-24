@@ -3,6 +3,7 @@ import { useAuth } from './state/auth';
 import { useRouter } from './lib/router';
 import { useUi } from './state/ui';
 import { TooltipLayer } from './ui/common';
+import { startMusic, unlockAudio } from './audio/audio';
 import { TitleScreen } from './screens/TitleScreen';
 import { CreditsScreen } from './screens/CreditsScreen';
 
@@ -41,6 +42,20 @@ export function App() {
   useEffect(() => {
     void check();
   }, [check]);
+
+  // Les navigateurs n'autorisent le son qu'après une interaction : la musique démarre au premier geste.
+  useEffect(() => {
+    const start = () => {
+      unlockAudio();
+      startMusic();
+    };
+    window.addEventListener('pointerdown', start, { once: true });
+    window.addEventListener('keydown', start, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', start);
+      window.removeEventListener('keydown', start);
+    };
+  }, []);
 
   // Les pages protégées renvoient à l'accueil si la session a expiré.
   useEffect(() => {

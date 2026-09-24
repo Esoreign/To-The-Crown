@@ -1,5 +1,6 @@
 import { useSettings } from '../state/settings';
 import { Modal } from '../ui/common';
+import { MusicSettings } from '../ui/music';
 
 function Slider({ label, value, onChange, min = 0, max = 1, step = 0.05 }: { label: string; value: number; onChange(v: number): void; min?: number; max?: number; step?: number }) {
   const id = `s-${label.replace(/\W/g, '')}`;
@@ -30,9 +31,11 @@ export function SettingsModal({ onClose }: { onClose(): void }) {
         <section>
           <h3 className="section-title">Audio</h3>
           <Slider label="Volume général" value={s.masterVolume} onChange={(v) => s.set({ masterVolume: v })} />
-          <Slider label="Musique" value={s.musicVolume} onChange={(v) => s.set({ musicVolume: v })} />
+          <Slider label="Volume de la musique" value={s.musicVolume} onChange={(v) => s.set({ musicVolume: v })} />
           <Slider label="Effets" value={s.sfxVolume} onChange={(v) => s.set({ sfxVolume: v })} />
           <Slider label="Ambiance" value={s.ambientVolume} onChange={(v) => s.set({ ambientVolume: v })} />
+          <h3 className="section-title">Musique</h3>
+          <MusicSettings />
         </section>
         <section>
           <h3 className="section-title">Carte</h3>

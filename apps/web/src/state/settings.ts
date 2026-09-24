@@ -3,6 +3,12 @@ import { create } from 'zustand';
 export interface Settings {
   masterVolume: number;
   musicVolume: number;
+  /** Musique de fond activée. */
+  musicEnabled: boolean;
+  /** Source : pistes enregistrées (ballades) ou musique générée. */
+  musicSource: 'tracks' | 'procedural';
+  /** Ordre aléatoire des pistes. */
+  musicShuffle: boolean;
   sfxVolume: number;
   ambientVolume: number;
   cameraSpeed: number;
@@ -21,6 +27,9 @@ export interface Settings {
 const DEFAULTS: Settings = {
   masterVolume: 0.7,
   musicVolume: 0.35,
+  musicEnabled: true,
+  musicSource: 'tracks',
+  musicShuffle: false,
   sfxVolume: 0.8,
   ambientVolume: 0.4,
   cameraSpeed: 1,

@@ -1,5 +1,6 @@
 import { GAME_VERSION_LABEL } from '@ttc/shared';
 import { useRouter } from '../lib/router';
+import { TRACKS } from '../audio/playlist';
 
 export function CreditsScreen() {
   const go = useRouter((s) => s.go);
@@ -12,7 +13,15 @@ export function CreditsScreen() {
         </p>
         <div className="divider" />
         <h3 className="section-title">Conception et développement</h3>
-        <p className="soft">Monde, personnages, événements, cartes, blasons, portraits et musique générés de façon procédurale pour ce projet.</p>
+        <p className="soft">Monde, personnages, événements, cartes, blasons, portraits, effets sonores et musique d’ambiance générés de façon procédurale pour ce projet.</p>
+        <h3 className="section-title">Musique de fond</h3>
+        <ul className="soft credits-list">
+          {TRACKS.map((t) => (
+            <li key={t.id}>
+              {t.title} — {t.artist}
+            </li>
+          ))}
+        </ul>
         <h3 className="section-title">Polices</h3>
         <ul className="soft credits-list">
           <li>Cinzel — Natanael Gama, SIL Open Font License 1.1</li>
@@ -25,7 +34,7 @@ export function CreditsScreen() {
           <li>Fastify, Drizzle ORM, Zod, Argon2 (MIT)</li>
         </ul>
         <p className="muted">
-          Œuvre originale. Aucun élément graphique, sonore ou textuel n’est repris d’un jeu existant. Version {GAME_VERSION_LABEL}.
+          Aucun élément graphique, sonore ou textuel n’est repris d’un jeu existant. Les morceaux de musique de fond appartiennent à leurs auteurs respectifs. Version {GAME_VERSION_LABEL}.
         </p>
         <button className="btn btn-primary" onClick={() => go({ name: 'title' })}>
           Retour

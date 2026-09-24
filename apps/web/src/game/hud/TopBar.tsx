@@ -16,6 +16,7 @@ import { charName, rulerTitle } from '../../lib/format';
 import { AnimatedNumber, Breakdown, CoatOfArms, Portrait, Tip } from '../../ui/common';
 import { openCharacter, openTitle } from '../hooks';
 import { useUi } from '../../state/ui';
+import { MusicButton } from '../../ui/music';
 
 function Resource({ icon, label, value, delta, decimals = 0, tip, testId, warn }: { icon: string; label: string; value: number; delta?: number; decimals?: number; tip: () => React.ReactNode; testId?: string; warn?: boolean }) {
   return (
@@ -158,6 +159,7 @@ export function TopBar({ view, me }: { view: GameView; me: Character }) {
           )}
         />
       </div>
+      <MusicButton className="topbar-music" />
       <button className="topbar-ledger icon-btn" onClick={() => openScreen('ledger')} aria-label="Registre du trésor" title="Registre du trésor">
         ⛁
       </button>

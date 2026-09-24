@@ -89,4 +89,4 @@ docs             Conception, architecture, multijoueur, base de données, direct
 
 ## Licence et crédits
 
-Œuvre originale : monde, personnages, textes, cartes, blasons, portraits et musique sont générés ou écrits pour ce projet. Aucun élément graphique, sonore ou textuel n'est repris d'un jeu existant. Polices sous licence SIL OFL 1.1 : Cinzel (Natanael Gama), Cormorant Garamond (Christian Thalmann), Inter (Rasmus Andersson).
+Monde, personnages, textes, cartes, blasons, portraits, effets sonores et musique générée sont créés pour ce projet ; aucun élément n'est repris d'un jeu existant. La musique de fond par défaut (`apps/web/public/music`) se compose de reprises « bardcore » de titres de Sabrina Carpenter, qui restent la propriété de leurs auteurs : vérifiez vos droits avant toute diffusion publique, ou choisissez « Musique générée » dans les paramètres. Polices sous licence SIL OFL 1.1 : Cinzel (Natanael Gama), Cormorant Garamond (Christian Thalmann), Inter (Rasmus Andersson).

@@ -11,6 +11,7 @@ import { playSound, startMusic, unlockAudio } from '../audio/audio';
 import { Modal } from '../ui/common';
 import { AuthModal } from './AuthModal';
 import { SettingsModal } from './SettingsModal';
+import { MusicButton, NowPlaying } from '../ui/music';
 
 export function TitleScreen() {
   const { user, logout } = useAuth();
@@ -103,6 +104,10 @@ export function TitleScreen() {
             </button>
           )}
         </nav>
+      </div>
+      <div className="title-music">
+        <MusicButton />
+        <NowPlaying />
       </div>
       <div className="title-version">v{GAME_VERSION_LABEL}</div>
       {auth && (

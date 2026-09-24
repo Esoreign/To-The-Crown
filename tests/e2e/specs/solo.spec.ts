@@ -29,6 +29,14 @@ test.describe('Partie solo', () => {
     await expect(steward.getByRole('radio', { name: 'Développer un comté' })).toHaveAttribute('aria-checked', 'true');
     await page.keyboard.press('Escape');
 
+    // Musique de fond : bouton rapide couper / rétablir.
+    const music = page.getByTestId('music-toggle');
+    const before = await music.getAttribute('aria-pressed');
+    await music.click();
+    await expect(music).not.toHaveAttribute('aria-pressed', before ?? '');
+    await music.click();
+    await expect(music).toHaveAttribute('aria-pressed', before ?? '');
+
     // Modes de carte.
     await page.getByTestId('mapmode-culture').click();
     await expect(page.locator('.legend')).toBeVisible();
@@ -52,7 +60,8 @@ test.describe('Partie solo', () => {
     expect(await currentYear(page)).toBeGreaterThanOrEqual(startYear);
     // Mise en pause certaine (un événement a pu déjà suspendre le temps).
     await resolveEvents(page);
-    if (!(await page.locator('.clock.paused').count())) await page.getByTestId('clock-toggle').click();
+    // Espace met en pause même si une fenêtre d'événement vient de s'ouvrir.
+    if (!(await page.locator('.clock.paused').count())) await page.keyboard.press(' ');
     await expect(page.locator('.clock.paused')).toBeVisible();
     await resolveEvents(page);
     const savedDate = await page.locator('.clock-date').textContent();

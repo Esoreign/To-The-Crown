@@ -1,9 +1,13 @@
 /**
- * Audio entièrement synthétisé (WebAudio) : effets, musique modale
- * procédurale et ambiance de vent. Aucune ressource sonore externe.
+ * Audio : effets synthétisés (WebAudio), ambiance de vent, et musique de
+ * fond — soit les pistes enregistrées (public/music), soit une musique
+ * modale générée. Tout est piloté par les paramètres (activation, source,
+ * volumes, ordre aléatoire).
  */
+import { create } from 'zustand';
 import type { SoundKey } from '@ttc/shared';
 import { useSettings } from '../state/settings';
+import { TRACKS } from './playlist';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -11,7 +15,6 @@ let sfxBus: GainNode | null = null;
 let musicBus: GainNode | null = null;
 let ambientBus: GainNode | null = null;
 let reverb: ConvolverNode | null = null;
-let musicTimer: number | null = null;
 let windSource: AudioBufferSourceNode | null = null;
 
 function ensure(): AudioContext | null {
@@ -158,11 +161,162 @@ export function playSound(key: SoundKey | 'click'): void {
 }
 
 // ---------------------------------------------------------------- Musique
-const SCALE = [0, 2, 3, 5, 7, 9, 10]; // dorien
+interface MusicState {
+  /** Piste courante (index dans TRACKS). */
+  index: number;
+  playing: boolean;
+  /** Le navigateur a refusé la lecture automatique : un clic la relancera. */
+  blocked: boolean;
+}
 
-export function startMusic(): void {
+export const useMusic = create<MusicState>(() => ({ index: 0, playing: false, blocked: false }));
+
+/** La musique a été demandée (après une interaction de l'utilisateur). */
+let wanted = false;
+let player: HTMLAudioElement | null = null;
+let fadeTimer: number | null = null;
+let proceduralTimer: number | null = null;
+let settingsHooked = false;
+
+function musicVolume(): number {
+  const s = useSettings.getState();
+  return Math.max(0, Math.min(1, s.masterVolume * s.musicVolume));
+}
+
+function clearFade(): void {
+  if (fadeTimer !== null) window.clearInterval(fadeTimer);
+  fadeTimer = null;
+}
+
+/** Fondu du volume de la piste vers `target` en `ms` millisecondes. */
+function fadeTo(target: number, ms: number, done?: () => void): void {
+  if (!player) return;
+  clearFade();
+  const p = player;
+  const from = p.volume;
+  const steps = Math.max(1, Math.round(ms / 50));
+  let i = 0;
+  fadeTimer = window.setInterval(() => {
+    i++;
+    p.volume = Math.max(0, Math.min(1, from + (target - from) * (i / steps)));
+    if (i >= steps) {
+      clearFade();
+      done?.();
+    }
+  }, 50);
+}
+
+function ensurePlayer(): HTMLAudioElement {
+  if (player) return player;
+  const p = new Audio();
+  p.preload = 'auto';
+  p.volume = 0;
+  p.addEventListener('ended', () => nextTrack());
+  p.addEventListener('error', () => {
+    // Piste illisible : on passe à la suivante sans boucler à l'infini.
+    if (TRACKS.length > 1) window.setTimeout(() => nextTrack(), 500);
+  });
+  p.addEventListener('play', () => useMusic.setState({ playing: true, blocked: false }));
+  p.addEventListener('pause', () => useMusic.setState({ playing: false }));
+  player = p;
+  return p;
+}
+
+function resumeOnGesture(): void {
+  const retry = () => {
+    window.removeEventListener('pointerdown', retry);
+    window.removeEventListener('keydown', retry);
+    unlockAudio();
+    syncMusic();
+  };
+  window.addEventListener('pointerdown', retry, { once: true });
+  window.addEventListener('keydown', retry, { once: true });
+}
+
+function playCurrent(): void {
+  const p = ensurePlayer();
+  const track = TRACKS[useMusic.getState().index] ?? TRACKS[0];
+  if (!track) return;
+  const url = new URL(track.src, window.location.href).href;
+  if (p.src !== url) {
+    p.src = track.src;
+    p.currentTime = 0;
+  }
+  if (!p.paused) {
+    fadeTo(musicVolume(), 400);
+    return;
+  }
+  p.volume = 0;
+  p.play()
+    .then(() => fadeTo(musicVolume(), 1500))
+    .catch(() => {
+      useMusic.setState({ blocked: true, playing: false });
+      resumeOnGesture();
+    });
+}
+
+function pauseTracks(fade = true): void {
+  const p = player;
+  if (!p || p.paused) return;
+  if (fade) fadeTo(0, 700, () => p.pause());
+  else {
+    clearFade();
+    p.pause();
+  }
+}
+
+function pickNext(step: 1 | -1): number {
+  const n = TRACKS.length;
+  const cur = useMusic.getState().index;
+  if (n <= 1) return 0;
+  if (useSettings.getState().musicShuffle) {
+    let r = cur;
+    while (r === cur) r = Math.floor(Math.random() * n);
+    return r;
+  }
+  return (cur + step + n) % n;
+}
+
+function changeTrack(index: number): void {
+  useMusic.setState({ index });
+  const s = useSettings.getState();
+  if (!wanted || !s.musicEnabled || s.musicSource !== 'tracks') return;
+  const p = player;
+  if (p && !p.paused) {
+    fadeTo(0, 600, () => {
+      p.pause();
+      playCurrent();
+    });
+  } else playCurrent();
+}
+
+export function nextTrack(): void {
+  changeTrack(pickNext(1));
+}
+
+export function previousTrack(): void {
+  const p = player;
+  // Comme un lecteur classique : revenir au début si la piste est entamée.
+  if (p && !p.paused && p.currentTime > 5) {
+    p.currentTime = 0;
+    return;
+  }
+  changeTrack(pickNext(-1));
+}
+
+export function selectTrack(index: number): void {
+  if (index >= 0 && index < TRACKS.length) changeTrack(index);
+}
+
+/** Active ou coupe la musique de fond (raccourci de l'interface). */
+export function toggleMusic(): void {
+  const s = useSettings.getState();
+  s.set({ musicEnabled: !s.musicEnabled });
+}
+
+function startProcedural(): void {
   const c = ensure();
-  if (!c || musicTimer !== null) return;
+  if (!c || proceduralTimer !== null) return;
   let step = 0;
   let root = -12;
   const loop = () => {
@@ -180,15 +334,67 @@ export function startMusic(): void {
       }
     }
     step++;
-    musicTimer = window.setTimeout(loop, 520);
+    proceduralTimer = window.setTimeout(loop, 520);
   };
   loop();
+}
+
+function stopProcedural(): void {
+  if (proceduralTimer !== null) window.clearTimeout(proceduralTimer);
+  proceduralTimer = null;
+}
+
+const SCALE = [0, 2, 3, 5, 7, 9, 10]; // dorien
+
+/** Aligne la lecture sur les paramètres courants (activation, source, volume). */
+function syncMusic(): void {
+  const s = useSettings.getState();
+  if (!wanted || !s.musicEnabled) {
+    stopProcedural();
+    pauseTracks();
+    return;
+  }
+  if (s.musicSource === 'tracks' && TRACKS.length) {
+    stopProcedural();
+    playCurrent();
+  } else {
+    pauseTracks();
+    startProcedural();
+  }
+}
+
+function hookSettings(): void {
+  if (settingsHooked) return;
+  settingsHooked = true;
+  let prev = useSettings.getState();
+  useSettings.subscribe((s) => {
+    const changed = s.musicEnabled !== prev.musicEnabled || s.musicSource !== prev.musicSource;
+    const volume = s.musicVolume !== prev.musicVolume || s.masterVolume !== prev.masterVolume;
+    prev = s;
+    if (changed) syncMusic();
+    else if (volume && player && !player.paused) {
+      clearFade();
+      player.volume = musicVolume();
+    }
+  });
+}
+
+/** Démarre la musique de fond et l'ambiance (à appeler après une interaction). */
+export function startMusic(): void {
+  if (!ensure()) return;
+  hookSettings();
+  if (!wanted) {
+    wanted = true;
+    // Premier lancement : piste de départ aléatoire si l'ordre aléatoire est actif.
+    if (useSettings.getState().musicShuffle) useMusic.setState({ index: Math.floor(Math.random() * TRACKS.length) });
+  }
+  syncMusic();
   startWind();
 }
 
 export function stopMusic(): void {
-  if (musicTimer !== null) window.clearTimeout(musicTimer);
-  musicTimer = null;
+  wanted = false;
+  syncMusic();
 }
 
 function startWind(): void {

@@ -873,3 +873,47 @@ kbd {
 .lobby-picker .start-list {
   overflow: auto;
 }
+
+/* ---------------------------------------------------------------- Musique */
+.music-btn {
+  font-size: 16px;
+}
+.music-btn:not(.active) {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.music-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.music-transport {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+}
+.music-shuffle {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--color-text-soft);
+  cursor: pointer;
+}
+.music-shuffle input {
+  accent-color: var(--color-gold-500);
+}
+.music-now {
+  font-size: 12.5px;
+  padding: 4px 0 2px;
+  min-height: 22px;
+}
+.title-music {
+  position: absolute;
+  left: 18px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  max-width: 60vw;
+}

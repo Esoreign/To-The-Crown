@@ -34,7 +34,14 @@
 
 ## Son
 
-WebAudio uniquement (`audio/audio.ts`) : musique modale dorienne générée, ambiance de vent, effets synthétisés (clic, notification, événement, guerre, bataille, mort, naissance, pièce, fanfare). Volumes séparés dans les paramètres.
+- **Musique de fond** (paramètres › Musique) : activable ou non, deux sources au choix :
+  - *Ballades* — pistes enregistrées de `apps/web/public/music` (liste dans `audio/playlist.ts`), lues en boucle avec fondu enchaîné, ordre aléatoire possible, piste précédente/suivante ;
+  - *Musique générée* — musique modale dorienne synthétisée en WebAudio.
+- Bouton ♫ dans la barre du jeu et sur l'écran titre : clic pour couper/rétablir, molette pour le volume.
+- Ambiance de vent et effets synthétisés (clic, notification, événement, guerre, bataille, mort, naissance, pièce, fanfare).
+- Volumes séparés (général, musique, effets, ambiance), mémorisés dans le navigateur. La musique démarre au premier clic (politique d'autoplay des navigateurs).
+
+Ajouter une piste : déposer le fichier dans `apps/web/public/music/` et l'inscrire dans `TRACKS`.
 
 ## Mouvement et accessibilité
 
