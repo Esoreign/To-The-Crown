@@ -495,8 +495,11 @@ export class MapRenderer {
       this.seaLabelLayer.addChild(t);
     }
     for (const p of WORLD.provinces) {
-      const t = this.makeLabel(p.name, Math.max(10, Math.min(20, p.label.size * 0.75)), 0xf0e2c0, { stroke: 3 });
-      t.position.set(p.label.at[0], p.label.at[1]);
+      const size = Math.max(10, Math.min(20, p.label.size * 0.75));
+      const t = this.makeLabel(p.name, size, 0xf0e2c0, { stroke: 3 });
+      // Le nom est décalé sous le donjon de la capitale (même point d'ancrage), le long de sa normale.
+      const off = 12 + size * 0.7;
+      t.position.set(p.label.at[0] - Math.sin(p.label.angle) * off, p.label.at[1] + Math.cos(p.label.angle) * off);
       t.rotation = p.label.angle;
       this.countyLabelLayer.addChild(t);
     }

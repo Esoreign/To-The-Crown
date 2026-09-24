@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 # ---------------------------------------------------------------------------
 # To The Crown — image multi-cibles
 #   docker build -f infra/docker/Dockerfile --target server .

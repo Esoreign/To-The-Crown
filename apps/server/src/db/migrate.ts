@@ -18,7 +18,8 @@ export async function runMigrations(url: string, folder?: string): Promise<void>
   }
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+// Exécuté comme script (tsx src/db/migrate.ts ou node dist/db/migrate.js), pas une fois intégré à un autre bundle.
+const isMain = !!process.argv[1] && /[\\/]db[\\/]migrate\.(ts|js)$/.test(resolve(process.argv[1])) && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 if (isMain) {
   const url = process.env.DATABASE_URL;
   if (!url) {

@@ -48,7 +48,8 @@ export async function seed(url: string, withDemoUsers: boolean): Promise<void> {
   }
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+// Exécuté comme script (tsx src/db/seed.ts ou node dist/db/seed.js), pas une fois intégré à un autre bundle.
+const isMain = !!process.argv[1] && /[\\/]db[\\/]seed\.(ts|js)$/.test(resolve(process.argv[1])) && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 if (isMain) {
   const url = process.env.DATABASE_URL;
   if (!url) {
