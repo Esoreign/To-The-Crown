@@ -10,6 +10,8 @@ Deux façons, au choix :
 
 ## A. Vercel + Supabase (sans serveur)
 
+**Déjà en ligne : https://to-the-crown.vercel.app** (projet Vercel `to-the-crown`, relié au dépôt GitHub).
+
 ### 1. Supabase (déjà fait)
 
 Le projet Supabase **To The Crown** est prêt : tables verrouillées, et fonctions du jeu installées (`database/migrations/*.sql` puis `database/supabase/web_mode.sql`). Son adresse et sa clé publique sont déjà dans `apps/web/.env.supabase`.
@@ -23,7 +25,7 @@ Pour un autre projet Supabase : exécutez ces fichiers SQL dans l'ordre (SQL Edi
 3. **Deploy**. Au bout de 2–3 minutes, Vercel donne un lien du type `https://to-the-crown.vercel.app`.
 4. Envoyez ce lien à vos amis. Chacun crée son compte sur le site.
 
-Chaque `git push` sur la branche de production met le site à jour.
+Chaque `git push` sur la branche de production de Vercel (en général `main`) met le site à jour ; un push sur une autre branche crée seulement un aperçu, qu'on peut promouvoir en production depuis Vercel (*Deployments › … › Promote to Production*).
 
 ### Jouer
 
