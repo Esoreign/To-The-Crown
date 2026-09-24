@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers';
+import { register, resolveEvents } from './helpers';
 
 test('multijoueur : salon, code d’invitation, choix, lancement et discussion', async ({ browser }) => {
   const hostCtx = await browser.newContext();
@@ -55,11 +55,13 @@ test('multijoueur : salon, code d’invitation, choix, lancement et discussion',
   await expect(guest.locator('.clock-date')).not.toHaveText(before ?? '', { timeout: 30_000 });
   await host.getByTestId('clock-toggle').click();
 
-  // Discussion.
+  // Discussion (les événements apparus entre-temps sont d'abord tranchés).
+  await resolveEvents(host);
   await host.getByTestId('nav-chat').click();
   await host.getByTestId('chat-input').fill('Salut, cousin. La paix ?');
   await host.getByTestId('chat-input').press('Enter');
   await guest.bringToFront();
+  await resolveEvents(guest);
   await guest.getByTestId('nav-chat').click();
   await expect(guest.getByTestId('chat-panel')).toContainText('La paix ?');
 
