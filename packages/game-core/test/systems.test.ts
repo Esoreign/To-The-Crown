@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { EventDef, GameState } from '@ttc/shared';
+import type { Effect, EventDef, GameState } from '@ttc/shared';
 import { armyMen, findPath, raiseArmy, orderMove, disbandArmy } from '../src/armies';
 import { ageOf, isAlive } from '../src/characters';
 import { PROVINCE_GEO } from '../src/content';
@@ -255,9 +255,9 @@ describe('Moteur d’événements', () => {
     const a = newState(15);
     const b = newState(15);
     const id = rulerId('Thalos');
-    const eff = [{ chance: 50, then: [{ addGold: 10 }], else: [{ addGold: -10 }] }, { if: { gold: { min: 0 } }, then: [{ addPrestige: 5 }] }] as const;
-    applyEffects(ctxFor(a), [...eff], { root: id });
-    applyEffects(ctxFor(b), [...eff], { root: id });
+    const eff: Effect[] = [{ chance: 50, then: [{ addGold: 10 }], else: [{ addGold: -10 }] }, { if: { gold: { min: 0 } }, then: [{ addPrestige: 5 }] }];
+    applyEffects(ctxFor(a), eff, { root: id });
+    applyEffects(ctxFor(b), eff, { root: id });
     expect(a.characters[id]!.gold).toBe(b.characters[id]!.gold);
   });
 });

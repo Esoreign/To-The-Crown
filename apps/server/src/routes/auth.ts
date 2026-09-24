@@ -61,6 +61,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     return { ok: true };
   });
 
+  /** État de session sans erreur (évite un 401 au chargement pour un visiteur). */
+  app.get('/api/auth/session', async (req) => ({ user: req.user ? toPublic(req.user) : null }));
+
   app.get('/api/auth/me', async (req) => {
     if (!req.user) throw new HttpError(401, ErrorCodes.AUTH_REQUIRED, 'Non connecté');
     return { user: toPublic(req.user) };

@@ -34,6 +34,9 @@ describe('Authentification', () => {
     const stale = new Client(url);
     stale.cookie = c.cookie;
     expect((await stale.req('GET', '/api/auth/me')).status).toBe(401);
+    const session = await stale.req<{ user: null }>('GET', '/api/auth/session');
+    expect(session.status).toBe(200);
+    expect(session.body.user).toBeNull();
   });
 
   it('ne stocke jamais le mot de passe en clair (Argon2id)', async () => {

@@ -6,6 +6,7 @@ import { isAlive } from './characters';
 import { DEJURE_PROVINCES, PROVINCE_GEO, TITLE_DEFS } from './content';
 import { allVassals, directVassals, rankOf, realmProvinceIds, sortTitleIds, topLiegeId } from './realm';
 import { bumpStructure } from './index-cache';
+import { chronicle, notifyAll, type Ctx } from './context';
 
 const HISTORY_CAP = 24;
 
@@ -160,6 +161,14 @@ export function canCreateTitle(state: GameView, charId: string, titleId: string)
   const share = dj.length ? dj.filter((p) => mine.has(p)).length / dj.length : 0;
   const ok = share >= required && c.gold >= cost.gold && c.prestige >= cost.prestige;
   return { ok, share, required, cost, reason: ok ? undefined : share < required ? 'share' : 'resources' };
+}
+
+/** Crée un titre et l'inscrit dans la chronique (couronnement pour royaume/empire). */
+export function createTitleWithChronicle(ctx: Ctx, charId: string, titleId: string): void {
+  createTitle(ctx.s, charId, titleId);
+  const rank = TITLE_DEFS[titleId]?.rank;
+  chronicle(ctx, rank === 'kingdom' || rank === 'empire' ? 'coronation' : 'title_created', { name: charId, title: titleId }, [charId]);
+  notifyAll(ctx, { level: rank === 'duchy' ? 'info' : 'important', kind: 'title_created', vars: { name: ctx.s.characters[charId]?.firstName ?? '', title: TITLE_DEFS[titleId]?.name ?? titleId }, focus: { type: 'title', id: titleId }, sound: 'fanfare' });
 }
 
 export function createTitle(state: GameState, charId: string, titleId: string): void {

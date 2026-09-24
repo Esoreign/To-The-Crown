@@ -7,7 +7,7 @@
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CULTURE_BY_ID, EMPIRE_DEFS, KINGDOM_DEFS, WORLD } from '@ttc/content';
+import { CULTURE_BY_ID, EMPIRE_DEFS, WORLD } from '@ttc/content';
 import {
   toDay,
   yearsToDays,

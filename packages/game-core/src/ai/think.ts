@@ -17,7 +17,7 @@ import { marriageCandidates, proposeMarriage } from '../marriage';
 import { alliesOf, opinion, relationsOf } from '../opinion';
 import { courtiers, directVassals, domainLimit, isIndependent, neighborRulers, rankOf } from '../realm';
 import { SCHEME_DEFS, schemeValidity, startScheme } from '../schemes';
-import { canCreateTitle, createTitle, transferTitle } from '../titles';
+import { canCreateTitle, createTitleWithChronicle, transferTitle } from '../titles';
 import { availableCasusBelli, declareWar, warsOf, type CbOption } from '../war';
 import { recruitMaa } from '../armies';
 import { takeDecision, decisionBlocker } from '../decisions';
@@ -159,7 +159,7 @@ function manageTitles(ctx: Ctx, c: Character): void {
   }
   for (const t of candidates) {
     if (canCreateTitle(s, c.id, t).ok) {
-      createTitle(ctx.s, c.id, t);
+      createTitleWithChronicle(ctx, c.id, t);
       return;
     }
   }

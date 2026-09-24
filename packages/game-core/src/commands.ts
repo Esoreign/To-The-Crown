@@ -36,7 +36,7 @@ import { respondProposal } from './proposals';
 import { cancelScheme, startScheme } from './schemes';
 import { exposeSecret } from './secrets';
 import { electionCandidates, electors } from './succession';
-import { createTitle, transferTitle } from './titles';
+import { createTitleWithChronicle, transferTitle } from './titles';
 import { callAlly, declareWar, offerPeace } from './war';
 import { domainProvinceIds } from './characters';
 
@@ -68,7 +68,7 @@ export function applyCommand(ctx: Ctx, actorId: string, cmd: GameCommand): Comma
       revokeTitle(ctx, actorId, cmd.payload.titleId, (t, to) => transferTitle(s, t, to, 'revoked'));
       break;
     case 'title.create':
-      createTitle(s, actorId, cmd.payload.titleId);
+      createTitleWithChronicle(ctx, actorId, cmd.payload.titleId);
       break;
     case 'council.assign':
       if (!actor.council) throw new GameError(ErrorCodes.INVALID_TARGET, 'Aucun conseil');

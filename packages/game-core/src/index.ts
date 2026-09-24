@@ -23,6 +23,7 @@ export * from './schemes';
 export * from './secrets';
 export * from './state';
 export * from './stats';
+export { stressForTags } from './stress';
 export * from './succession';
 export * from './titles';
 export * from './views';

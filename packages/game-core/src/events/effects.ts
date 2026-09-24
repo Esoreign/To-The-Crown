@@ -103,8 +103,11 @@ export function applyEffect(ctx: Ctx, e: Effect, scope: EventScope): void {
   if ('exposeSecret' in e) {
     const o = who(e.exposeSecret.of);
     if (!o) return;
-    const sec = Object.values(s.secrets).find((x) => x.ownerId === o.id && !x.exposed);
-    if (sec) exposeSecret(ctx, sec.id, scope.root);
+    // Priorité à un secret que le destinataire connaît ; sinon la rumeur éclate sans auteur.
+    const hidden = Object.values(s.secrets).filter((x) => x.ownerId === o.id && !x.exposed);
+    const known = hidden.find((x) => x.knownBy.includes(scope.root));
+    if (known) exposeSecret(ctx, known.id, scope.root);
+    else if (hidden[0]) exposeSecret(ctx, hidden[0].id, null);
     return;
   }
 

@@ -26,7 +26,7 @@ if (isMain) {
     process.exit(1);
   }
   runMigrations(url)
-    .then(() => console.log('Migrations appliquées.'))
+    .then(() => console.warn('Migrations appliquées.'))
     .catch((err: unknown) => {
       console.error(err);
       process.exit(1);
