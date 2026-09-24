@@ -14,7 +14,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   const { db, config, limiter } = app;
 
   app.post('/api/auth/register', async (req, reply) => {
-    if (!(await limiter.hit(`register:${req.ip}`, 10, 3600))) throw new HttpError(429, ErrorCodes.RATE_LIMITED, 'Trop d’inscriptions, réessayez plus tard.');
+    if (!(await limiter.hit(`register:${req.ip}`, config.REGISTER_LIMIT_PER_HOUR, 3600))) throw new HttpError(429, ErrorCodes.RATE_LIMITED, 'Trop d’inscriptions, réessayez plus tard.');
     const body = registerSchema.parse(req.body);
     const problem = passwordProblems(body.password);
     if (problem) throw new HttpError(400, ErrorCodes.VALIDATION_FAILED, problem);

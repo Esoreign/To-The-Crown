@@ -25,6 +25,8 @@ const schema = z.object({
   /** Durée d'un jour de jeu en ms pour chaque vitesse (1x, 2x, 3x). */
   TICK_MS: z.string().default('600,250,90'),
   AUTOSAVE_MIN_SECONDS: z.coerce.number().int().min(1).default(20),
+  /** Inscriptions autorisées par IP et par heure. */
+  REGISTER_LIMIT_PER_HOUR: z.coerce.number().int().min(1).default(10),
 });
 
 export type Config = ReturnType<typeof loadConfig>;
