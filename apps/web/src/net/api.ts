@@ -1,16 +1,14 @@
 import type { ApiError } from '@ttc/shared';
+import { ApiFailure } from './failure';
+import { WEB_MODE } from './mode';
+import { browserApi } from './browser/api';
 
-export class ApiFailure extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+export { ApiFailure };
 
-export async function api<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<T> {
+type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+
+export async function api<T>(method: Method, path: string, body?: unknown): Promise<T> {
+  if (WEB_MODE) return browserApi<T>(method, path, body);
   let res: Response;
   try {
     res = await fetch(path, {

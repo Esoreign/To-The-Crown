@@ -23,7 +23,7 @@ Sauvegarde automatique : chaque 1er du mois de jeu (au plus une fois toutes les 
 
 ## Versions de sauvegarde
 
-`SAVE_SCHEMA_VERSION` (`packages/shared/src/state.ts`) est enregistré avec chaque snapshot. Au chargement, `migrateSnapshot` applique les migrations successives ; une sauvegarde plus récente que le serveur est refusée (`SAVE_INCOMPATIBLE`).
+`SAVE_SCHEMA_VERSION` (`packages/shared/src/state.ts`) est enregistré avec chaque snapshot. Au chargement, `migrateSnapshot` (`packages/game-core/src/save.ts`) applique les migrations successives ; une sauvegarde plus récente que le serveur est refusée (`SAVE_INCOMPATIBLE`).
 
 ## Sécurité des données
 
@@ -32,3 +32,13 @@ Sauvegarde automatique : chaque 1er du mois de jeu (au plus une fois toutes les 
 - Mots de passe : Argon2id uniquement (`password_hash`), jamais journalisés.
 - Sessions : seul le HMAC du jeton est stocké (`token_hash`), expiration et révocation.
 - Aucune donnée secrète dans les journaux applicatifs.
+
+## Mode sans serveur (Supabase)
+
+`database/supabase/web_mode.sql` (à appliquer après les migrations, idempotent) ajoute :
+
+- `web_presence` (présence dans les salons) et `web_rate_events` (limitation de débit), RLS activée sans politique ;
+- le schéma interne `ttc_private` (non exposé) ;
+- l'API `public.ttc_*` en `SECURITY DEFINER` (`search_path` vide), seule accessible à la clé publique : chaque fonction vérifie le jeton de session (empreinte SHA-256 en base, 30 jours, révocable), l'appartenance à la partie et le rôle d'hôte. L'avertissement Supabase « Public Can Execute SECURITY DEFINER Function » est donc attendu pour ces fonctions.
+- Erreurs : `raise exception` avec le code `ErrorCodes` dans `hint` ; quand un compteur doit être conservé (connexion échouée, code inconnu), réponse `{"error": {...}}` sans exception.
+- Mots de passe : bcrypt (`pgcrypto`, coût 10) ; les empreintes Argon2id du mode serveur n'y sont pas vérifiables.

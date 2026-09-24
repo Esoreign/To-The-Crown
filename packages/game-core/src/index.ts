@@ -19,6 +19,7 @@ export * from './opinion';
 export * from './provinces';
 export * from './realm';
 export * from './rng';
+export * from './save';
 export * from './schemes';
 export * from './secrets';
 export * from './state';

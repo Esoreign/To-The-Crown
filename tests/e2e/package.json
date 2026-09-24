@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "e2e": "playwright test",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "e2e:supabase": "playwright test -c playwright.supabase.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

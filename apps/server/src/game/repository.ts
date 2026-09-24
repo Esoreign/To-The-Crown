@@ -3,9 +3,10 @@
  */
 import { randomBytes } from 'node:crypto';
 import { and, asc, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
+import { migrateSnapshot as migrateSaved } from '@ttc/game-core';
 import {
   ErrorCodes,
-  SAVE_SCHEMA_VERSION,
+  isGameError,
   type ChatMessage,
   type GameLogEntry,
   type GameNotification,
@@ -37,21 +38,14 @@ export function newInviteCode(): string {
   return out;
 }
 
-/** Migrations de snapshot : SAVE_SCHEMA_VERSION → fonction de migration depuis la version précédente. */
-const SNAPSHOT_MIGRATIONS: Record<number, (s: Record<string, unknown>) => Record<string, unknown>> = {};
-
+/** Migration de snapshot (voir `packages/game-core/src/save.ts`), erreurs traduites en HTTP 409. */
 export function migrateSnapshot(raw: Record<string, unknown>): GameState {
-  let version = Number(raw.schemaVersion ?? 0);
-  let data = raw;
-  if (version > SAVE_SCHEMA_VERSION) throw new HttpError(409, ErrorCodes.SAVE_INCOMPATIBLE, 'Sauvegarde créée par une version plus récente du jeu');
-  while (version < SAVE_SCHEMA_VERSION) {
-    const mig = SNAPSHOT_MIGRATIONS[version + 1];
-    if (!mig) throw new HttpError(409, ErrorCodes.SAVE_INCOMPATIBLE, `Aucune migration de sauvegarde depuis la version ${version}`);
-    data = mig(data);
-    version++;
-    data.schemaVersion = version;
+  try {
+    return migrateSaved(raw);
+  } catch (err) {
+    if (isGameError(err)) throw new HttpError(409, err.code, err.message);
+    throw err;
   }
-  return data as unknown as GameState;
 }
 
 export class GameRepository {

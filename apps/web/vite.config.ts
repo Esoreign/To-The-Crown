@@ -13,6 +13,7 @@ export default defineConfig({
       '/socket.io': { target, ws: true, changeOrigin: false },
     },
   },
+  worker: { format: 'es' },
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 4000,

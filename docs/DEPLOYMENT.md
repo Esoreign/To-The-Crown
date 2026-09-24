@@ -1,51 +1,54 @@
-# Mettre le jeu en ligne (Supabase + Render)
+# Mettre le jeu en ligne
 
-Résultat : un lien du type `https://to-the-crown.onrender.com` à partager avec vos amis.
+Deux façons, au choix :
 
-- **Supabase** garde la base de données (comptes, parties, sauvegardes).
-- **Render** fait tourner le jeu (serveur + site + musique) en continu.
+| | Vercel + Supabase (recommandé pour jouer entre amis) | Render + Supabase |
+| --- | --- | --- |
+| Serveur | aucun : le jeu tourne dans le navigateur de l'hôte | serveur de jeu Node allumé en continu |
+| Coût | gratuit | gratuit (le service s'endort) |
+| À savoir | la page de celui qui a créé la partie doit rester ouverte | rien de particulier |
 
-> Vercel ne convient pas : il coupe les programmes au bout de quelques secondes, alors que le serveur de jeu doit rester allumé pour faire avancer le temps et relier les joueurs en direct.
+## A. Vercel + Supabase (sans serveur)
 
-## 1. Supabase (déjà préparé)
+### 1. Supabase (déjà fait)
 
-Le projet Supabase **To The Crown** contient déjà toutes les tables du jeu, verrouillées (inaccessibles depuis l'API publique de Supabase) et les données de référence.
+Le projet Supabase **To The Crown** est prêt : tables verrouillées, et fonctions du jeu installées (`database/migrations/*.sql` puis `database/supabase/web_mode.sql`). Son adresse et sa clé publique sont déjà dans `apps/web/.env.supabase`.
 
-Il reste à récupérer **l'adresse de connexion** :
+Pour un autre projet Supabase : exécutez ces fichiers SQL dans l'ordre (SQL Editor), puis remplacez l'adresse et la clé « publishable » dans `apps/web/.env.supabase` (ou définissez `VITE_SUPABASE_URL` et `VITE_SUPABASE_KEY` sur Vercel). Dans *Realtime › Settings*, laissez l'accès public activé.
 
-1. Ouvrez le projet **To The Crown** sur supabase.com.
-2. Cliquez sur **Connect** (en haut).
-3. Choisissez **Session pooler** et copiez l'adresse (elle commence par `postgresql://postgres.`).
-4. Remplacez `[YOUR-PASSWORD]` par le mot de passe de la base. Oublié ? *Project Settings › Database › Reset database password*.
-5. Ajoutez à la fin : `?sslmode=no-verify` (connexion chiffrée).
+### 2. Vercel
 
-Exemple (inventé) :
+1. Sur vercel.com, **Add New › Project**, importez le dépôt GitHub `to-the-crown`.
+2. Ne touchez à rien : le fichier `vercel.json` règle tout (installation, construction, dossier `apps/web/dist`).
+3. **Deploy**. Au bout de 2–3 minutes, Vercel donne un lien du type `https://to-the-crown.vercel.app`.
+4. Envoyez ce lien à vos amis. Chacun crée son compte sur le site.
 
-```
-postgresql://postgres.abcdefgh:MonMotDePasse@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=no-verify
-```
+Chaque `git push` sur la branche de production met le site à jour.
 
-Utilisez bien le **Session pooler** : c'est lui qui fonctionne depuis Render.
+### Jouer
 
-## 2. Render
+- **Solo** : *Nouvelle partie*. La partie est enregistrée dans Supabase ; *Continuer* la reprend.
+- **À plusieurs** : l'un crée un salon (*Multijoueur*), donne le **code d'invitation**, les autres le saisissent. Chacun choisit son souverain, puis l'hôte lance.
+- **L'hôte doit garder la page du jeu ouverte** (elle peut être en arrière-plan). S'il la ferme, la partie se met en pause pour tout le monde et reprend quand il revient.
 
-1. Créez un compte sur render.com avec votre compte GitHub, et autorisez l'accès au dépôt `to-the-crown`.
-2. **New › Blueprint**, choisissez le dépôt et la branche du jeu. Render lit le fichier `render.yaml` et prépare le service **to-the-crown**.
-3. Remplissez les deux champs demandés :
-   - `DATABASE_URL` : l'adresse Supabase de l'étape 1 ;
-   - `APP_ORIGIN` : `https://to-the-crown.onrender.com` (l'adresse de votre service ; si Render en donne une autre, recopiez-la ici, sans `/` à la fin).
-4. Validez. La première construction prend 5 à 10 minutes.
-5. Ouvrez l'adresse du service : le jeu s'affiche. Créez vos comptes et jouez.
+## B. Render + Supabase (serveur de jeu)
 
-`SESSION_SECRET` est généré automatiquement par Render.
+### 1. Adresse de la base
 
-## Bon à savoir
+1. Ouvrez le projet **To The Crown** sur supabase.com, cliquez sur **Connect**.
+2. Choisissez **Session pooler** et copiez l'adresse (elle commence par `postgresql://postgres.`).
+3. Remplacez `[YOUR-PASSWORD]` par le mot de passe de la base (oublié ? *Project Settings › Database › Reset database password*) et ajoutez à la fin `?sslmode=no-verify`.
 
-- **Offre gratuite de Render** (à vérifier sur leur site) : le service s'endort après un moment sans visite ; la première visite suivante prend environ une minute. Les parties sont sauvegardées dans Supabase avant l'arrêt et reprennent ensuite.
-- **Mise à jour** : chaque `git push` sur la branche relance automatiquement la construction.
-- **En cas de souci** : onglet *Logs* du service sur Render. L'adresse `/api/health` doit répondre `{"status":"ok"…}`.
+### 2. Render
+
+1. Créez un compte sur render.com avec GitHub et autorisez l'accès au dépôt.
+2. **New › Blueprint**, choisissez le dépôt : Render lit `render.yaml`.
+3. Renseignez `DATABASE_URL` (étape 1) et `APP_ORIGIN` (`https://to-the-crown.onrender.com`, sans `/` final).
+4. Validez (5 à 10 minutes). `/api/health` doit répondre `{"status":"ok"…}`.
+
+Offre gratuite : le service s'endort après un moment sans visite ; la première visite suivante prend environ une minute.
 
 ## Autres façons de lancer le jeu
 
-- Sur votre ordinateur, avec Docker : voir le README (`docker compose up --build`).
-- Toute plateforme capable de construire le `Dockerfile` (`infra/docker/Dockerfile`, étape par défaut « tout-en-un ») et de fournir `DATABASE_URL`, `SESSION_SECRET` et `APP_ORIGIN`.
+- Sur votre ordinateur avec Docker : voir le README (`docker compose up --build`).
+- Toute plateforme capable de construire `infra/docker/Dockerfile` (étape « tout-en-un ») avec `DATABASE_URL`, `SESSION_SECRET` et `APP_ORIGIN`.

@@ -19,3 +19,7 @@
 
 - En headless, la carte est rendue par WebGL logiciel : les scénarios sont lents (1 à 3 minutes chacun) ; les délais de Playwright en tiennent compte, et les pages de plusieurs joueurs ne sont pas ralenties en arrière-plan.
 - Les comptes créés par les tests ont des adresses uniques (`@e2e.tothecrown.local`) : la base de développement peut être partagée.
+
+## Mode sans serveur
+
+`pnpm test:e2e:supabase` rejoue les scénarios de bout en bout contre un site en `--mode supabase` et une pile Supabase locale (`supabase start`, puis `database/migrations/*.sql` et `database/supabase/web_mode.sql`), plus `specs/browser-host.spec.ts` : commande d'un invité exécutée par l'hôte, départ de l'hôte (partie en attente) et retour. `HostRoom` a ses tests unitaires (`apps/web/src/net/browser/hostRoom.test.ts`). L'inscription est limitée à 20 comptes par heure et par adresse IP : vider `web_rate_events` entre deux campagnes locales.

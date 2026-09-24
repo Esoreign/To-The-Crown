@@ -50,7 +50,10 @@ Le jeu est servi sur http://localhost:8080 (nginx → serveur de jeu, PostgreSQL
 
 ## Mettre le jeu en ligne
 
-Supabase (base de données) + Render (serveur et site) : guide pas à pas dans [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Vercel + Supabase, sans serveur** : le site est statique, la simulation tourne dans le navigateur de l'hôte, Supabase garde comptes, parties et sauvegardes et relie les joueurs en direct. Importer le dépôt sur Vercel suffit (`vercel.json`).
+- **Render + Supabase** : serveur de jeu autoritaire allumé en continu.
+
+Guide pas à pas : [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). En local, le mode sans serveur se lance avec `pnpm dev:supabase` (Supabase local : `supabase start`, puis les fichiers de `database/migrations` et `database/supabase/web_mode.sql`).
 
 ## Commandes
 
@@ -60,7 +63,9 @@ Supabase (base de données) + Render (serveur et site) : guide pas à pas dans [
 | `pnpm lint` · `pnpm typecheck` | Qualité statique (ESLint, TypeScript strict) |
 | `pnpm test` | Tests unitaires (moteur, contenu, client) et d'intégration (serveur) |
 | `pnpm test:e2e` | Scénarios Playwright (solo, événements, multijoueur, guerre) |
+| `pnpm test:e2e:supabase` | Mêmes scénarios en mode sans serveur (Supabase local) + hôte navigateur |
 | `pnpm build` | Compilation du serveur (esbuild) et du client (Vite) |
+| `pnpm build:supabase` | Site statique du mode sans serveur (`apps/web/dist`) |
 | `pnpm simulate` | Simulation longue sans joueur avec vérification des invariants |
 | `pnpm --filter @ttc/game-core check:events` | Tire chaque choix de chaque événement et vérifie l'état |
 | `pnpm world:generate` · `pnpm world:validate` | Génère / valide la carte de Caldria |
@@ -75,7 +80,7 @@ packages/shared  Types, commandes (zod), protocole réseau, calendrier, i18n
 packages/content Monde, scénario, cultures, confessions, traits, bâtiments, événements, textes
 packages/game-core  Simulation déterministe pure (aucune E/S)
 tests/e2e        Playwright
-database         Migrations SQL versionnées
+database         Migrations SQL versionnées ; `supabase/web_mode.sql` (API du mode sans serveur)
 infra            Dockerfile, nginx
 docs             Conception, architecture, multijoueur, base de données, direction artistique, tests
 ```

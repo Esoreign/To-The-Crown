@@ -706,6 +706,7 @@ const T: Record<string, Record<string, string>> = {
     NOT_FOUND: 'Introuvable.',
     INTERNAL: 'Erreur interne du serveur.',
     PROTOCOL_MISMATCH: 'Version du jeu obsolète : rechargez la page.',
+    HOST_OFFLINE: 'L’hôte de la partie n’est pas connecté : sa page doit rester ouverte.',
     GAME_NOT_FOUND: 'Partie introuvable.',
     GAME_ALREADY_STARTED: 'La partie a déjà commencé.',
     GAME_NOT_STARTED: 'La partie n’a pas encore commencé.',
@@ -753,6 +754,7 @@ const T: Record<string, Record<string, string>> = {
     shutdown: 'Serveur en maintenance',
     error: 'Pause : erreur de simulation',
     game_over: 'Fin de partie',
+    host_offline: 'En attente de l’hôte (sa page doit rester ouverte)',
   },
 };
 

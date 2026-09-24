@@ -1,11 +1,14 @@
 /**
  * Connexion temps réel. Le client n'envoie que des intentions (commandes) ;
  * il applique les patches reçus et se resynchronise en cas de trou.
+ * En mode sans serveur (`WEB_MODE`), les mêmes fonctions passent par
+ * `browser/session.ts` (hôte navigateur + Supabase Realtime).
  */
 import { io, type Socket } from 'socket.io-client';
 import {
   PROTOCOL_VERSION,
   type AckMessage,
+  type ChatMessage,
   type ClientToServerEvents,
   type GameCommand,
   type LobbyState,
@@ -16,6 +19,12 @@ import { useGame } from '../state/game';
 import { playSound } from '../audio/audio';
 import { pushToast } from '../state/ui';
 import { errorMessage } from '../lib/i18n';
+import { useAuth } from '../state/auth';
+import { WEB_MODE } from './mode';
+import { BrowserSession } from './browser/session';
+import { joinLobbyBrowser, mergeChat, pokeLobby } from './browser/lobby';
+import { rpcAuth } from './browser/supabase';
+import { ApiFailure } from './failure';
 
 type ClientSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -24,6 +33,7 @@ let currentGame: string | null = null;
 let lobbyListeners = new Set<(l: LobbyState) => void>();
 let lobbyStartListeners = new Set<(id: string) => void>();
 let lobbyKickListeners = new Set<(id: string) => void>();
+let browserSession: BrowserSession | null = null;
 
 function uuid(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -80,6 +90,14 @@ function joinGameRoom(gameId: string): void {
 }
 
 export function connectGame(gameId: string): void {
+  if (WEB_MODE) {
+    browserSession?.close();
+    useGame.getState().reset();
+    useGame.setState({ gameId, status: 'connecting', error: null });
+    browserSession = new BrowserSession(gameId);
+    void browserSession.open();
+    return;
+  }
   if (currentGame && currentGame !== gameId) leaveGame();
   currentGame = gameId;
   useGame.setState({ gameId, status: 'connecting', error: null });
@@ -89,6 +107,12 @@ export function connectGame(gameId: string): void {
 }
 
 export function leaveGame(): void {
+  if (WEB_MODE) {
+    browserSession?.close();
+    browserSession = null;
+    useGame.getState().reset();
+    return;
+  }
   if (currentGame && socket) socket.emit('game:leave', { gameId: currentGame });
   currentGame = null;
   useGame.getState().reset();
@@ -96,9 +120,20 @@ export function leaveGame(): void {
 
 /** Envoie une commande et attend l'accusé du serveur. */
 export function sendCommand(command: GameCommand, opts: { silent?: boolean } = {}): Promise<AckMessage> {
+  const started = performance.now();
+  if (WEB_MODE) {
+    const pending = browserSession?.sendCommand(command) ?? Promise.resolve<AckMessage>({ commandId: '', ok: false, error: { code: 'NOT_GAME_MEMBER', message: 'Aucune partie ouverte' }, version: 0 });
+    return pending.then((ack) => {
+      useGame.setState({ latencyMs: Math.round(performance.now() - started) });
+      if (!ack.ok && !opts.silent) {
+        pushToast({ kind: 'error', text: errorMessage(ack.error?.code, ack.error?.message) });
+        playSound('error');
+      }
+      return ack;
+    });
+  }
   const s = getSocket();
   const commandId = uuid();
-  const started = performance.now();
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve({ commandId, ok: false, error: { code: 'INTERNAL', message: 'Délai dépassé' }, version: 0 }), 10_000);
     s.emit('game:command', { commandId, expectedVersion: useGame.getState().view?.version, command }, (ack) => {
@@ -114,14 +149,30 @@ export function sendCommand(command: GameCommand, opts: { silent?: boolean } = {
 }
 
 export function setSpeed(speed: Speed): void {
+  if (WEB_MODE) return browserSession?.setSpeed(speed);
   if (currentGame) getSocket().emit('time:set', { gameId: currentGame, speed });
 }
 
 export function requestPause(paused: boolean): void {
+  if (WEB_MODE) return browserSession?.requestPause(paused);
   if (currentGame) getSocket().emit('pause:request', { gameId: currentGame, paused });
 }
 
 export function sendChat(gameId: string, text: string): Promise<boolean> {
+  if (WEB_MODE) {
+    if (browserSession?.gameId === gameId) return browserSession.chat(text);
+    return rpcAuth<ChatMessage>('ttc_chat_send', { p_game: gameId, p_text: text }).then(
+      (msg) => {
+        mergeChat([msg], msg.userId);
+        pokeLobby(gameId);
+        return true;
+      },
+      (e: unknown) => {
+        pushToast({ kind: 'error', text: e instanceof ApiFailure ? errorMessage(e.code, e.message) : 'Erreur inattendue' });
+        return false;
+      },
+    );
+  }
   return new Promise((resolve) => {
     getSocket().emit('chat:send', { gameId, text }, (res) => {
       if (!res.ok) pushToast({ kind: 'error', text: errorMessage(res.error.code, res.error.message) });
@@ -131,6 +182,7 @@ export function sendChat(gameId: string, text: string): Promise<boolean> {
 }
 
 export function devAdvance(days: number): void {
+  if (WEB_MODE) return browserSession?.devAdvance(days);
   if (!currentGame) return;
   getSocket().emit('dev:advance', { gameId: currentGame, days }, (res) => {
     if (!res.ok) pushToast({ kind: 'error', text: res.error.message });
@@ -138,6 +190,7 @@ export function devAdvance(days: number): void {
 }
 
 export function joinLobby(gameId: string, onUpdate: (l: LobbyState) => void, onStart: (id: string) => void, onKick: (id: string) => void): () => void {
+  if (WEB_MODE) return joinLobbyBrowser(gameId, useAuth.getState().user?.id ?? null, onUpdate, onStart, onKick);
   const s = getSocket();
   lobbyListeners.add(onUpdate);
   lobbyStartListeners.add(onStart);
@@ -161,6 +214,8 @@ export function joinLobby(gameId: string, onUpdate: (l: LobbyState) => void, onS
 
 /** Après déconnexion d'un compte, la socket doit être recréée (nouveau cookie). */
 export function resetSocket(): void {
+  browserSession?.close();
+  browserSession = null;
   socket?.disconnect();
   socket = null;
   currentGame = null;

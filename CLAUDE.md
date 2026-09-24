@@ -26,9 +26,14 @@ pnpm test:e2e                                # si l'interface ou le protocole ch
 6. **Équilibrage centralisé.** Tout nombre de gameplay va dans `packages/game-core/src/balance.ts`.
 7. **Données, pas code.** Traits, bâtiments, cultures, confessions, unités et événements sont des données (`packages/content`). Un événement se décrit avec le DSL `Condition`/`Effect` (voir `docs/EVENTS.md`).
 8. **Localisation.** Aucun texte d'interface codé en dur hors français naturel des composants ; les libellés de données passent par `LOCALE_FR` (`t('clé')`). Nouvelle clé → `packages/content/src/locales/fr.ts`.
-9. **Sauvegardes.** Changer la forme de `GameState` impose d'incrémenter `SAVE_SCHEMA_VERSION` et d'écrire une migration de snapshot (`apps/server/src/game/repository.ts`).
+9. **Sauvegardes.** Changer la forme de `GameState` impose d'incrémenter `SAVE_SCHEMA_VERSION` et d'écrire une migration de snapshot (`packages/game-core/src/save.ts`, partagée par le serveur et l'hôte navigateur).
 10. **Sécurité.** Mots de passe en Argon2id uniquement ; ne jamais journaliser mot de passe, hash, secret de session, cookie ou jeton. Cookies `HttpOnly`, `SameSite=Lax`, `Secure` en production. Toute route d'état exige l'origine attendue ou l'en-tête `x-requested-with: ttc`. Toute nouvelle table doit activer la RLS dans sa migration (`ALTER TABLE … ENABLE ROW LEVEL SECURITY`) : sur Supabase, le schéma public est exposé par l'API.
 11. **Pas de faux.** Pas de bouton « bientôt », pas de test vide, pas de contenu repris d'un jeu existant.
+
+## Deux modes réseau
+
+- **Serveur** (défaut) : `apps/server`, REST + Socket.IO.
+- **Sans serveur** (`vite --mode supabase`, déploiement Vercel) : simulation dans un Web Worker de l'hôte (`apps/web/src/net/browser/`), API SQL `database/supabase/web_mode.sql`, temps réel Supabase. Toute nouvelle route REST utilisée par l'interface doit aussi être traduite dans `net/browser/api.ts` (et sa fonction `ttc_*` ajoutée au script SQL) ; toute évolution de `GameRoom` doit être reportée dans `HostRoom`.
 
 ## Où modifier quoi
 
