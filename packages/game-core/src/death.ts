@@ -85,6 +85,11 @@ export function killCharacter(ctx: Ctx, charId: string, cause: DeathCause, kille
   const primaryTitle = c.titleIds[0] ?? null;
   const rank = rankOf(c);
   if (landed && plan) applySuccession(ctx, c.id, plan);
+  // Légitimité du nouveau règne : héritée en partie du défunt.
+  if (plan?.primaryHeirId) {
+    const heir = s.characters[plan.primaryHeirId];
+    if (heir) heir.legitimacy = Math.round(Math.max(BALANCE.politics.legitimacy.heir - 15, (c.legitimacy ?? BALANCE.politics.legitimacy.base) * 0.5 + BALANCE.politics.legitimacy.heir * 0.5));
+  }
   // Armées restantes d'un personnage sans héritier ou sans terre : dissoutes
   // (les levées rentrent chez elles).
   for (const a of Object.values(s.armies)) {

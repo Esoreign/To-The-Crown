@@ -2,6 +2,7 @@
  * Application autoritaire des commandes joueur. Chaque branche valide ses
  * préconditions (GameError sinon) avant de muter l'état.
  */
+import { releaseSubject, setTribute } from './politics';
 import { ErrorCodes, GameError, isDevCommand, type GameCommand } from '@ttc/shared';
 import { mergeArmies, orderMove, raiseArmy, recruitMaa, disbandArmy, setCommander } from './armies';
 import { startConstruction, completeConstructionNow } from './buildings';
@@ -110,6 +111,12 @@ export function applyCommand(ctx: Ctx, actorId: string, cmd: GameCommand): Comma
       result = { accepted: r.accepted, pending: r.pending, acceptance: r.acceptance };
       break;
     }
+    case 'subject.tribute':
+      setTribute(ctx, actorId, cmd.payload.pactId, cmd.payload.level);
+      break;
+    case 'subject.release':
+      releaseSubject(ctx, actorId, cmd.payload.pactId);
+      break;
     case 'army.raise': {
       const a = raiseArmy(ctx, actorId, cmd.payload.provinceId);
       result = { armyId: a.id };

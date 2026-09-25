@@ -24,7 +24,7 @@ import {
 } from '@ttc/game-core';
 import type { Character, GameView, RelationType } from '@ttc/shared';
 import { fmt, opinionReason, t, tOr } from '../../lib/i18n';
-import { ageText, charName, rulerTitle, styledName, titleName } from '../../lib/format';
+import { ageText, charName, councilTitle, rulerTitle, styledName, titleName } from '../../lib/format';
 import { Breakdown, CoatOfArms, Portrait, ProgressBar, Tip } from '../../ui/common';
 import { SkillGrid, TraitList } from '../../ui/char';
 import { openCharacter, openTitle } from '../hooks';
@@ -122,7 +122,7 @@ export function CharacterPanel({ view, me, c }: { view: GameView; me: Character;
         <Portrait c={c} view={view} size={92} showCoa />
         <div className="char-header-info">
           <div className="char-name">{charName(view, c)}</div>
-          <div className="char-title">{rulerTitle(c) || (seat ? t(`council.${seat}`) : court ? `Cour de ${court.firstName}` : 'Sans terre')}</div>
+          <div className="char-title">{rulerTitle(c) || (seat ? councilTitle(liege ?? court, seat) : court ? `Cour de ${court.firstName}` : 'Sans terre')}</div>
           <div className="muted char-meta">
             {ageText(c, view.date)} · {CULTURE_BY_ID[c.cultureId] ? t(`culture.${c.cultureId}`) : ''} · {FAITH_BY_ID[c.faithId] ? t(`faith.${c.faithId}`) : ''}
           </div>

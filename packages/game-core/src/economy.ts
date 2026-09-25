@@ -4,6 +4,7 @@
  */
 import type { Character, GameView, UnitType } from '@ttc/shared';
 import { BALANCE } from './balance';
+import { governmentLevyFactor, governmentTaxFactor, pactsAsOverlord, pactsAsSubject, tributeOf, vassalContractFactor } from './politics';
 import { characterModifier, domainProvinceIds, skill } from './characters';
 import { UNIT_BY_ID } from './content';
 import { opinionOf } from './opinion';
@@ -31,14 +32,14 @@ export function vassalTaxShare(state: GameView, liege: Character, vassal: Charac
   const byAuth = BALANCE.economy.vassalTaxByAuthority[liege.crownAuthority] ?? 0.2;
   const op = opinionOf(state, vassal.id, liege.id).total;
   const opFactor = Math.max(0.5, Math.min(1.25, 1 + op / 200));
-  return byAuth * opFactor;
+  return byAuth * opFactor * governmentTaxFactor(liege);
 }
 
 export function vassalLevyShare(state: GameView, liege: Character, vassal: Character): number {
   const byAuth = BALANCE.economy.vassalLevyByAuthority[liege.crownAuthority] ?? 0.3;
   const op = opinionOf(state, vassal.id, liege.id).total;
   const opFactor = Math.max(0.25, Math.min(1.25, 1 + op / 100));
-  return byAuth * opFactor;
+  return byAuth * opFactor * governmentLevyFactor(liege);
 }
 
 /** Pénalité de domaine (0..1) quand le personnage détient trop de comtés. */
@@ -75,8 +76,11 @@ export function ledgerOf(state: GameView, c: Character): Ledger {
   if (penalty > 0) income.push({ key: 'domain_penalty', value: 0, vars: { pct: Math.round(penalty * 100) } });
 
   let vassalTaxes = 0;
-  for (const v of directVassals(state, c.id)) vassalTaxes += domainIncome(state, v) * vassalTaxShare(state, c, v);
+  for (const v of directVassals(state, c.id)) vassalTaxes += domainIncome(state, v) * vassalTaxShare(state, c, v) * vassalContractFactor(state, v.id, c.id);
   if (vassalTaxes > 0) income.push({ key: 'vassal_taxes', value: vassalTaxes });
+  let tributes = 0;
+  for (const p of pactsAsOverlord(state, c.id)) tributes += tributeOf(state, p, (x) => domainIncome(state, x));
+  if (tributes > 0) income.push({ key: 'tribute_received', value: tributes });
 
   // Intendant : collecte des impôts.
   if (c.council?.steward.task === 'steward_taxes') {
@@ -94,10 +98,13 @@ export function ledgerOf(state: GameView, c: Character): Ledger {
   if (c.liegeId) {
     const liege = state.characters[c.liegeId];
     if (liege) {
-      const paid = domain * vassalTaxShare(state, liege, c);
+      const paid = domain * vassalTaxShare(state, liege, c) * vassalContractFactor(state, c.id, liege.id);
       if (paid > 0) expenses.push({ key: 'liege_tax', value: paid });
     }
   }
+  let tributePaid = 0;
+  for (const p of pactsAsSubject(state, c.id)) tributePaid += tributeOf(state, p, (x) => domainIncome(state, x));
+  if (tributePaid > 0) expenses.push({ key: 'tribute_paid', value: tributePaid });
   const rank = rankOf(c);
   if (rank > 0) expenses.push({ key: 'court', value: BALANCE.economy.courtUpkeep[rank - 1] ?? 0 });
   const upkeep = armyUpkeep(state, c);

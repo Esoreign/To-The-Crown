@@ -52,6 +52,12 @@ export function transferTitle(
       }
     }
   }
+  // Le nouveau titulaire hérite de la forme de gouvernement du domaine.
+  if (toId) {
+    const to = state.characters[toId];
+    const prevGov = prevId ? state.characters[prevId]?.government : undefined;
+    if (to && !to.government && prevGov) to.government = prevGov;
+  }
   title.holderId = toId;
   title.active = toId !== null || title.active;
   title.history.push({ date: state.date, holderId: toId, how });

@@ -5,21 +5,31 @@ import {
   PROVINCE_GEO,
   TITLE_DEFS,
   canCreateTitle,
+  crownAuthorityCost,
   directVassals,
   domainLimit,
   domainProvinceIds,
   factionPower,
   factionRatio,
+  governmentOf,
+  isExternalPact,
   isIndependent,
+  legitimacyOf,
+  legitimacyTarget,
+  maxCrownAuthority,
   militaryStrength,
   opinionOf,
+  pactsAsOverlord,
+  pactsAsSubject,
   provinceTax,
   rankOf,
   realmProvinceIds,
+  tributeOf,
+  domainIncome,
   vassalLevyShare,
   vassalTaxShare,
 } from '@ttc/game-core';
-import type { Character, GameView } from '@ttc/shared';
+import type { Character, GameView, Pact } from '@ttc/shared';
 import { fmt, opinionReason, t } from '../../lib/i18n';
 import { charName, formatDateFr, rulerTitle, titleFullName } from '../../lib/format';
 import { ActionButton, Breakdown, CoatOfArms, Portrait, ProgressBar, Tip } from '../../ui/common';
@@ -35,13 +45,15 @@ const AUTH_DESC = [
   'Le souverain est maître chez lui ; les grands le tolèrent mal.',
 ];
 
-type Tab = 'vassals' | 'laws' | 'factions' | 'domain' | 'titles';
+type Tab = 'government' | 'vassals' | 'subjects' | 'laws' | 'factions' | 'domain' | 'titles';
 
 export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Character; tab: string | null }) {
-  const [tab, setTab] = useState<Tab>((initial as Tab) ?? 'vassals');
+  const [tab, setTab] = useState<Tab>((initial as Tab) ?? 'government');
   const vassals = useMemo(() => directVassals(view, me.id).filter((v) => v.titleIds.length), [view, me.id]);
   const factions = Object.values(view.factions).filter((f) => f.targetId === me.id);
   const myFactions = Object.values(view.factions).filter((f) => me.liegeId && f.targetId === me.liegeId);
+  const asOverlord = useMemo(() => pactsAsOverlord(view, me.id), [view, me.id]);
+  const asSubject = useMemo(() => pactsAsSubject(view, me.id), [view, me.id]);
   const domain = domainProvinceIds(me);
   const limit = domainLimit(view, me);
   const creatable = useMemo(() => {
@@ -62,7 +74,9 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
       <div className="tabs">
         {(
           [
+            ['government', 'Institutions'],
             ['vassals', `Vassaux (${vassals.length})`],
+            ['subjects', `Sujets (${asOverlord.length})`],
             ['laws', 'Lois'],
             ['factions', `Factions (${factions.length})`],
             ['domain', `Domaine (${domain.length}/${limit})`],
@@ -74,6 +88,8 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
           </button>
         ))}
       </div>
+      {tab === 'government' && <GovernmentTab view={view} me={me} asSubject={asSubject} />}
+      {tab === 'subjects' && <SubjectsTab view={view} me={me} pacts={asOverlord} />}
       {tab === 'vassals' && (
         <table className="data-table">
           <thead>
@@ -132,7 +148,8 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
                 {AUTH_NAMES.map((name, lvl) => {
                   const current = me.crownAuthority === lvl;
                   const next = Math.abs(lvl - me.crownAuthority) === 1;
-                  const cost = lvl > me.crownAuthority ? (BALANCE.authority.crownAuthorityCost[lvl] ?? 0) : 0;
+                  const allowed = lvl <= maxCrownAuthority(me) || lvl < me.crownAuthority;
+                  const cost = lvl > me.crownAuthority ? crownAuthorityCost(me, lvl) : 0;
                   const cd = (me.cooldowns.crown_authority ?? 0) > view.date;
                   return (
                     <div key={lvl} className={`authority-step${current ? ' active' : ''}`}>
@@ -143,7 +160,8 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
                       <div className="muted num" style={{ fontSize: 12 }}>
                         Impôt vassal {Math.round((BALANCE.economy.vassalTaxByAuthority[lvl] ?? 0) * 100)} % · Levées {Math.round((BALANCE.economy.vassalLevyByAuthority[lvl] ?? 0) * 100)} % · Opinion {BALANCE.authority.crownAuthorityOpinion[lvl]}
                       </div>
-                      {next && (
+                      {next && !allowed && <div className="muted" style={{ fontSize: 12 }}>Hors de portée de votre forme de gouvernement.</div>}
+                      {next && allowed && (
                         <ActionButton
                           className="btn-sm"
                           disabled={cd || me.authority < cost}
@@ -287,5 +305,181 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
         </div>
       )}
     </ScreenFrame>
+  );
+}
+
+function PactRealm({ view, titleId }: { view: GameView; titleId: string }) {
+  const holder = view.titles[titleId]?.holderId;
+  const c = holder ? view.characters[holder] : undefined;
+  return (
+    <div className="row" style={{ gap: 8 }}>
+      <CoatOfArms seed={TITLE_DEFS[titleId]?.coaSeed ?? 1} rank={0} size={26} />
+      <div className="col" style={{ gap: 0 }}>
+        <button className="link-btn" onClick={() => openTitle(titleId)}>
+          {titleFullName(titleId)}
+        </button>
+        {c && (
+          <button className="link-btn muted" style={{ fontSize: 12 }} onClick={() => openCharacter(c.id)}>
+            {charName(view, c)}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function pactTribute(view: GameView, p: Pact): number {
+  return tributeOf(view, p, (x) => domainIncome(view, x));
+}
+
+const TRIBUTE_LEVELS = [
+  ['light', 'Léger'],
+  ['normal', 'Ordinaire'],
+  ['heavy', 'Lourd'],
+] as const;
+
+function GovernmentTab({ view, me, asSubject }: { view: GameView; me: Character; asSubject: Pact[] }) {
+  const gov = governmentOf(me);
+  const target = legitimacyTarget(view, me);
+  const current = legitimacyOf(me);
+  return (
+    <div className="col" style={{ gap: 16 }}>
+      <section>
+        <h3 className="section-title">Forme de gouvernement</h3>
+        {gov ? (
+          <div className="col" style={{ gap: 6 }}>
+            <div className="display" style={{ fontSize: 18 }}>
+              {t(`government.${gov.id}`)}
+            </div>
+            <p className="soft narrative" style={{ margin: 0 }}>
+              {t(`government.desc.${gov.id}`)}
+            </p>
+            <div className="info-line">
+              <span>Pouvoir central</span>
+              <span>{gov.authorityLabel}</span>
+            </div>
+            <div className="info-line">
+              <span>Succession coutumière</span>
+              <span>{t(`law.${gov.succession}`)}</span>
+            </div>
+            <div className="info-line">
+              <span>Prélèvements sur les vassaux</span>
+              <span className="num">
+                impôt {Math.round(gov.subjectTax * 100)} % · levées {Math.round(gov.subjectLevy * 100)} %
+              </span>
+            </div>
+            <div className="info-line">
+              <span>Autorité maximale</span>
+              <span>{AUTH_NAMES[maxCrownAuthority(me)]}</span>
+            </div>
+            <div className="info-line">
+              <span>Guerres privées entre vassaux</span>
+              <span>{gov.vassalWars ? 'tolérées si l’autorité est faible' : 'interdites'}</span>
+            </div>
+            <div className="info-line">
+              <span>Sources de légitimité</span>
+              <span>{gov.legitimacyFrom.map((k) => t(`legitimacy.${k === 'victory' ? 'prestige' : k}`)).join(' · ')}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="muted">Gouvernement coutumier.</p>
+        )}
+      </section>
+      <section>
+        <h3 className="section-title">Légitimité</h3>
+        <div className="row" style={{ gap: 12, alignItems: 'center' }}>
+          <Tip content={() => <Breakdown title="Légitimité visée" rows={target.rows.map((r) => ({ label: t(`legitimacy.${r.key}`), value: r.value }))} total={target.total} decimals={0} />}>
+            <span className={`display ${current < 35 ? 'neg' : current >= 65 ? 'pos' : ''}`} style={{ fontSize: 26 }} data-testid="legitimacy">
+              {Math.round(current)}
+            </span>
+          </Tip>
+          <div className="grow">
+            <ProgressBar value={current} danger={current < 35} />
+            <div className="muted" style={{ fontSize: 12.5 }}>
+              Tend vers {Math.round(target.total)} chaque mois. Une faible légitimité refroidit vos vassaux ; une forte les rallie.
+            </div>
+          </div>
+        </div>
+      </section>
+      {asSubject.length > 0 && (
+        <section>
+          <h3 className="section-title">Vos obligations</h3>
+          {asSubject.map((p) => (
+            <div key={p.id} className="scheme-option">
+              <PactRealm view={view} titleId={p.overlordTitleId} />
+              <div className="grow soft" style={{ fontSize: 13 }}>
+                <strong>{t(`subject.${p.type}`)}</strong> — {t(`subject.desc.${p.type}`)}
+              </div>
+              {isExternalPact(p) && <span className="badge">Tribut {fmt(pactTribute(view, p), 1)} / mois</span>}
+            </div>
+          ))}
+        </section>
+      )}
+    </div>
+  );
+}
+
+function SubjectsTab({ view, me, pacts }: { view: GameView; me: Character; pacts: Pact[] }) {
+  if (pacts.length === 0) return <p className="muted">Aucun royaume ne vous doit allégeance par contrat.</p>;
+  return (
+    <table className="data-table">
+      <thead>
+        <tr>
+          <th>Sujet</th>
+          <th>Contrat</th>
+          <th className="num">Opinion</th>
+          <th className="num">Tribut</th>
+          <th>Niveau</th>
+          <th />
+        </tr>
+      </thead>
+      <tbody>
+        {pacts.map((p) => {
+          const holder = view.titles[p.subjectTitleId]?.holderId;
+          const op = holder ? opinionOf(view, holder, me.id) : null;
+          const external = isExternalPact(p);
+          return (
+            <tr key={p.id} data-testid={`pact-${p.id}`}>
+              <td>
+                <PactRealm view={view} titleId={p.subjectTitleId} />
+              </td>
+              <td>
+                <Tip content={() => <div className="soft">{t(`subject.desc.${p.type}`)}</div>}>
+                  <span className="badge">{t(`subject.${p.type}`)}</span>
+                </Tip>
+              </td>
+              <td className="num">{op ? <span className={op.total >= 0 ? 'pos' : 'neg'}>{Math.round(op.total)}</span> : '—'}</td>
+              <td className="num">{external ? `${fmt(pactTribute(view, p), 1)} / mois` : '—'}</td>
+              <td>
+                {external ? (
+                  <div className="row" style={{ gap: 4 }}>
+                    {TRIBUTE_LEVELS.map(([level, label]) => {
+                      const active = Math.abs(BALANCE.politics.tributeLevels[level] - p.tribute) < 1e-6;
+                      return (
+                        <ActionButton
+                          key={level}
+                          className={`btn-sm${active ? ' btn-primary' : ''}`}
+                          disabled={active}
+                          onClick={() => act({ type: 'subject.tribute', payload: { pactId: p.id, level } }, `Tribut fixé : ${label.toLowerCase()}`)}
+                        >
+                          {label} {Math.round(BALANCE.politics.tributeLevels[level] * 100)} %
+                        </ActionButton>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <span className="muted">Impôt {Math.round((BALANCE.politics.vassalTaxFactor[p.type] ?? 1) * 100)} % de l’ordinaire</span>
+                )}
+              </td>
+              <td>
+                <ActionButton className="btn-sm" onClick={() => act({ type: 'subject.release', payload: { pactId: p.id } }, `${titleFullName(p.subjectTitleId)} est affranchi`)}>
+                  Affranchir
+                </ActionButton>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }

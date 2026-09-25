@@ -4,6 +4,7 @@
  */
 import type { Character, GameView, RelationType } from '@ttc/shared';
 import { BALANCE } from './balance';
+import { isExternalPact, legitimacyOpinion, pactsAsSubject } from './politics';
 import { ageOf, characterModifier } from './characters';
 import { FAITH_BY_ID, TRAIT_BY_ID } from './content';
 import { areSiblings, isParentOf, sameDynasty } from './family';
@@ -116,6 +117,8 @@ export function opinionOf(state: GameView, ofId: string, towardsId: string): Opi
     const vo = characterModifier(state, towards, 'vassal_opinion');
     if (vo) rows.push({ reason: 'liege_traits', value: vo });
     if (of.cultureId !== towards.cultureId) rows.push({ reason: 'different_culture', value: BALANCE.opinion.differentCultureVassal });
+    const legit = legitimacyOpinion(towards);
+    if (legit) rows.push({ reason: 'legitimacy', value: legit });
     for (const f of Object.values(state.factions)) {
       if (f.targetId === towardsId && f.members.includes(ofId)) {
         rows.push({ reason: 'faction_member', value: -10 });
@@ -127,6 +130,7 @@ export function opinionOf(state: GameView, ofId: string, towardsId: string): Opi
   const faith = faithOpinion(of, towards);
   if (faith) rows.push(faith);
 
+  if (pactsAsSubject(state, ofId).some((p) => isExternalPact(p) && towards.titleIds.includes(p.overlordTitleId))) rows.push({ reason: 'tributary', value: BALANCE.politics.tributaryOpinion });
   if (areAllied(state, ofId, towardsId)) rows.push({ reason: 'ally', value: BALANCE.opinion.ally });
   if (atWarWith(state, ofId, towardsId)) rows.push({ reason: 'at_war', value: BALANCE.opinion.atWar });
 

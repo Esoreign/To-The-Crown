@@ -24,6 +24,7 @@ import { expireProposals } from './proposals';
 import { developmentGrowth, provinceModifier } from './provinces';
 import { rankOf } from './realm';
 import { monthlySchemes } from './schemes';
+import { legitimacyTarget, monthlyLegitimacy } from './politics';
 import { updatePlayerStats } from './stats';
 import { dailyWarChecks, warsOf } from './war';
 import { bumpStructure } from './index-cache';
@@ -39,7 +40,7 @@ export function advanceDay(ctx: Ctx): void {
   s.date += 1;
   bumpStructure();
   safeRun(ctx, 'events', () => processEventQueue(ctx));
-  for (const b of Object.values(ctx.base.characters)) {
+  for (const b of Object.values(ctx.r.characters)) {
     if (!b.pregnancy || b.death !== null || b.pregnancy.due > s.date) continue;
     const c = s.characters[b.id];
     if (c?.pregnancy && c.death === null && c.pregnancy.due <= s.date) safeRun(ctx, `birth:${c.id}`, () => processBirth(ctx, c));
@@ -66,7 +67,7 @@ function dailyAi(ctx: Ctx): void {
     if (!c || c.isPlayer || !isAlive(c)) continue;
     if ((hash(id) + s.date) % 3 === 0) safeRun(ctx, `aiWar:${id}`, () => aiWarTick(ctx, id));
   }
-  for (const b of Object.values(ctx.base.characters)) {
+  for (const b of Object.values(ctx.r.characters)) {
     if (b.isPlayer || b.death !== null || !b.titleIds.length || b.aiNextThink > s.date) continue;
     const c = s.characters[b.id];
     if (!c || c.isPlayer || c.death !== null || !c.titleIds.length || c.aiNextThink > s.date) continue;
@@ -87,7 +88,7 @@ function dailyCharacterCycle(ctx: Ctx): void {
   const s = ctx.s;
   const dom = fromDay(s.date).day;
   if (dom > CYCLE_DAYS) return;
-  for (const b of Object.values(ctx.base.characters)) {
+  for (const b of Object.values(ctx.r.characters)) {
     if (b.death !== null || (hash(b.id) % CYCLE_DAYS) + 1 !== dom) continue;
     const c = s.characters[b.id];
     if (!c || c.death !== null) continue;
@@ -101,7 +102,7 @@ export function monthly(ctx: Ctx): void {
   safeRun(ctx, 'schemes', () => monthlySchemes(ctx));
   safeRun(ctx, 'factions', () => monthlyFactions(ctx));
   monthlyLevies(ctx);
-  for (const b of Object.values(ctx.base.provinces)) {
+  for (const b of Object.values(ctx.r.provinces)) {
     if (!b.modifiers.some((m) => m.expires !== null && m.expires <= s.date)) continue;
     const p = s.provinces[b.id]!;
     p.modifiers = p.modifiers.filter((m) => m.expires === null || m.expires > s.date);
@@ -127,6 +128,7 @@ function monthlyCharacter(ctx: Ctx, c: GameState['characters'][string]): void {
     c.fervor = Math.max(0, Math.round((c.fervor + fervor) * 100) / 100);
     c.authority = Math.min(1000, Math.round((c.authority + authority) * 100) / 100);
     monthlyCouncil(ctx, c);
+    if (!c.liegeId) monthlyLegitimacy(ctx, c, legitimacyTarget(r, c).total);
     pulseEvents(ctx, c.id);
   }
   if (c.death !== null) return;
@@ -148,7 +150,7 @@ function yearly(ctx: Ctx): void {
     if (!occupied && p.control < 100) p.control = Math.min(100, Math.round((p.control + BALANCE.economy.controlGrowth * 12 * (1 + provinceModifier(ctx.r, p.id, 'control_growth') * 4)) * 100) / 100);
   }
   // Renommée dynastique : les grands dirigeants font briller leur maison.
-  for (const b of Object.values(ctx.base.characters)) {
+  for (const b of Object.values(ctx.r.characters)) {
     if (b.death !== null || !b.titleIds.length || !b.houseId) continue;
     const house = s.houses[b.houseId];
     if (!house) continue;

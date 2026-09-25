@@ -25,7 +25,7 @@ export type ScreenId =
   | 'ledger'
   | null;
 
-export type MapMode = 'political' | 'terrain' | 'culture' | 'faith' | 'economy' | 'development' | 'control' | 'diplomacy';
+export type MapMode = 'political' | 'terrain' | 'culture' | 'faith' | 'economy' | 'development' | 'control' | 'diplomacy' | 'government' | 'subjects';
 
 export interface Toast {
   id: number;

@@ -14,6 +14,8 @@ export const MAP_MODES: { id: MapMode; icon: string; key: string }[] = [
   { id: 'development', icon: '⚒', key: 'T' },
   { id: 'control', icon: '⚑', key: 'Y' },
   { id: 'diplomacy', icon: '✉', key: 'U' },
+  { id: 'government', icon: '⚖', key: 'O' },
+  { id: 'subjects', icon: '⛓', key: 'P' },
 ];
 
 export function MapModes({ view, playerId }: { view: GameView; playerId: string | null }) {

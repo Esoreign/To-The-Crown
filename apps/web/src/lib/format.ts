@@ -45,6 +45,13 @@ export function holderTitle(c: Character): string {
   return t(`rank.holder.${c.sex}.${rank}`);
 }
 
+/** Intitulé d'un siège du conseil selon le gouvernement du souverain. */
+export function councilTitle(ruler: Pick<Character, 'government'> | undefined, role: string): string {
+  const gov = ruler?.government ? GOVERNMENT_BY_ID[ruler.government as GovernmentId] : undefined;
+  const idx = ['chancellor', 'marshal', 'steward', 'spymaster', 'scholar'].indexOf(role);
+  return (idx >= 0 ? gov?.councilTitles[idx] : undefined) ?? t(`council.${role}`);
+}
+
 export function titleName(titleId: string | null | undefined): string {
   if (!titleId) return '—';
   return TITLE_DEFS[titleId]?.name ?? titleId;

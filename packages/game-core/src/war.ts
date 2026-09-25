@@ -3,6 +3,7 @@
  */
 import { ErrorCodes, GameError, type CasusBelli, type GameState, type GameView, type War } from '@ttc/shared';
 import { BALANCE } from './balance';
+import { allowsVassalWars, endPactsBetween, isExternalPact, pactsAsSubject } from './politics';
 import { acceptance, type Acceptance, type AcceptRow } from './acceptance';
 import { isAdult, isAlive } from './characters';
 import { chronicle, log, newId, notify, type Ctx } from './context';
@@ -62,7 +63,7 @@ export function canTargetForWar(state: GameView, actorId: string, targetId: stri
   if (actor.liegeId) {
     if (target.id === actor.liegeId) return null;
     const liege = state.characters[actor.liegeId];
-    if (target.liegeId === actor.liegeId && liege && liege.crownAuthority <= 1) return null;
+    if (target.liegeId === actor.liegeId && liege && allowsVassalWars(liege)) return null;
     return 'vassal';
   }
   if (target.liegeId) return 'not_independent';
@@ -102,6 +103,9 @@ export function availableCasusBelli(state: GameView, actorId: string, targetId: 
     }
   }
   if (actor.liegeId === targetId) out.push({ cb: 'independence', titleId: null, claimantId: null });
+  // Tributaire ou client : guerre d'affranchissement contre le suzerain.
+  else if (pactsAsSubject(state, actorId).some((p) => isExternalPact(p) && target.titleIds.includes(p.overlordTitleId)))
+    out.push({ cb: 'independence', titleId: null, claimantId: null });
   if (!actor.liegeId) {
     const faith = FAITH_BY_ID[actor.faithId];
     const tfaith = FAITH_BY_ID[target.faithId];
@@ -415,6 +419,7 @@ function applyVictory(ctx: Ctx, war: War): void {
     case 'independence':
     case 'faction': {
       attacker.liegeId = null;
+      endPactsBetween(s, attacker.id, war.defenderId);
       bumpStructure();
       if (war.cb === 'faction' && war.factionId) {
         for (const m of war.attackers) {
@@ -450,6 +455,7 @@ export function pressTitle(ctx: Ctx, titleId: string, winnerId: string, warLeade
   const winner = s.characters[winnerId]!;
   const liegeForClaimant = winnerId !== warLeaderId && winner.titleIds.length === 0 ? warLeaderId : undefined;
   transferTitle(s, titleId, winnerId, def.rank === 'county' ? 'conquest' : 'usurped', { liegeId: liegeForClaimant });
+  if (def.rank !== 'county' && winner.titleIds[0] === titleId) winner.legitimacy = Math.min(winner.legitimacy ?? BALANCE.politics.legitimacy.base, BALANCE.politics.legitimacy.usurper);
   title.active = true;
   if (def.rank !== 'county' && loserId) {
     // Comtés de jure détenus par le perdant : suivent le titre.

@@ -209,6 +209,45 @@ export const BALANCE = {
     successBase: 0.55,
     murderSuccessBase: 0.4,
   },
+  politics: {
+    /** Part de l'impôt vassal effectivement versée selon le contrat. */
+    vassalTaxFactor: { direct_vassal: 1, autonomous_vassal: 0.5, personal_union: 0.25, confederate_member: 0.3, tributary: 0, client_state: 0 } as Record<string, number>,
+    tributeLevels: { light: 0.08, normal: 0.15, heavy: 0.25 },
+    tributeOpinion: { heavier: -20, lighter: 15 },
+    /** Opinion d'un tributaire envers son suzerain. */
+    tributaryOpinion: -10,
+    /** Référence des prélèvements sur les sujets : un gouvernement à 0,3 d'impôt et 0,4 de levées ne change rien. */
+    subjectTaxReference: 0.3,
+    subjectLevyReference: 0.4,
+    /** Niveau d'autorité maximal de l'échelle de jeu (0..3). */
+    maxAuthorityLevel: 3,
+    releaseOpinion: 40,
+    releasePrestige: 60,
+    legitimacy: {
+      base: 45,
+      dynastyMax: 15,
+      renownPerPoint: 300,
+      prestigeMax: 15,
+      prestigePerPoint: 250,
+      fervorMax: 12,
+      fervorPerPoint: 120,
+      wealthMax: 12,
+      goldPerPoint: 150,
+      election: 10,
+      mandatePerAuthority: 5,
+      minor: -15,
+      elder: 5,
+      madness: -20,
+      crimes: -15,
+      /** Fraction de l'écart comblée chaque mois. */
+      convergence: 0.08,
+      /** Opinion des vassaux : (légitimité − 50) / diviseur. */
+      opinionDivisor: 5,
+      /** Légitimité d'un héritier légal, d'un usurpateur. */
+      heir: 55,
+      usurper: 30,
+    },
+  },
   succession: {
     /** Taille maximale du collège électoral (en plus du dirigeant). */
     maxElectors: 7,

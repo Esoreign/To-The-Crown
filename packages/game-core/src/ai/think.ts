@@ -138,7 +138,7 @@ function manageMarriages(ctx: Ctx, c: Character): void {
   const pool = familyToMarry(ctx, c);
   const suitor = pool[0];
   if (!suitor) return;
-  const candidates = marriageCandidates(s, c.id, suitor.id, 10, BALANCE.ai.marriageEvaluate, ctx.base).filter((x) => x.acceptance.accept);
+  const candidates = marriageCandidates(s, c.id, suitor.id, 10, BALANCE.ai.marriageEvaluate).filter((x) => x.acceptance.accept);
   if (!candidates.length) return;
   // Valeur pour nous : rang du décideur, alliance potentielle.
   const scored = candidates

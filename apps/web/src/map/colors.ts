@@ -2,8 +2,8 @@
  * Couleurs de la carte selon le mode (politique, culture, économie…).
  * Pure : dépend uniquement de la vue de jeu et du joueur.
  */
-import { CULTURE_BY_ID, FAITH_BY_ID, WORLD } from '@ttc/content';
-import { PROVINCE_GEO, areAllied, atWarWith, isInRealmOf, provinceTax, topLiegeId } from '@ttc/game-core';
+import { CULTURE_BY_ID, FAITH_BY_ID, GOVERNMENTS, WORLD } from '@ttc/content';
+import { PROVINCE_GEO, areAllied, atWarWith, isInRealmOf, pactsAsOverlord, pactsAsSubject, provinceTax, topLiegeId } from '@ttc/game-core';
 import type { GameView, Terrain } from '@ttc/shared';
 import type { MapMode } from '../state/ui';
 
@@ -67,6 +67,48 @@ export function realmColor(view: Pick<GameView, 'characters' | 'titles'>, provin
 
 const PROVINCES = WORLD.provinces;
 
+/** Teintes des formes de gouvernement (regroupées par familles voisines). */
+const GOVERNMENT_COLORS: Record<string, string> = {
+  feudal_monarchy: '#8a5a3c',
+  centralized_monarchy: '#b0703a',
+  elective_monarchy: '#c9955a',
+  imperial_bureaucracy: '#c8a23c',
+  mamluk_sultanate: '#9c3a2e',
+  iqta_realm: '#b85a44',
+  steppe_confederation: '#7c8a3a',
+  tribal_confederation: '#5f7a4a',
+  chiefdom: '#4a6a58',
+  clan_realm: '#6a8a7a',
+  warrior_shogunate: '#7a3a5a',
+  city_republic: '#3a6a9a',
+  merchant_republic: '#2f86a0',
+  city_state: '#5a8ab8',
+  theocracy: '#e0d8b8',
+  holy_order: '#b8b0a0',
+  tributary_empire: '#a0508a',
+  mandala_kingdom: '#6a4aa0',
+};
+
+/** Statut d'un royaume vis-à-vis des contrats de sujétion. */
+const SUBJECT_COLORS: Record<string, string> = {
+  sovereign: '#6b6258',
+  overlord: '#d9b865',
+  tributary: '#c0622e',
+  client_state: '#9a4aa0',
+  personal_union: '#4f7fc0',
+  autonomous_vassal: '#3f9a8a',
+  confederate_member: '#5a9a4a',
+  direct_vassal: '#8a7a5a',
+};
+
+/** Garde les entrées de légende les plus représentées (la carte en compte des centaines). */
+function topLegend(counts: Map<string, number>, label: (id: string) => string, color: (id: string) => string, max = 14): LegendEntry[] {
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, max)
+    .map(([id]) => ({ label: label(id), color: color(id) }));
+}
+
 export function computeColors(view: GameView, mode: MapMode, playerId: string | null): { colors: Map<string, ProvinceColor>; legend: LegendEntry[] } {
   const colors = new Map<string, ProvinceColor>();
   const legend: LegendEntry[] = [];
@@ -78,19 +120,25 @@ export function computeColors(view: GameView, mode: MapMode, playerId: string | 
       break;
     }
     case 'culture': {
+      const counts = new Map<string, number>();
       for (const p of PROVINCES) {
-        const c = CULTURE_BY_ID[view.provinces[p.id]?.cultureId ?? p.cultureId];
+        const id = view.provinces[p.id]?.cultureId ?? p.cultureId;
+        const c = CULTURE_BY_ID[id];
         colors.set(p.id, { color: hexToNum(c?.color ?? '#777777'), alpha: 0.72 });
+        if (c) counts.set(id, (counts.get(id) ?? 0) + 1);
       }
-      for (const c of Object.values(CULTURE_BY_ID)) legend.push({ label: `culture.${c.id}`, color: c.color });
+      legend.push(...topLegend(counts, (id) => `culture.${id}`, (id) => CULTURE_BY_ID[id]!.color));
       break;
     }
     case 'faith': {
+      const counts = new Map<string, number>();
       for (const p of PROVINCES) {
-        const f = FAITH_BY_ID[view.provinces[p.id]?.faithId ?? p.faithId];
+        const id = view.provinces[p.id]?.faithId ?? p.faithId;
+        const f = FAITH_BY_ID[id];
         colors.set(p.id, { color: hexToNum(f?.color ?? '#777777'), alpha: 0.72 });
+        if (f) counts.set(id, (counts.get(id) ?? 0) + 1);
       }
-      for (const f of Object.values(FAITH_BY_ID)) legend.push({ label: `faith.${f.id}`, color: f.color });
+      legend.push(...topLegend(counts, (id) => `faith.${id}`, (id) => FAITH_BY_ID[id]!.color));
       break;
     }
     case 'economy': {
@@ -138,6 +186,49 @@ export function computeColors(view: GameView, mode: MapMode, playerId: string | 
         { label: 'diplo.enemy', color: '#b03a2e' },
         { label: 'diplo.neutral', color: '#6b6258' },
       );
+      break;
+    }
+    case 'government': {
+      const counts = new Map<string, number>();
+      const govOf = new Map<string, string>();
+      for (const p of PROVINCES) {
+        const holder = view.titles[p.countyTitleId]?.holderId;
+        let gov = '';
+        if (holder) {
+          const top = topLiegeId(view, holder);
+          if (!govOf.has(top)) govOf.set(top, view.characters[top]?.government ?? '');
+          gov = govOf.get(top)!;
+        }
+        colors.set(p.id, { color: hexToNum(GOVERNMENT_COLORS[gov] ?? '#5a544c'), alpha: gov ? 0.75 : 0.35 });
+        if (gov) counts.set(gov, (counts.get(gov) ?? 0) + 1);
+      }
+      legend.push(...topLegend(counts, (id) => `government.${id}`, (id) => GOVERNMENT_COLORS[id] ?? '#5a544c', GOVERNMENTS.length));
+      break;
+    }
+    case 'subjects': {
+      // Premier contrat rencontré en remontant la chaîne vassalique ; sinon
+      // suzerain (s'il a des sujets externes) ou souverain.
+      const statusOf = new Map<string, string>();
+      const status = (id: string): string => {
+        const known = statusOf.get(id);
+        if (known) return known;
+        let result = 'sovereign';
+        const own = pactsAsSubject(view, id)[0];
+        const c = view.characters[id];
+        if (own) result = own.type;
+        else if (c?.liegeId) result = status(c.liegeId);
+        else if (pactsAsOverlord(view, id).length) result = 'overlord';
+        statusOf.set(id, result);
+        return result;
+      };
+      const counts = new Map<string, number>();
+      for (const p of PROVINCES) {
+        const holder = view.titles[p.countyTitleId]?.holderId;
+        const st = holder ? status(holder) : 'sovereign';
+        colors.set(p.id, { color: hexToNum(SUBJECT_COLORS[st] ?? SUBJECT_COLORS.sovereign!), alpha: holder ? 0.75 : 0.35 });
+        counts.set(st, (counts.get(st) ?? 0) + 1);
+      }
+      for (const id of Object.keys(SUBJECT_COLORS)) if (counts.has(id)) legend.push({ label: id === 'sovereign' ? 'legend.sovereign' : id === 'overlord' ? 'legend.overlord' : `subject.${id}`, color: SUBJECT_COLORS[id]! });
       break;
     }
   }

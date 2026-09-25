@@ -3,6 +3,7 @@
  * indépendance, prisonniers, invitations, tutelle.
  */
 import { ErrorCodes, GameError, RANK_ORDER, type Character, type GameView, type SkillKey } from '@ttc/shared';
+import { crownAuthorityCost, maxCrownAuthority } from './politics';
 import { BALANCE } from './balance';
 import { acceptance, type Acceptance, type AcceptRow } from './acceptance';
 import { addTrait, isAdult, isAlive } from './characters';
@@ -435,7 +436,8 @@ export function changeCrownAuthority(ctx: Ctx, actorId: string, level: number): 
   const cd = actor.cooldowns.crown_authority;
   if (cd && cd > ctx.s.date) throw new GameError(ErrorCodes.ON_COOLDOWN, 'Changement récent', { until: cd });
   if (level > actor.crownAuthority) {
-    const cost = BALANCE.authority.crownAuthorityCost[level] ?? 999;
+    if (level > maxCrownAuthority(actor)) throw new GameError(ErrorCodes.REQUIREMENTS_NOT_MET, 'Votre forme de gouvernement ne permet pas une telle autorité');
+    const cost = crownAuthorityCost(actor, level);
     if (actor.authority < cost) throw new GameError(ErrorCodes.INSUFFICIENT_AUTHORITY, 'Autorité insuffisante', { cost });
     actor.authority -= cost;
     for (const v of directVassals(ctx.s, actorId)) addOpinion(ctx.s, v.id, actorId, -10, 'opinion.reason.raised_authority', 60);

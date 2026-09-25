@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { PROVINCE_GEO, PROVINCE_TASKS, ROLE_SKILL, ROLE_TASKS, councilCandidates, domainProvinceIds, opinion, seatSkill, skill } from '@ttc/game-core';
 import { COUNCIL_ROLES, type Character, type CouncilRole, type CouncilTask, type GameView } from '@ttc/shared';
 import { t } from '../../lib/i18n';
-import { charName } from '../../lib/format';
+import { charName, councilTitle } from '../../lib/format';
 import { Portrait, Tip } from '../../ui/common';
 import { act, openCharacter } from '../hooks';
 import { ScreenFrame } from './ScreenHost';
@@ -34,7 +34,7 @@ export function CouncilScreen({ view, me }: { view: GameView; me: Character }) {
           return (
             <div key={role} className="council-card" data-testid={`council-${role}`}>
               <div className="council-role display">
-                <span aria-hidden="true">{ROLE_ICON[role]}</span> {t(`council.${role}`)}
+                <span aria-hidden="true">{ROLE_ICON[role]}</span> {councilTitle(me, role)}
               </div>
               <div className="council-person">
                 <Portrait c={c} view={view} size={64} onClick={c ? () => openCharacter(c.id) : undefined} title={c ? charName(view, c) : undefined} />
@@ -52,7 +52,7 @@ export function CouncilScreen({ view, me }: { view: GameView; me: Character }) {
               </div>
               <select
                 className="input"
-                aria-label={`Nommer ${t(`council.${role}`)}`}
+                aria-label={`Nommer ${councilTitle(me, role)}`}
                 value={seat.characterId ?? ''}
                 onChange={(e) => void act({ type: 'council.assign', payload: { role, characterId: e.target.value || null } }, 'Conseiller nommé')}
               >

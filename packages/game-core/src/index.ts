@@ -16,6 +16,7 @@ export * from './family';
 export * from './flags';
 export * from './marriage';
 export * from './opinion';
+export * from './politics';
 export * from './provinces';
 export * from './realm';
 export * from './rng';

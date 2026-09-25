@@ -63,6 +63,8 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('war.callAlly'), payload: z.object({ warId: id, allyId: id }) }),
   z.object({ type: z.literal('war.offerPeace'), payload: z.object({ warId: id, kind: z.enum(['enforce', 'white', 'surrender']) }) }),
   z.object({ type: z.literal('army.raise'), payload: z.object({ provinceId: id.optional() }) }),
+  z.object({ type: z.literal('subject.tribute'), payload: z.object({ pactId: id, level: z.enum(['light', 'normal', 'heavy']) }) }),
+  z.object({ type: z.literal('subject.release'), payload: z.object({ pactId: id }) }),
   z.object({ type: z.literal('army.disband'), payload: z.object({ armyId: id }) }),
   z.object({ type: z.literal('army.move'), payload: z.object({ armyId: id, to: id }) }),
   z.object({ type: z.literal('army.merge'), payload: z.object({ armyId: id, intoId: id }) }),

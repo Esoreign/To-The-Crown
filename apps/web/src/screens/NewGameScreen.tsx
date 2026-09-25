@@ -5,7 +5,10 @@ import {
   ageOf,
   capitalProvinceOf,
   directVassals,
+  governmentOf,
   holderOfProvince,
+  isExternalPact,
+  pactsAsSubject,
   militaryStrength,
   planSuccession,
   primaryTitleId,
@@ -24,8 +27,14 @@ import { playSound } from '../audio/audio';
 import { CoatOfArms, Portrait } from '../ui/common';
 import { SkillGrid, TraitList } from '../ui/char';
 
+const SCENARIO = getScenario('monde_1400');
+
 export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Character; rec?: RecommendedStart; onPick(id: string): void }) {
   const pt = primaryTitleId(c);
+  const polityId = pt ? TITLE_DEFS[pt]?.polityId : undefined;
+  const polity = polityId ? SCENARIO.polities?.[polityId] : undefined;
+  const gov = governmentOf(c);
+  const bonds = pactsAsSubject(view, c.id);
   const house = c.houseId ? view.houses[c.houseId] : undefined;
   const counties = realmProvinceIds(view, c.id).length;
   const plan = useMemo(() => planSuccession(view, c), [view, c]);
@@ -68,6 +77,18 @@ export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Charac
       <h3 className="section-title">Traits</h3>
       <TraitList c={c} />
       <h3 className="section-title">Situation</h3>
+      {gov && (
+        <div className="info-line">
+          <span>Gouvernement</span>
+          <span>{t(`government.${gov.id}`)}</span>
+        </div>
+      )}
+      {bonds.map((p) => (
+        <div key={p.id} className="info-line">
+          <span>{t(`subject.${p.type}`)}</span>
+          <span>{titleName(p.overlordTitleId)}{isExternalPact(p) ? ` · tribut ${Math.round(p.tribute * 100)} %` : ''}</span>
+        </div>
+      ))}
       <div className="info-line">
         <span>Maison</span>
         <span>{house?.name ?? '—'}</span>
@@ -118,6 +139,21 @@ export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Charac
           </p>
         </>
       )}
+      {polity && (
+        <>
+          <h3 className="section-title">Repères historiques</h3>
+          <div>
+            <span className={`badge confidence-${polity.confidence}`} data-testid="polity-confidence">
+              {t(`confidence.${polity.confidence}`)}
+            </span>
+          </div>
+          {polity.note && (
+            <p className="soft" style={{ margin: '6px 0 0', fontSize: 13 }}>
+              {polity.note}
+            </p>
+          )}
+        </>
+      )}
       {vassals.length > 0 && (
         <>
           <h3 className="section-title">Vassaux jouables</h3>
@@ -144,7 +180,12 @@ export function NewGameScreen() {
   const [eventFrequency, setFreq] = useState<'low' | 'normal' | 'high'>('normal');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [focus, setFocus] = useState<{ provinceId: string; at: number; zoom?: number; realmOf?: string } | null>(null);
+  const [focus, setFocus] = useState<{ provinceId: string; at: number; zoom?: number; realmOf?: string } | null>(() => {
+    // Ouvre la carte sur le premier royaume conseillé.
+    const first = view.characters[scenario.recommended[0]!.characterId];
+    const cap = first ? capitalProvinceOf(first) : null;
+    return cap && first ? { provinceId: cap, at: 0, realmOf: first.id } : null;
+  });
 
   const c = view.characters[selected];
   const rec = scenario.recommended.find((r) => r.characterId === selected);

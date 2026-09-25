@@ -20,10 +20,13 @@ export interface StructureIndex {
   membersByDynasty: Map<string, string[]>;
   membersByHouse: Map<string, string[]>;
   warsByChar: Map<string, War[]>;
+  /** Contrats de sujétion (identifiants) par titre sujet / titre suzerain. */
+  pactsBySubjectTitle: Map<string, string[]>;
+  pactsByOverlordTitle: Map<string, string[]>;
   memo: Map<string, unknown>;
 }
 
-type Keyed = Pick<GameView, 'characters' | 'relations' | 'alliances' | 'wars' | 'houses'>;
+type Keyed = Pick<GameView, 'characters' | 'relations' | 'alliances' | 'wars' | 'houses'> & Partial<Pick<GameView, 'pacts'>>;
 
 let epoch = 0;
 let cached: { epoch: number; keys: unknown[]; idx: StructureIndex } | null = null;
@@ -69,7 +72,7 @@ export function forEachValue<T>(input: Record<string, T>, fn: (value: T) => void
 }
 
 export function getIndex(state: Keyed): StructureIndex {
-  const keys = [state.characters, state.relations, state.alliances, state.wars, state.houses].map((k) => unwrapCollection(k as object));
+  const keys = [state.characters, state.relations, state.alliances, state.wars, state.houses, state.pacts ?? null].map((k) => (k ? unwrapCollection(k as object) : null));
   if (cached && cached.epoch === epoch && cached.keys.every((k, i) => k === keys[i])) return cached.idx;
   const idx: StructureIndex = {
     vassalsByLiege: new Map(),
@@ -79,6 +82,8 @@ export function getIndex(state: Keyed): StructureIndex {
     membersByDynasty: new Map(),
     membersByHouse: new Map(),
     warsByChar: new Map(),
+    pactsBySubjectTitle: new Map(),
+    pactsByOverlordTitle: new Map(),
     memo: new Map(),
   };
   const houseDyn = new Map<string, string>();
@@ -105,6 +110,11 @@ export function getIndex(state: Keyed): StructureIndex {
   for (const w of Object.values(unwrapCollection(state.wars))) {
     for (const p of [...w.attackers, ...w.defenders]) push(idx.warsByChar, p, w);
   }
+  if (state.pacts)
+    forEachValue(state.pacts, (p) => {
+      push(idx.pactsBySubjectTitle, p.subjectTitleId, p.id);
+      push(idx.pactsByOverlordTitle, p.overlordTitleId, p.id);
+    });
   cached = { epoch, keys, idx };
   return idx;
 }
