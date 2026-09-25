@@ -12,7 +12,7 @@ import { killCharacter } from './death';
 import { isCloseRelative, sameDynasty } from './family';
 import { hasFlag } from './flags';
 import { addOpinion, alliesOf, areAllied, atWarWith, opinion } from './opinion';
-import { directVassals, isIndependent, isInRealmOf, neighborRulers, rankOf, topLiegeId } from './realm';
+import { courtiers, directVassals, isIndependent, isInRealmOf, neighborRulers, rankOf, topLiegeId } from './realm';
 import { consumeHook, usableHook } from './secrets';
 import { addStress, stressForTags } from './stress';
 import { militaryStrength } from './economy';
@@ -58,8 +58,8 @@ export function evaluateAlliance(state: GameView, actorId: string, targetId: str
   const rows: AcceptRow[] = [{ key: 'base', value: -25 }];
   rows.push({ key: 'opinion', value: opinion(state, targetId, actorId) * 0.6 });
   const family = isCloseRelative(state, actor, target) || state.characters[actor.spouseId ?? '']?.fatherId === targetId;
-  const inLaws = Object.values(state.characters).some(
-    (c) => c.death === null && c.spouseId && ((c.courtId === actorId || c.id === actorId) && isCloseRelative(state, state.characters[c.spouseId]!, target)),
+  const inLaws = [actor, ...courtiers(state, actorId)].some(
+    (c) => c.death === null && !!c.spouseId && isCloseRelative(state, state.characters[c.spouseId]!, target),
   );
   if (family) rows.push({ key: 'family', value: 30 });
   else if (inLaws) rows.push({ key: 'in_laws', value: 25 });

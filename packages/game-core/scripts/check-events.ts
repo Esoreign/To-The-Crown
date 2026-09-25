@@ -18,7 +18,7 @@ const ALLOWED_VARS = new Set(['name', 'fullname', 'title', 'il', 'le', 'e', 'fil
 const SCOPES = new Set(['root', 'target', 'other', 'actor', 'province']);
 
 const contentErrors = validateContent(CONTENT);
-const base = createGameState(getScenario('couronne_brisee'), { gameId: 'chk', seed: 7, players: [] });
+const base = createGameState(getScenario('monde_1400'), { gameId: 'chk', seed: 7, players: [] });
 // Quelques années de simulation pour diversifier les situations (enfants, guerres…).
 simulateDaysMutable(base, 365 * 3);
 

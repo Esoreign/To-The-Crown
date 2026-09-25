@@ -49,7 +49,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/scripts/**/*.ts', 'apps/server/src/db/seed.ts', 'tests/**/*.ts'],
+    files: ['**/scripts/**/*.ts', 'tools/**/*.ts', 'apps/server/src/db/seed.ts', 'tests/**/*.ts'],
     rules: { 'no-console': 'off' },
   },
 );

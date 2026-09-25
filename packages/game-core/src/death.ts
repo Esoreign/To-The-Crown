@@ -85,6 +85,16 @@ export function killCharacter(ctx: Ctx, charId: string, cause: DeathCause, kille
   const primaryTitle = c.titleIds[0] ?? null;
   const rank = rankOf(c);
   if (landed && plan) applySuccession(ctx, c.id, plan);
+  // Armées restantes d'un personnage sans héritier ou sans terre : dissoutes
+  // (les levées rentrent chez elles).
+  for (const a of Object.values(s.armies)) {
+    if (a.ownerId !== charId) continue;
+    for (const [pid, men] of Object.entries(a.leviesFrom)) {
+      const prov = s.provinces[pid];
+      if (prov) prov.levies += Math.round(men);
+    }
+    delete s.armies[a.id];
+  }
 
   // Joueur : continue avec l'héritier.
   if (wasPlayer) {
@@ -283,7 +293,7 @@ function spawnLocalRuler(ctx: Ctx, deceasedId: string): string {
   const dec = s.characters[deceasedId]!;
   const houseId = `h_local_${s.nextId}`;
   const dynastyId = `dy_local_${s.nextId}`;
-  const name = TITLE_DEFS[dec.titleIds[0] ?? '']?.name ?? 'Caldria';
+  const name = TITLE_DEFS[dec.titleIds[0] ?? '']?.short ?? TITLE_DEFS[dec.titleIds[0] ?? '']?.name ?? 'Nouvelle maison';
   s.dynasties[dynastyId] = { id: dynastyId, name, houseIds: [houseId], renown: 0 };
   s.houses[houseId] = {
     id: houseId,

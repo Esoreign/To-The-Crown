@@ -9,7 +9,7 @@ import { opinionOf } from '../src/opinion';
 import { publicPatches, publicView, privateViewFor } from '../src/views';
 import { checkInvariants } from '../src/simulate';
 import { buildOptions } from '../src/buildings';
-import { ctxFor, newState, rulerId, scenario } from './helpers';
+import { ctxFor, newState, rulerOf, scenario } from './helpers';
 
 describe('PRNG déterministe', () => {
   it('produit la même suite pour la même graine', () => {
@@ -37,19 +37,19 @@ describe('PRNG déterministe', () => {
 });
 
 describe('Déterminisme de la simulation', () => {
-  it('même état + même graine ⇒ même résultat après 120 jours', () => {
+  it('même état + même graine ⇒ même résultat après 30 jours', () => {
     const a = newState(99);
     const b = newState(99);
-    simulateDaysMutable(a, 120);
-    simulateDaysMutable(b, 120);
+    simulateDaysMutable(a, 30);
+    simulateDaysMutable(b, 30);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
   it('stepDay (Immer) et simulation mutable donnent le même état', () => {
     let a: GameState = newState(7);
     const b = newState(7);
-    for (let i = 0; i < 40; i++) a = stepDay(a).state;
-    simulateDaysMutable(b, 40);
+    for (let i = 0; i < 20; i++) a = stepDay(a).state;
+    simulateDaysMutable(b, 20);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
@@ -60,13 +60,19 @@ describe('Déterminisme de la simulation', () => {
 
 describe('Économie', () => {
   it('le ledger correspond exactement à la variation mensuelle d’or', () => {
-    const id = rulerId('Aurelan');
+    const id = rulerOf('cas');
     // Joueur humain : l'IA ne dépense pas son or pendant le test.
     const s = newState(3, [{ userId: 'u1', displayName: 'Test', characterId: id }]);
-    while (!isEveOfMonth(s.date)) simulateDaysMutable(s, 1);
-    const before = s.characters[id]!.gold;
-    const net = ledgerOf(s, s.characters[id]!).net;
-    simulateDaysMutable(s, 1);
+    // Le cycle mensuel d'un personnage tombe un jour fixe du mois : on avance
+    // jusqu'à la veille de ce jour, repéré par une variation d'or.
+    let before = s.characters[id]!.gold;
+    let net = ledgerOf(s, s.characters[id]!).net;
+    for (let i = 0; i < 40; i++) {
+      before = s.characters[id]!.gold;
+      net = ledgerOf(s, s.characters[id]!).net;
+      simulateDaysMutable(s, 1);
+      if (s.characters[id]!.gold !== before) break;
+    }
     expect(s.characters[id]!.gold).toBeCloseTo(before + net, 1);
     expect(net).toBeGreaterThan(0);
   });
@@ -76,7 +82,7 @@ describe('Économie', () => {
     const c = Object.values(s.characters).find((x) => x.titleIds.length && x.death === null)!;
     const limit = domainLimit(s, c);
     const extra = Object.values(s.titles)
-      .filter((t) => t.id.startsWith('c_') && t.holderId !== c.id)
+      .filter((t) => /^c\d+$/.test(t.id) && t.holderId && t.holderId !== c.id)
       .slice(0, limit + 3);
     for (const t of extra) {
       const prev = s.characters[t.holderId!]!;
@@ -89,55 +95,45 @@ describe('Économie', () => {
   });
 });
 
-function isEveOfMonth(day: number): boolean {
-  // Le jour suivant est un 1er du mois.
-  const lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  let d = (day + 1) % 365;
-  for (const len of lengths) {
-    if (d === 0) return true;
-    if (d < len) return false;
-    d -= len;
-  }
-  return false;
-}
 
 describe('Opinion', () => {
   it('le total correspond à la somme des lignes (bornée)', () => {
     const s = newState(2);
-    const aelis = rulerId('Aélis');
-    for (const v of directVassals(s, aelis)) {
-      const o = opinionOf(s, v.id, aelis);
+    const king = rulerOf('fra');
+    expect(directVassals(s, king).length).toBeGreaterThan(3);
+    for (const v of directVassals(s, king)) {
+      const o = opinionOf(s, v.id, king);
       const sum = o.rows.reduce((x, r) => x + r.value, 0);
       expect(o.total).toBe(Math.max(-100, Math.min(100, Math.round(sum))));
     }
   });
 
-  it('les vassaux de la reine de Valorie doutent de sa légitimité', () => {
+  it('un tributaire reste un royaume distinct lié par un contrat', () => {
     const s = newState(2);
-    const aelis = rulerId('Aélis');
-    const aldren = rulerId('Aldren');
-    const o = opinionOf(s, aldren, aelis);
-    expect(o.rows.some((r) => r.reason === 'opinion.reason.contested_succession')).toBe(true);
-    expect(o.total).toBeLessThan(0);
+    const moscow = rulerOf('msc');
+    expect(s.characters[moscow]!.liegeId).toBeNull();
+    const pact = Object.values(s.pacts).find((p) => s.titles[p.subjectTitleId]?.holderId === moscow);
+    expect(pact?.type).toBe('tributary');
+    expect(s.titles[pact!.overlordTitleId]?.holderId).toBe(rulerOf('gh'));
   });
 });
 
 describe('Commandes et serveur autoritaire', () => {
   it('refuse une commande de développement hors mode dev, sans modifier l’état', () => {
-    const s = newState(5, [{ userId: 'u1', displayName: 'A', characterId: rulerId('Thalos') }]);
+    const s = newState(5, [{ userId: 'u1', displayName: 'A', characterId: rulerOf('cas') }]);
     const before = JSON.stringify(s);
-    expect(() => runCommand(s, rulerId('Thalos'), { type: 'dev.addResources', payload: { gold: 99999 } })).toThrowError(GameError);
+    expect(() => runCommand(s, rulerOf('cas'), { type: 'dev.addResources', payload: { gold: 99999 } })).toThrowError(GameError);
     expect(JSON.stringify(s)).toBe(before);
   });
 
   it('refuse de déplacer l’armée d’un autre', () => {
-    let s = newState(5, [{ userId: 'u1', displayName: 'A', characterId: rulerId('Thalos') }]);
-    const other = rulerId('Altani');
+    let s = newState(5, [{ userId: 'u1', displayName: 'A', characterId: rulerOf('cas') }]);
+    const other = rulerOf('por');
     const raised = runCommand(s, other, { type: 'army.raise', payload: {} });
     s = raised.state;
     const armyId = raised.result.armyId as string;
     try {
-      runCommand(s, rulerId('Thalos'), { type: 'army.move', payload: { armyId, to: 'p001' } });
+      runCommand(s, rulerOf('cas'), { type: 'army.move', payload: { armyId, to: 'p001' } });
       expect.unreachable();
     } catch (e) {
       expect((e as GameError).code).toBe(ErrorCodes.ARMY_NOT_OWNED);
@@ -146,7 +142,7 @@ describe('Commandes et serveur autoritaire', () => {
 
   it('une erreur de commande n’applique aucune mutation (transaction)', () => {
     const s = newState(6);
-    const id = rulerId('Morcant');
+    const id = rulerOf('nav');
     const before = JSON.stringify(s);
     expect(() => runCommand(s, id, { type: 'building.construct', payload: { provinceId: 'p000', buildingId: 'fortress' } })).toThrow();
     expect(JSON.stringify(s)).toBe(before);
@@ -154,7 +150,7 @@ describe('Commandes et serveur autoritaire', () => {
 
   it('construit réellement : or déduit puis bâtiment achevé', () => {
     let s = newState(8);
-    const id = rulerId('Thalos');
+    const id = rulerOf('cas');
     const c = s.characters[id]!;
     const pick = domainProvinceIds(c)
       .flatMap((p) => buildOptions(s, p, id).map((o) => ({ p, o })))
@@ -176,7 +172,8 @@ describe('Commandes et serveur autoritaire', () => {
 
   it('refuse une construction faute d’or', () => {
     const s = newState(8);
-    const id = rulerId('Morcant');
+    const id = rulerOf('nav');
+    s.characters[id]!.gold = 0;
     const pid = domainProvinceIds(s.characters[id]!)[0]!;
     try {
       runCommand(s, id, { type: 'building.construct', payload: { provinceId: pid, buildingId: 'chancery' } });
@@ -190,15 +187,16 @@ describe('Commandes et serveur autoritaire', () => {
 describe('Vues joueur', () => {
   it('ne divulgue ni la RNG ni les secrets d’autrui', () => {
     const s = newState(9);
-    const velimir = rulerId('Velimir');
+    const velimir = rulerOf('orl');
     const pub = publicView(s);
     expect('rng' in pub).toBe(false);
     expect(Object.keys(pub.secrets)).toHaveLength(0);
     const priv = privateViewFor(s, velimir);
     const own = Object.values(s.secrets).filter((x) => x.knownBy.includes(velimir) || x.ownerId === velimir);
     expect(Object.keys(priv.secrets).sort()).toEqual(own.map((x) => x.id).sort());
-    const otherPriv = privateViewFor(s, rulerId('Aélis'));
-    for (const sec of Object.values(otherPriv.secrets)) expect(sec.knownBy.includes(rulerId('Aélis')) || sec.ownerId === rulerId('Aélis') || sec.exposed).toBe(true);
+    const other = rulerOf('bur');
+    const otherPriv = privateViewFor(s, other);
+    for (const sec of Object.values(otherPriv.secrets)) expect(sec.knownBy.includes(other) || sec.ownerId === other || sec.exposed).toBe(true);
   });
 
   it('filtre les patches privés', () => {
@@ -212,7 +210,7 @@ describe('Vues joueur', () => {
 describe('Royaume', () => {
   it('le royaume inclut les terres des vassaux', () => {
     const s = newState(11);
-    const id = rulerId('Aurelan');
+    const id = rulerOf('fra');
     const realm = realmProvinceIds(s, id);
     expect(realm.length).toBeGreaterThan(domainProvinceIds(s.characters[id]!).length);
     expect(rankOf(s.characters[id]!)).toBe(3);

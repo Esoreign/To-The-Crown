@@ -2,6 +2,7 @@
  * Succession : calcul des héritiers selon la loi du titre principal
  * (partage, primogéniture, élection, ancienneté) et répartition des titres.
  */
+import { BALANCE } from './balance';
 import { RANK_ORDER, type Character, type GameState, type GameView, type SuccessionLaw } from '@ttc/shared';
 import { ageOf, isAdult, isAlive, skill } from './characters';
 import { FAITH_BY_ID, TITLE_DEFS } from './content';
@@ -86,8 +87,10 @@ function seniorityHeir(state: GameView, c: Character): Character | null {
 
 export function electors(state: GameView, c: Character): Character[] {
   const vassals = directVassals(state, c.id).filter((v) => rankOf(v) >= 2);
-  const out = vassals.length ? vassals : directVassals(state, c.id);
-  return [c, ...out].filter(isAlive);
+  const out = (vassals.length ? vassals : directVassals(state, c.id)).filter(isAlive);
+  // Collège électoral : les grands vassaux (au plus BALANCE.succession.maxElectors).
+  out.sort((a, b) => rankOf(b) - rankOf(a) || b.prestige - a.prestige);
+  return [c, ...out.slice(0, BALANCE.succession.maxElectors)].filter(isAlive);
 }
 
 export function electionCandidates(state: GameView, c: Character): Character[] {
@@ -123,7 +126,18 @@ export function electionResult(state: GameView, c: Character, titleId: string): 
     let choice: string | undefined = manual && votes.has(manual) ? manual : undefined;
     if (!choice) {
       if (e.id === c.id && c.nominatedHeirId && votes.has(c.nominatedHeirId)) choice = c.nominatedHeirId;
-      else choice = [...cands].sort((a, b) => candidateScore(state, e, b) - candidateScore(state, e, a))[0]!.id;
+      else {
+        let best = cands[0]!;
+        let bestScore = -Infinity;
+        for (const k of cands) {
+          const sc = candidateScore(state, e, k);
+          if (sc > bestScore) {
+            bestScore = sc;
+            best = k;
+          }
+        }
+        choice = best.id;
+      }
     }
     votes.set(choice, (votes.get(choice) ?? 0) + (e.id === c.id ? 2 : 1));
   }

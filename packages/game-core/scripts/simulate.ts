@@ -7,7 +7,7 @@ import { simulateGame } from '../src/simulate';
 
 const years = Number(process.argv[2] ?? 30);
 const seed = Number(process.argv[3] ?? 42);
-const { report } = simulateGame(getScenario('couronne_brisee'), { years, seed, checkEveryMonths: 12 });
+const { report } = simulateGame(getScenario('monde_1400'), { years, seed, checkEveryMonths: 12 });
 const { invariantErrors, ...rest } = report;
 console.log(JSON.stringify(rest, null, 2));
 if (invariantErrors.length) {

@@ -84,7 +84,18 @@ export function makeRng(st: RngState): Rng {
   return rng;
 }
 
-/** RNG d'un état de partie (mute state.rng — à utiliser dans un draft). */
-export function gameRng(state: { rng: RngState }): Rng {
-  return makeRng(state.rng);
+/**
+ * RNG d'un état de partie. Sur un état ordinaire, state.rng est muté en place.
+ * Sur un brouillon Immer, on tire sur une copie locale (écrire 4 cases de
+ * tableau brouillon à chaque tirage coûte cher) recopiée par `flush()` en fin
+ * d'étape.
+ */
+export function gameRng(state: { rng: RngState }, draft = false): Rng & { flush(): void } {
+  if (!draft) return Object.assign(makeRng(state.rng), { flush: () => undefined });
+  const local: RngState = [state.rng[0], state.rng[1], state.rng[2], state.rng[3]];
+  return Object.assign(makeRng(local), {
+    flush: () => {
+      for (let i = 0; i < 4; i++) if (state.rng[i] !== local[i]) state.rng[i] = local[i]!;
+    },
+  });
 }

@@ -36,8 +36,8 @@ function onCooldown(ctx: Ctx, c: Character, def: EventDef): boolean {
 function pickTarget(ctx: Ctx, root: Character, sel: TargetSelector | undefined, scope: EventScope, slot: 'target' | 'other'): boolean {
   if (!sel) return true;
   if (scope[slot]) return true;
-  const candidates = targetPool(ctx.s, root, sel.pool).filter(
-    (c) => c.id !== scope.target && evalCondition(ctx.s, sel.where, { ...scope, [slot]: c.id }),
+  const candidates = targetPool(ctx.r, root, sel.pool).filter(
+    (c) => c.id !== scope.target && evalCondition(ctx.r, sel.where, { ...scope, [slot]: c.id }),
   );
   if (!candidates.length) return !!sel.optional;
   scope[slot] = ctx.rng.pick(candidates).id;
@@ -46,14 +46,14 @@ function pickTarget(ctx: Ctx, root: Character, sel: TargetSelector | undefined, 
 
 /** Prépare la portée d'un événement ; renvoie null si inéligible. */
 export function prepareEvent(ctx: Ctx, def: EventDef, charId: string, base: Partial<EventScope> = {}): EventScope | null {
-  const root = ctx.s.characters[charId];
+  const root = ctx.r.characters[charId];
   if (!root || !isAlive(root)) return null;
   if (def.rulerOnly !== false && root.titleIds.length === 0) return null;
   if (onCooldown(ctx, root, def)) return null;
   const scope: EventScope = { root: charId, ...base };
   if (!pickTarget(ctx, root, def.target, scope, 'target')) return null;
   if (!pickTarget(ctx, root, def.other, scope, 'other')) return null;
-  if (!evalCondition(ctx.s, def.conditions, scope)) return null;
+  if (!evalCondition(ctx.r, def.conditions, scope)) return null;
   return scope;
 }
 
@@ -148,10 +148,10 @@ export function chooseEventOption(ctx: Ctx, charId: string, activeEventId: strin
 
 /** Tirage mensuel d'événements pour un dirigeant. */
 export function pulseEvents(ctx: Ctx, charId: string): void {
-  const c = ctx.s.characters[charId];
+  const c = ctx.r.characters[charId];
   if (!c || !isAlive(c) || c.titleIds.length === 0) return;
   // Un joueur n'a jamais plus de 2 événements en attente.
-  if (c.isPlayer && Object.values(ctx.s.activeEvents).filter((e) => e.characterId === charId).length >= 2) return;
+  if (c.isPlayer && Object.values(ctx.r.activeEvents).filter((e) => e.characterId === charId).length >= 2) return;
   const chance = BALANCE.events.monthlyChance[ctx.s.settings.eventFrequency] * (c.isPlayer ? 1.3 : 0.6);
   if (!ctx.rng.chance(chance)) return;
   const candidates: { def: EventDef; scope: EventScope }[] = [];

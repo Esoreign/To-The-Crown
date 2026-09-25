@@ -253,7 +253,7 @@ function main(): void {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g.land[y * W + x] === 1) macro[y * W + x] = MACROS.indexOf(macroRegion(cellLon(x), cellLat(y))) + 1;
   console.timeEnd('macro-régions');
   console.time('poids');
-  let weight = computeWeights(g, macro);
+  const weight = computeWeights(g, macro);
   const fields = climate(g.land, g.elev, deserts);
   saveGrid('temp', fields.temp);
   saveGrid('moist', fields.moist);
@@ -401,7 +401,7 @@ function main(): void {
 
   // --- Remplissage final ---------------------------------------------------
   console.time('remplissage');
-  let label = flood(seeds, landOnly, cost);
+  const label = flood(seeds, landOnly, cost);
   // Îlots restants : rattachés à la province la plus proche par la mer.
   {
     const lbl = label;

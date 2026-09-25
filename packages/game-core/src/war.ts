@@ -6,7 +6,7 @@ import { BALANCE } from './balance';
 import { acceptance, type Acceptance, type AcceptRow } from './acceptance';
 import { isAdult, isAlive } from './characters';
 import { chronicle, log, newId, notify, type Ctx } from './context';
-import { CULTURE_BY_ID, DEJURE_PROVINCES, FAITH_BY_ID, PROVINCE_GEO, TITLE_DEFS } from './content';
+import { DEJURE_PROVINCES, FAITH_BY_ID, PROVINCE_GEO, TITLE_DEFS } from './content';
 import { fireOnAction } from './events/engine';
 import { militaryStrength } from './economy';
 import { addOpinion, alliesOf, areAllied, atWarWith, opinion } from './opinion';
@@ -69,6 +69,9 @@ export function canTargetForWar(state: GameView, actorId: string, targetId: stri
   return null;
 }
 
+/** Gouvernements qui peuvent conquérir sans revendication (prestige). */
+const CONQUEST_GOVERNMENTS = new Set(['steppe_confederation', 'tributary_empire', 'iqta_realm', 'mamluk_sultanate']);
+
 export function availableCasusBelli(state: GameView, actorId: string, targetId: string): CbOption[] {
   if (canTargetForWar(state, actorId, targetId)) return [];
   const actor = state.characters[actorId]!;
@@ -107,7 +110,7 @@ export function availableCasusBelli(state: GameView, actorId: string, targetId: 
     if (border && faith?.doctrines.holyWar && tfaith && faith.family !== tfaith.family) {
       out.push({ cb: 'holy_war', titleId: PROVINCE_GEO[border]!.countyTitleId, claimantId: actorId, cost: { fervor: 200 } });
     }
-    if (border && CULTURE_BY_ID[actor.cultureId]?.id === 'kharzul') {
+    if (border && CONQUEST_GOVERNMENTS.has(actor.government ?? '')) {
       out.push({ cb: 'conquest', titleId: PROVINCE_GEO[border]!.countyTitleId, claimantId: actorId, cost: { prestige: 250 } });
     }
   }

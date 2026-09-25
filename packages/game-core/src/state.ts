@@ -10,6 +10,7 @@ import {
   type ScenarioData,
 } from '@ttc/shared';
 import { computePersonality, isAlive } from './characters';
+import { autoFillCouncil } from './council';
 import { seedRng } from './rng';
 import { emptyStats } from './stats';
 
@@ -59,6 +60,7 @@ export function createGameState(
     secrets: data.secrets,
     hooks: data.hooks,
     factions: data.factions,
+    pacts: data.pacts ?? {},
     activeEvents: {},
     scheduledEvents: {},
     proposals: {},
@@ -69,6 +71,8 @@ export function createGameState(
     c.personality = computePersonality(c.traits);
     c.isPlayer = false;
   }
+  // Conseils : pourvus au démarrage pour chaque dirigeant.
+  for (const c of Object.values(state.characters)) if (c.titleIds.length && !c.council && isAlive(c)) autoFillCouncil(state, c.id);
   const taken = new Set<string>();
   for (const p of opts.players) {
     if (!isPlayableCharacter(state, p.characterId)) throw new GameError(ErrorCodes.CHARACTER_NOT_PLAYABLE, 'Personnage non jouable');

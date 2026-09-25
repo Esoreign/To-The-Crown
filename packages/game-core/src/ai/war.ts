@@ -6,15 +6,13 @@ import type { Army, Character, GameState, War } from '@ttc/shared';
 import { armyMen, findPath, mergeArmies, orderMove, raiseArmy, disbandArmy } from '../armies';
 import { isAlive } from '../characters';
 import { safeRun, type Ctx } from '../context';
-import { PROVINCE_GEO } from '../content';
+import { PROVINCE_GEO, provinceKm } from '../content';
 import { availableLevies } from '../economy';
 import { capitalProvinceOf, holderOfProvince, realmProvinceIds, topLiegeId } from '../realm';
 import { canEnforce, offerPeace, sideOf, warGoalProvinces, warsOf } from '../war';
 
 function dist(a: string, b: string): number {
-  const ga = PROVINCE_GEO[a]!;
-  const gb = PROVINCE_GEO[b]!;
-  return Math.hypot(ga.centroid[0] - gb.centroid[0], ga.centroid[1] - gb.centroid[1]);
+  return provinceKm(a, b);
 }
 
 function enemiesOf(state: GameState, charId: string): Set<string> {

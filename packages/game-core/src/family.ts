@@ -71,12 +71,12 @@ export function descendantsOf(state: S, c: Character): Character[] {
 type Indexed = Pick<GameView, 'characters' | 'relations' | 'alliances' | 'wars' | 'houses'>;
 
 export function houseMembers(state: Indexed, houseId: string, aliveOnly = true): Character[] {
-  if (aliveOnly) return (getIndex(state).membersByHouse.get(houseId) ?? []).slice();
+  if (aliveOnly) return (getIndex(state).membersByHouse.get(houseId) ?? []).map((id) => state.characters[id]!);
   return Object.values(state.characters).filter((c) => c.houseId === houseId);
 }
 
 export function dynastyMembers(state: Indexed, dynastyId: string, aliveOnly = true): Character[] {
-  if (aliveOnly) return (getIndex(state).membersByDynasty.get(dynastyId) ?? []).slice();
+  if (aliveOnly) return (getIndex(state).membersByDynasty.get(dynastyId) ?? []).map((id) => state.characters[id]!);
   return Object.values(state.characters).filter((c) => {
     if (!c.houseId || (aliveOnly && c.death !== null)) return false;
     return state.houses[c.houseId]?.dynastyId === dynastyId;

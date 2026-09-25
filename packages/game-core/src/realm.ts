@@ -56,7 +56,7 @@ type Indexed = Pick<GameView, 'characters' | 'relations' | 'alliances' | 'wars' 
 
 /** Vassaux directs vivants. */
 export function directVassals(state: Indexed, liegeId: string): Character[] {
-  return (getIndex(state).vassalsByLiege.get(liegeId) ?? []).slice();
+  return (getIndex(state).vassalsByLiege.get(liegeId) ?? []).map((id) => state.characters[id]!);
 }
 
 /** Tous les vassaux (récursif). */
@@ -67,8 +67,8 @@ export function allVassals(state: Indexed, liegeId: string): Character[] {
   while (stack.length) {
     const id = stack.pop()!;
     for (const v of byLiege.get(id) ?? []) {
-      out.push(v);
-      stack.push(v.id);
+      out.push(state.characters[v]!);
+      stack.push(v);
     }
   }
   return out;
@@ -111,7 +111,7 @@ export function topLiegeOfProvince(state: Pick<GameView, 'titles' | 'characters'
 export function domainLimit(state: ReadState, c: Character): number {
   const d = BALANCE.domain;
   const rank = rankOf(c);
-  const base = d.base + Math.floor(skill(state, c, 'stewardship') / d.perStewardship) + (d.byRank[rank - 1] ?? 0);
+  const base = d.base + Math.floor(skill(state, c, 'stewardship') / d.perStewardship) + (d.byRank[rank - 1] ?? 0) + (d.byGovernment[c.government ?? ''] ?? 0);
   return base + Math.round(characterModifier(state, c, 'domain_limit'));
 }
 
@@ -139,7 +139,7 @@ export function locationOf(state: Pick<GameView, 'characters'>, c: Character): s
 
 /** Courtisans vivants d'un dirigeant (non titrés, résidant à sa cour). */
 export function courtiers(state: Indexed, rulerId: string): Character[] {
-  return (getIndex(state).courtiersByCourt.get(rulerId) ?? []).filter((c) => isAlive(c));
+  return (getIndex(state).courtiersByCourt.get(rulerId) ?? []).map((id) => state.characters[id]!).filter((c) => isAlive(c));
 }
 
 /** Nombre de comtés contrôlés (royaume complet). */

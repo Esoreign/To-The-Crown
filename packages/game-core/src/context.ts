@@ -11,18 +11,34 @@ import type {
   SoundKey,
   StepOutput,
 } from '@ttc/shared';
+import { isDraft, original } from 'immer';
 import { gameRng, type Rng } from './rng';
+import { readView } from './view';
 
 export interface Ctx {
   s: GameState;
+  /**
+   * État au début de l'étape (hors brouillon Immer) : à utiliser pour les
+   * parcours en lecture seule de grandes collections (repérage des
+   * personnages à traiter), puis agir sur `s`. Il ne reflète pas les
+   * mutations de l'étape en cours.
+   */
+  base: GameState;
+  /** Vue de lecture à jour et économe (voir view.ts) : jamais pour muter. */
+  r: GameState;
   rng: Rng;
   out: StepOutput;
   /** Autorise les commandes de développement. */
   dev?: boolean;
+  /** Recopie l'état du PRNG dans le brouillon (fin d'étape). */
+  flush: () => void;
 }
 
 export function createCtx(s: GameState, dev = false): Ctx {
-  return { s, rng: gameRng(s), out: emptyOutput(), dev };
+  const draft = isDraft(s);
+  const base = draft ? (original(s) as GameState) : s;
+  const rng = gameRng(s, draft);
+  return { s, base, r: readView(s), rng, out: emptyOutput(), dev, flush: rng.flush };
 }
 
 export function emptyOutput(): StepOutput {

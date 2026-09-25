@@ -10,7 +10,7 @@ import { ageOf, domainProvinceIds, isAdult, isAlive, skill } from '../characters
 import { safeRun, type Ctx } from '../context';
 import { CULTURE_BY_ID, DEJURE_CHILDREN, TITLE_DEFS } from '../content';
 import { autoFillCouncil, ROLE_SKILL } from '../council';
-import { assignGuardian, proposeAlliance, proposeVassalization, evaluateVassalization, grantTitle, sendGift, evaluateAlliance } from '../diplomacy';
+import { assignGuardian, canGrantTitle, proposeAlliance, proposeVassalization, evaluateVassalization, grantTitle, sendGift, evaluateAlliance } from '../diplomacy';
 import { availableLevies, ledgerOf, militaryStrength } from '../economy';
 import { childrenOf, siblingsOf } from '../family';
 import { marriageCandidates, proposeMarriage } from '../marriage';
@@ -53,9 +53,9 @@ function manageCouncil(ctx: Ctx, c: Character): void {
   const council = c.council;
   if (!council) return;
   const domain = domainProvinceIds(c);
-  const lowControl = domain.some((p) => (ctx.s.provinces[p]?.control ?? 100) < 70);
-  const vassals = directVassals(ctx.s, c.id);
-  const avgOp = vassals.length ? vassals.reduce((s, v) => s + opinion(ctx.s, v.id, c.id), 0) / vassals.length : 20;
+  const lowControl = domain.some((p) => (ctx.r.provinces[p]?.control ?? 100) < 70);
+  const vassals = directVassals(ctx.r, c.id);
+  const avgOp = vassals.length ? vassals.reduce((acc, v) => acc + opinion(ctx.r, v.id, c.id), 0) / vassals.length : 20;
   const tasks: Record<string, CouncilTask> = {
     chancellor: avgOp < 5 ? 'chancellor_relations' : 'chancellor_prestige',
     marshal: lowControl ? 'marshal_control' : 'marshal_train',
@@ -74,7 +74,8 @@ function manageCouncil(ctx: Ctx, c: Character): void {
 }
 
 function manageEducation(ctx: Ctx, c: Character): void {
-  const s = ctx.s;
+  // Lectures via la vue économe ; toute mutation passe par ctx (ctx.s).
+  const s = ctx.r;
   const kids = courtiers(s, c.id).filter((k) => !isAdult(k, s.date) && ageOf(k, s.date) >= 6 && k.education && !k.education.tutorId);
   if (!kids.length) return;
   const tutors = [c, ...courtiers(s, c.id)].filter((t) => isAdult(t, s.date) && !t.isPlayer && !t.prisonerOf);
@@ -93,7 +94,8 @@ const BUILD_PRIORITY: Record<string, number> = {
 };
 
 function manageEconomy(ctx: Ctx, c: Character): void {
-  const s = ctx.s;
+  // Lectures via la vue économe ; toute mutation passe par ctx (ctx.s).
+  const s = ctx.r;
   const ledger = ledgerOf(s, c);
   const reserve = Math.max(BALANCE.ai.constructionReserve, ledger.net * BALANCE.economy.aiEmergencyMonths);
   const atWar = warsOf(s, c.id).length > 0;
@@ -117,7 +119,8 @@ function manageEconomy(ctx: Ctx, c: Character): void {
 }
 
 function familyToMarry(ctx: Ctx, c: Character): Character[] {
-  const s = ctx.s;
+  // Lectures via la vue économe ; toute mutation passe par ctx (ctx.s).
+  const s = ctx.r;
   const pool = [...childrenOf(s, c), ...siblingsOf(s, c)];
   if (!c.spouseId && ageOf(c, s.date) < 55) pool.unshift(c);
   return pool.filter((x) => {
@@ -130,11 +133,12 @@ function familyToMarry(ctx: Ctx, c: Character): Character[] {
 
 function manageMarriages(ctx: Ctx, c: Character): void {
   if (!ctx.rng.chance(0.5)) return;
-  const s = ctx.s;
+  // Lectures via la vue économe ; toute mutation passe par ctx (ctx.s).
+  const s = ctx.r;
   const pool = familyToMarry(ctx, c);
   const suitor = pool[0];
   if (!suitor) return;
-  const candidates = marriageCandidates(s, c.id, suitor.id, 25, 40).filter((x) => x.acceptance.accept);
+  const candidates = marriageCandidates(s, c.id, suitor.id, 10, BALANCE.ai.marriageEvaluate, ctx.base).filter((x) => x.acceptance.accept);
   if (!candidates.length) return;
   // Valeur pour nous : rang du décideur, alliance potentielle.
   const scored = candidates
@@ -150,7 +154,8 @@ function manageMarriages(ctx: Ctx, c: Character): void {
 }
 
 function manageTitles(ctx: Ctx, c: Character): void {
-  const s = ctx.s;
+  // Lectures via la vue économe ; toute mutation passe par ctx (ctx.s).
+  const s = ctx.r;
   // Créer des titres supérieurs.
   const candidates = new Set<string>();
   for (const t of c.titleIds) {
@@ -174,16 +179,18 @@ function manageTitles(ctx: Ctx, c: Character): void {
   if (!to) return;
   const primaryCap = TITLE_DEFS[c.titleIds[0]!]?.capitalProvinceId;
   const county = c.titleIds.filter((t) => TITLE_DEFS[t]!.rank === 'county' && TITLE_DEFS[t]!.provinceId !== primaryCap).pop();
-  if (county) grantTitle(ctx, c.id, county, to.id, (t, toId, liege) => transferTitle(s, t, toId, 'granted', { liegeId: liege }));
+  if (county && !canGrantTitle(s, c.id, county, to.id)) grantTitle(ctx, c.id, county, to.id, (t, toId, liege) => transferTitle(ctx.s, t, toId, 'granted', { liegeId: liege }));
   void DEJURE_CHILDREN;
 }
 
 function manageDiplomacy(ctx: Ctx, c: Character): void {
-  const s = ctx.s;
+  // Lectures via la vue économe ; toute mutation passe par ctx (ctx.s).
+  const s = ctx.r;
   const neighbors = neighborRulers(s, c.id);
   if (isIndependent(c) && alliesOf(s, c.id).length < 2 && ctx.rng.chance(0.3)) {
     const options = neighbors
       .filter((n) => !(c.cooldowns[`alliance_${n}`] && c.cooldowns[`alliance_${n}`]! > s.date))
+      .slice(0, BALANCE.ai.allianceEvaluate)
       .map((n) => ({ n, acc: evaluateAlliance(s, c.id, n) }))
       .filter((x) => x.acc.accept && !s.characters[x.n]!.isPlayer)
       .sort((a, b) => b.acc.score - a.acc.score);
@@ -214,7 +221,8 @@ function manageDiplomacy(ctx: Ctx, c: Character): void {
 }
 
 function manageSchemes(ctx: Ctx, c: Character): void {
-  const s = ctx.s;
+  // Lectures via la vue économe ; toute mutation passe par ctx (ctx.s).
+  const s = ctx.r;
   if (!ctx.rng.chance(0.25)) return;
   const active = Object.values(s.schemes).filter((x) => x.ownerId === c.id && x.status === 'active');
   const hasHostile = active.some((x) => SCHEME_DEFS[x.type].hostile);
@@ -269,7 +277,8 @@ const CB_VALUE: Record<string, number> = {
 };
 
 function sideStrength(ctx: Ctx, leaderId: string): number {
-  const s = ctx.s;
+  // Lectures via la vue économe ; toute mutation passe par ctx (ctx.s).
+  const s = ctx.r;
   const leader = s.characters[leaderId]!;
   let total = militaryStrength(s, leader);
   for (const a of alliesOf(s, leaderId)) total += militaryStrength(s, s.characters[a]!) * 0.5;
@@ -277,7 +286,8 @@ function sideStrength(ctx: Ctx, leaderId: string): number {
 }
 
 function considerWar(ctx: Ctx, c: Character): void {
-  const s = ctx.s;
+  // Lectures via la vue économe ; toute mutation passe par ctx (ctx.s).
+  const s = ctx.r;
   if (warsOf(s, c.id).length) return;
   if (!isAdult(c, s.date)) return;
   const p = c.personality;

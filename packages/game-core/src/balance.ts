@@ -37,10 +37,23 @@ export const BALANCE = {
     leviesPerDevelopment: 0.012,
   },
   domain: {
-    base: 2,
+    base: 5,
     /** +1 par tranche de 6 points de gestion. */
     perStewardship: 6,
-    byRank: [0, 1, 2, 3],
+    byRank: [0, 3, 6, 9],
+    /** Bonus selon la forme de gouvernement (domaines lâches ou administrés). */
+    byGovernment: {
+      tribal_confederation: 5,
+      chiefdom: 4,
+      steppe_confederation: 6,
+      clan_realm: 3,
+      mandala_kingdom: 2,
+      tributary_empire: 3,
+      imperial_bureaucracy: 4,
+      mamluk_sultanate: 2,
+      iqta_realm: 2,
+      centralized_monarchy: 1,
+    } as Record<string, number>,
   },
   prestige: {
     monthlyByRank: [0.2, 0.5, 1.0, 1.6],
@@ -132,18 +145,26 @@ export const BALANCE = {
     disruptPerSkill: 0.4,
   },
   army: {
-    /** Jours de base pour traverser une province. */
-    baseMoveDays: 8,
-    straitMoveDays: 16,
+    /** Distance parcourue par jour de marche (km) en terrain facile. */
+    kmPerDay: 22,
+    /** Jours minimum pour entrer dans une province voisine. */
+    minMoveDays: 2,
+    /** Jours supplémentaires pour franchir un détroit. */
+    straitExtraDays: 4,
     terrainMoveMult: {
       plains: 1,
       farmlands: 1,
       steppe: 0.9,
+      savanna: 1,
       hills: 1.3,
       forest: 1.3,
+      jungle: 1.7,
       marsh: 1.6,
       mountains: 1.8,
       coast_cliffs: 1.2,
+      desert: 1.4,
+      tundra: 1.4,
+      ice: 2.5,
     } as Record<string, number>,
     maxBattleDays: 12,
     minBattleDays: 3,
@@ -188,9 +209,18 @@ export const BALANCE = {
     successBase: 0.55,
     murderSuccessBase: 0.4,
   },
+  succession: {
+    /** Taille maximale du collège électoral (en plus du dirigeant). */
+    maxElectors: 7,
+  },
   ai: {
     /** Jours entre deux évaluations IA d'un dirigeant. */
     thinkIntervalDays: 30,
+    /** Intervalle par rang (comte, duc, roi, empereur) hors guerre. */
+    thinkIntervalByRank: [120, 75, 45, 30],
+    /** Candidats évalués en détail par recherche de mariage / d'alliance. */
+    marriageEvaluate: 15,
+    allianceEvaluate: 6,
     thinkJitter: 20,
     warPowerRatio: 1.3,
     warMinGoldMonths: 3,

@@ -29,6 +29,7 @@ export function stepDay(state: GameState, opts: { dev?: boolean } = {}): StepRes
   const [next, patches] = produceWithPatches(state, (draft) => {
     const ctx = createCtx(draft as GameState, opts.dev);
     advanceDay(ctx);
+    ctx.flush();
     draft.version += 1;
     output = ctx.out;
   });
@@ -41,6 +42,7 @@ export function runCommand(state: GameState, actorCharacterId: string, cmd: Game
   const [next, patches] = produceWithPatches(state, (draft) => {
     const ctx = createCtx(draft as GameState, opts.dev);
     result = applyCommand(ctx, actorCharacterId, cmd);
+    ctx.flush();
     draft.version += 1;
     output = ctx.out;
   });

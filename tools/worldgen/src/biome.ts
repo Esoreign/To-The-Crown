@@ -36,7 +36,7 @@ export function fbm(x: number, y: number, seed: number): number {
 
 /** Flou boîte séparable (3 passes ≈ gaussienne), bouclé en longitude. */
 export function blurField(src: Float32Array, r: number, passes = 3): Float32Array {
-  let a = new Float32Array(src);
+  const a = new Float32Array(src);
   const tmp = new Float32Array(src.length);
   for (let p = 0; p < passes; p++) {
     for (let y = 0; y < H; y++) {

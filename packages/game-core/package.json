@@ -11,7 +11,8 @@
     "test": "vitest run",
     "simulate": "tsx scripts/simulate.ts",
     "scenario:generate": "tsx scripts/generate-scenario.ts",
-    "check:events": "tsx scripts/check-events.ts"
+    "check:events": "tsx scripts/check-events.ts",
+    "perf": "tsx scripts/perf.ts"
   },
   "dependencies": {
     "@ttc/content": "workspace:*",

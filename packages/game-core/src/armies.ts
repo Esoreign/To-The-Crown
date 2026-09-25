@@ -16,7 +16,7 @@ import {
 import { BALANCE } from './balance';
 import { addTrait, characterModifier, domainProvinceIds, isAdult, isAlive, skill } from './characters';
 import { chronicle, log, newId, notify, type Ctx } from './context';
-import { CULTURE_BY_ID, PROVINCE_GEO, TRAIT_BY_ID, UNIT_BY_ID } from './content';
+import { CULTURE_BY_ID, PROVINCE_GEO, TRAIT_BY_ID, UNIT_BY_ID, kmBetween } from './content';
 import { killCharacter } from './death';
 import { fireOnAction } from './events/engine';
 import { vassalLevyShare, domainPenalty } from './economy';
@@ -38,9 +38,9 @@ export function moveDays(from: string, to: string): number {
   const gf = PROVINCE_GEO[from];
   if (!g || !gf) return 99;
   const strait = gf.straits.includes(to);
-  const base = strait ? BALANCE.army.straitMoveDays : BALANCE.army.baseMoveDays;
-  const dist = Math.hypot(g.centroid[0] - gf.centroid[0], g.centroid[1] - gf.centroid[1]);
-  return Math.max(3, Math.round(base * (BALANCE.army.terrainMoveMult[g.terrain] ?? 1) * (dist / 230)));
+  const km = kmBetween(gf.centroid, g.centroid);
+  const days = (km / BALANCE.army.kmPerDay) * (BALANCE.army.terrainMoveMult[g.terrain] ?? 1) + (strait ? BALANCE.army.straitExtraDays : 0);
+  return Math.max(BALANCE.army.minMoveDays, Math.round(days));
 }
 
 /** A* sur le graphe des provinces (coût = jours de marche). */
@@ -50,7 +50,7 @@ export function findPath(from: string, to: string): string[] | null {
   const goal = PROVINCE_GEO[to]!;
   const h = (id: string) => {
     const g = PROVINCE_GEO[id]!;
-    return Math.hypot(g.centroid[0] - goal.centroid[0], g.centroid[1] - goal.centroid[1]) / 60;
+    return (kmBetween(g.centroid, goal.centroid) / BALANCE.army.kmPerDay) * 0.9;
   };
   const open = new Map<string, number>([[from, h(from)]]);
   const gScore = new Map<string, number>([[from, 0]]);
@@ -677,24 +677,35 @@ export function dailySieges(ctx: Ctx): void {
 }
 
 /** Régénération mensuelle des levées et garnisons. */
-export function monthlyLevies(s: GameState): void {
+export function monthlyLevies(ctx: Ctx): void {
+  const s = ctx.s;
+  const r = ctx.r;
   const raised = new Map<string, number>();
-  for (const a of Object.values(s.armies)) {
+  for (const a of Object.values(r.armies)) {
     for (const [pid, men] of Object.entries(a.leviesFrom)) raised.set(pid, (raised.get(pid) ?? 0) + men);
   }
-  for (const p of Object.values(s.provinces)) {
-    const max = Math.max(0, provinceMaxLevies(s, p.id) - (raised.get(p.id) ?? 0));
-    const holder = holderOfProvince(s, p.id);
-    const holderChar = holder ? s.characters[holder] : undefined;
+  const besieged = new Set(Object.values(r.sieges).map((sg) => sg.provinceId));
+  for (const p of Object.values(r.provinces)) {
+    const max = Math.max(0, provinceMaxLevies(r, p.id) - (raised.get(p.id) ?? 0));
+    const gmax = maxGarrison(r, p.id);
+    const occupied = !!r.titles[PROVINCE_GEO[p.id]!.countyTitleId]?.occupiedBy;
+    const needLevies = p.levies < max || p.levies > max;
+    const needGarrison = !occupied && !besieged.has(p.id) && p.garrison < gmax;
+    if (!needLevies && !needGarrison) continue;
     let regen = BALANCE.army.levyRegenMonthly;
-    const marshalOwner = holderChar ? (holderChar.liegeId && s.characters[holderChar.liegeId]) || holderChar : undefined;
+    const holder = holderOfProvince(r, p.id);
+    const holderChar = holder ? r.characters[holder] : undefined;
+    const marshalOwner = holderChar ? (holderChar.liegeId && r.characters[holderChar.liegeId]) || holderChar : undefined;
     if (marshalOwner?.council?.marshal.task === 'marshal_train' && marshalOwner.council.marshal.characterId) {
-      const m = s.characters[marshalOwner.council.marshal.characterId];
-      if (m) regen *= 1 + skill(s, m, 'martial') * 0.03;
+      const m = r.characters[marshalOwner.council.marshal.characterId];
+      if (m) regen *= 1 + skill(r, m, 'martial') * 0.03;
     }
-    p.levies = Math.min(max, Math.round(p.levies + max * regen));
-    const occupied = !!s.titles[PROVINCE_GEO[p.id]!.countyTitleId]?.occupiedBy;
-    const gmax = maxGarrison(s, p.id);
-    if (!occupied && !Object.values(s.sieges).some((sg) => sg.provinceId === p.id)) p.garrison = Math.min(gmax, Math.round(p.garrison + gmax * 0.1));
+    const levies = Math.min(max, Math.round(p.levies + max * regen));
+    const garrison = needGarrison ? Math.min(gmax, Math.round(p.garrison + gmax * 0.1)) : p.garrison;
+    if (levies !== p.levies || garrison !== p.garrison) {
+      const d = s.provinces[p.id]!;
+      d.levies = levies;
+      d.garrison = garrison;
+    }
   }
 }

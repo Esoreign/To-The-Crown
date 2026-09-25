@@ -42,7 +42,7 @@ export function checkInvariants(s: GameState): string[] {
     }
     if (c.titleIds.length === 0 && c.liegeId) errors.push(`${c.id} : sans terre mais vassal`);
   }
-  if (alive > 2500) errors.push(`Explosion démographique : ${alive} vivants`);
+  if (alive > 12000) errors.push(`Explosion démographique : ${alive} vivants`);
   if (alive < 150) errors.push(`Effondrement démographique : ${alive} vivants`);
   for (const t of Object.values(s.titles)) {
     const def = TITLE_DEFS[t.id]!;

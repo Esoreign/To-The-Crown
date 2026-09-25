@@ -57,4 +57,23 @@ export function neighborsOf(provinceId: string): string[] {
   return g ? [...g.neighbors, ...g.straits] : [];
 }
 
+/** Distance orthodromique (km) entre deux points [lon, lat]. */
+export function kmBetween(a: readonly [number, number], b: readonly [number, number]): number {
+  const r = Math.PI / 180;
+  const dLat = (b[1] - a[1]) * r;
+  let dLon = Math.abs(b[0] - a[0]);
+  if (dLon > 180) dLon = 360 - dLon;
+  dLon *= r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[1] * r) * Math.cos(b[1] * r) * Math.sin(dLon / 2) ** 2;
+  return 12742 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** Distance (km) entre les centres de deux provinces. */
+export function provinceKm(a: string, b: string): number {
+  const ga = PROVINCE_GEO[a];
+  const gb = PROVINCE_GEO[b];
+  if (!ga || !gb) return Infinity;
+  return kmBetween(ga.centroid, gb.centroid);
+}
+
 export const PERSONALITY_TRAIT_IDS = CONTENT.traits.filter((t) => t.category === 'personality').map((t) => t.id);

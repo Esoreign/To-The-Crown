@@ -572,6 +572,14 @@ const deName = (n: string) => (/^[aeiouyàâäéèêëîïôöûüœh]/i.test(n)
   }
 }
 for (const i of ids) if (owner[i]! >= 0) polities[owner[i]!]!.provinces.push(i);
+// Une entité de rang comtal devenue trop vaste est gouvernée comme un duché
+// (l'intitulé du dirigeant reste celui de la fiche).
+for (const pol of polities) {
+  if (pol.spec.rank === 'county' && pol.provinces.length > 4) {
+    const gov = GOVERNMENT_BY_ID[pol.spec.gov]!;
+    pol.spec = { ...pol.spec, rank: 'duchy', title: pol.spec.title ?? gov.rulerTitles.county };
+  }
+}
 
 // Confession : dans le monde malais, la population suit la foi de la cour.
 const COURT_FAITH = new Set(['malay', 'philippine', 'bugis', 'dayak']);
@@ -700,7 +708,18 @@ for (const pol of polities) {
   if (!pol.provinces.length) continue;
   const size = DIV_SIZE[s.gov] ?? 7;
   const k = pol.provinces.length <= size * 1.5 ? 1 : Math.round(pol.provinces.length / size);
-  const groups = partition(pol.provinces, k, pol.capital > 0 && pol.provinces.includes(pol.capital) ? pol.capital : pol.provinces[0]!);
+  const first = pol.capital > 0 && pol.provinces.includes(pol.capital) ? pol.capital : pol.provinces[0]!;
+  const groups = partition(pol.provinces, k, first);
+  // Équilibrage : une division trop grande est coupée en deux (récursivement).
+  const maxSize = Math.ceil(size * 1.4);
+  for (let guard = 0; guard < 200; guard++) {
+    const big = groups.findIndex((g) => g.length > maxSize);
+    if (big < 0) break;
+    const g = groups[big]!;
+    const halves = partition(g, 2, g.includes(first) ? first : g[0]!);
+    if (halves.length < 2) break;
+    groups.splice(big, 1, ...halves);
+  }
   // Groupe de la capitale en premier.
   groups.sort((a, b) => Number(b.includes(pol.capital)) - Number(a.includes(pol.capital)));
   const list: DivisionOut[] = groups.map((g, n) => ({ id: n === 0 ? `d_${s.id}` : `d_${s.id}_${n}`, polity: s.id, provinces: g, seat: n === 0 && g.includes(pol.capital) ? pol.capital : seatOf(g) }));
@@ -721,7 +740,6 @@ function chain(id: string): PolitySpec[] {
   }
   return out;
 }
-const RANK_N = { county: 1, duchy: 2, kingdom: 3, empire: 4 } as const;
 const DEJURE_EMPIRE: Record<string, string> = { yan: 'ming' };
 const MACRO_EMPIRE: Record<MacroRegion, string> = {
   europe: 'Empire d’Europe', mena: 'Empire du Levant et de l’Iran', ssa: 'Empire d’Afrique', india: 'Empire des Indes', eastasia: 'Empire d’Asie orientale',
@@ -886,7 +904,7 @@ const world = {
     terrain: ids.map((i) => TERRAINS.indexOf(prov[i]!.terrain)),
     coastal: ids.map((i) => (prov[i]!.coastal ? 1 : 0)),
     neighbors: ids.map((i) => prov[i]!.neighbors.filter((n) => prov[n])),
-    straits: ids.map((i) => landAdj[i]!.map(([v]) => v).filter((v) => straitSet.has(`${Math.min(i, v)}:${Math.max(i, v)}`))),
+    straits: ids.map((i) => [...new Set(landAdj[i]!.map(([v]) => v).filter((v) => straitSet.has(`${Math.min(i, v)}:${Math.max(i, v)}`) && !prov[i]!.neighbors.includes(v)))]),
     seas: ids.map((i) => prov[i]!.seas),
     culture: ids.map((i) => cultureList.indexOf(provCulture[i]!)),
     faith: ids.map((i) => faithList.indexOf(provFaith[i]!)),
@@ -909,6 +927,8 @@ const start = {
     .filter((p) => p.provinces.length || p.spec.union || p.spec.id === 'hre')
     .map((p) => ({
       id: p.spec.id,
+      rank: p.spec.rank,
+      ...(p.spec.title ? { title: p.spec.title } : {}),
       capital: p.capital > 0 ? p.capital : provinceAt(p.spec.cap[0], p.spec.cap[1]),
       provinces: p.provinces,
       divisions: (polityDivisions.get(p.spec.id) ?? []).map((d) => ({ id: d.id, provinces: d.provinces, seat: d.seat })),

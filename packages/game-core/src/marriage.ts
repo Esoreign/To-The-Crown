@@ -196,23 +196,27 @@ export function marriageCandidates(
   suitorId: string,
   limit = 40,
   maxEvaluate = 400,
+  /** Collection à parcourir pour le pré-filtrage (état hors brouillon si disponible). */
+  scan: Pick<GameView, 'characters'> = state,
 ): { id: string; acceptance: Acceptance }[] {
   const suitor = state.characters[suitorId];
   if (!suitor) return [];
   const sAge = ageOf(suitor, state.date);
   const pre: { c: Character; cheap: number }[] = [];
-  for (const c of Object.values(state.characters)) {
+  for (const c of Object.values(scan.characters)) {
     if (c.death !== null || c.sex === suitor.sex || c.spouseId || c.betrothedId || c.prisonerOf) continue;
     if (c.isPlayer && c.id !== actorId) continue;
     const age = ageOf(c, state.date);
     if (Math.abs(age - sAge) > 20 || age < 12) continue;
     if (!c.courtId && !c.titleIds.length) continue;
-    const court = c.titleIds.length ? c : state.characters[c.courtId ?? ''];
+    const court = c.titleIds.length ? c : scan.characters[c.courtId ?? ''];
     pre.push({ c, cheap: (court ? rankOf(court) * 10 : 0) - Math.abs(age - sAge) });
   }
   pre.sort((a, b) => b.cheap - a.cheap);
   const out: { id: string; acceptance: Acceptance }[] = [];
-  for (const { c } of pre.slice(0, maxEvaluate)) {
+  for (const { c: scanned } of pre.slice(0, maxEvaluate)) {
+    const c = state.characters[scanned.id];
+    if (!c || c.death !== null || c.spouseId || c.betrothedId) continue;
     if (marriageBlocker(state, suitor, c)) continue;
     out.push({ id: c.id, acceptance: evaluateMarriage(state, actorId, suitorId, c.id) });
   }

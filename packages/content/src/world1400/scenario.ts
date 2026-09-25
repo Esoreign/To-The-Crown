@@ -41,7 +41,15 @@ export const START_1400 = toDay(1400, 1, 1);
 
 interface StartData {
   fillers: PolitySpec[];
-  polities: { id: string; capital: number; provinces: number[]; divisions: { id: string; provinces: number[]; seat: number }[] }[];
+  polities: {
+    id: string;
+    /** Rang effectif (une entité comtale trop vaste est promue duché). */
+    rank?: TitleRank;
+    title?: [string, string];
+    capital: number;
+    provinces: number[];
+    divisions: { id: string; provinces: number[]; seat: number }[];
+  }[];
 }
 const START = startJson as unknown as StartData;
 
@@ -101,7 +109,6 @@ function makeRng(seed: number) {
     },
   };
 }
-type Rng = ReturnType<typeof makeRng>;
 
 const PERSONALITY = TRAITS.filter((t) => t.category === 'personality');
 const TRAIT_OPP = new Map(TRAITS.map((t) => [t.id, t.opposites ?? []]));
@@ -346,7 +353,7 @@ function buildScenario(): ScenarioData {
     c.crownAuthority = Math.min(3, START_AUTHORITY[gov]);
     c.government = gov;
     c.legitimacy = rng.int(55, 85);
-    c.aiNextThink = START_1400 + rng.int(1, 30);
+    c.aiNextThink = START_1400 + rng.int(1, [30, 120, 75, 45, 30][r]!);
   }
   function courtiers(ruler: Character, n: number): void {
     for (let i = 0; i < n; i++) {
@@ -356,7 +363,13 @@ function buildScenario(): ScenarioData {
   }
 
   // --- Entités politiques ------------------------------------------------
-  const specs = new Map<string, PolitySpec>([...POLITIES_1400, ...START.fillers].map((s) => [s.id, s]));
+  const startRank = new Map(START.polities.map((p) => [p.id, p]));
+  const specs = new Map<string, PolitySpec>(
+    [...POLITIES_1400, ...START.fillers].map((s) => {
+      const st = startRank.get(s.id);
+      return [s.id, st?.rank && st.rank !== s.rank ? { ...s, rank: st.rank, ...(st.title && !s.title ? { title: st.title } : {}) } : s];
+    }),
+  );
   const rulerOf = new Map<string, string>();
   const primaryOf = new Map<string, string>();
   const startById = new Map(START.polities.map((p) => [p.id, p]));

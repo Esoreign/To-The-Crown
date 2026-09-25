@@ -163,7 +163,7 @@ function main(): void {
         .filter((r) => r.length);
       parts.push([outer, ...holes] as never);
     }
-    let result: Position[][][] = [];
+    let result: Position[][][];
     try {
       result = parts.length ? (polygonClipping.intersection(polys as never, parts) as unknown as Position[][][]) : [];
     } catch {
