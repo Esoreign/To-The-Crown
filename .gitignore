@@ -20,3 +20,4 @@ blob-report/
 volumes/
 *.tsbuildinfo
 .eslintcache
+.cache/

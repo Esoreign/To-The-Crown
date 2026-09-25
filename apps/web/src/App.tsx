@@ -3,6 +3,7 @@ import { useAuth } from './state/auth';
 import { useRouter } from './lib/router';
 import { useUi } from './state/ui';
 import { TooltipLayer } from './ui/common';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { startMusic, unlockAudio } from './audio/audio';
 import { TitleScreen } from './screens/TitleScreen';
 import { CreditsScreen } from './screens/CreditsScreen';
@@ -87,7 +88,9 @@ export function App() {
 
   return (
     <>
-      <Suspense fallback={<Loading />}>{user || route.name === 'title' || route.name === 'credits' ? screen : <Loading />}</Suspense>
+      <ErrorBoundary resetKey={route.name}>
+        <Suspense fallback={<Loading />}>{user || route.name === 'title' || route.name === 'credits' ? screen : <Loading />}</Suspense>
+      </ErrorBoundary>
       <Toasts />
       <TooltipLayer />
     </>

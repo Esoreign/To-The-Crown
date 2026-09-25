@@ -16,7 +16,11 @@ import { App } from './App';
 
 applyDocumentSettings();
 
-createRoot(document.getElementById('root')!).render(
+// Diagnostic : pile de composants de toute erreur React (visible dans la console).
+createRoot(document.getElementById('root')!, {
+  onUncaughtError: (error, info) =>
+    console.error('[To The Crown] Erreur non rattrapée', error, info.componentStack),
+}).render(
   <StrictMode>
     <App />
   </StrictMode>,
