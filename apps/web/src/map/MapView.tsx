@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { GameView } from '@ttc/shared';
 import { computeColors } from './colors';
-import { MapRenderer, type MapCallbacks, type MapStyle } from './MapRenderer';
+import { WorldMap, type MapCallbacks, type MapStyle } from './WorldMap';
 import type { MapMode } from '../state/ui';
 
 interface Props extends MapCallbacks {
@@ -12,15 +12,21 @@ interface Props extends MapCallbacks {
   selectedProvince?: string | null;
   highlight?: string[];
   selectedArmy?: string | null;
-  focus?: { provinceId: string; at: number; zoom?: number } | null;
-  onReady?(r: MapRenderer): void;
+  /** Cadrage demandé : province, ou royaume entier d'un souverain (`realmOf`). */
+  focus?: { provinceId: string; at: number; zoom?: number; realmOf?: string } | null;
+  onReady?(r: WorldMap): void;
   className?: string;
 }
 
-/** Monte le moteur PixiJS et relaie les changements d'état (sans re-render React par frame). */
+function applyFocus(r: WorldMap, f: NonNullable<Props['focus']>): void {
+  if (f.realmOf) r.focusRealm(f.realmOf);
+  else r.centerOn(f.provinceId, f.zoom);
+}
+
+/** Monte la carte du monde (MapLibre) et relaie les changements d'état (sans re-render React par frame). */
 export function MapView(props: Props) {
   const host = useRef<HTMLDivElement>(null);
-  const renderer = useRef<MapRenderer | null>(null);
+  const renderer = useRef<WorldMap | null>(null);
   const cbs = useRef<Props>(props);
   cbs.current = props;
   const lastColorAt = useRef(0);
@@ -28,7 +34,7 @@ export function MapView(props: Props) {
 
   useEffect(() => {
     const el = host.current!;
-    const r = new MapRenderer(props.styleMode, {
+    const r = new WorldMap(props.styleMode, {
       onHover: (id) => cbs.current.onHover?.(id),
       onClick: (id, e) => cbs.current.onClick?.(id, e),
       onRightClick: (id, e) => cbs.current.onRightClick?.(id, e),
@@ -45,7 +51,7 @@ export function MapView(props: Props) {
       const cur = cbs.current;
       r.setSelection(cur.selectedProvince ?? null, cur.highlight ?? []);
       r.setSelectedArmy(cur.selectedArmy ?? null);
-      if (cur.focus) r.centerOn(cur.focus.provinceId, cur.focus.zoom);
+      if (cur.focus) applyFocus(r, cur.focus);
     });
     return () => {
       cancelled = true;
@@ -84,7 +90,7 @@ export function MapView(props: Props) {
     renderer.current?.setSelectedArmy(props.selectedArmy ?? null);
   }, [props.selectedArmy]);
   useEffect(() => {
-    if (props.focus) renderer.current?.centerOn(props.focus.provinceId, props.focus.zoom);
+    if (props.focus && renderer.current) applyFocus(renderer.current, props.focus);
   }, [props.focus]);
 
   return <div ref={host} className={props.className ?? 'map-host'} />;

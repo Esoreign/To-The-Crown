@@ -31,7 +31,7 @@ function parse<S extends z.ZodType>(schema: S, body: unknown): z.output<S> {
 }
 
 function assertPlayable(characterId: string | null | undefined): void {
-  if (characterId && !isPlayableCharacter(getScenario('couronne_brisee'), characterId)) {
+  if (characterId && !isPlayableCharacter(getScenario('monde_1400'), characterId)) {
     throw new ApiFailure(400, ErrorCodes.CHARACTER_NOT_PLAYABLE, 'Ce personnage ne peut pas être joué');
   }
 }

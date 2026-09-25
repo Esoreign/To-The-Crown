@@ -365,6 +365,9 @@ for (let pass = 0; pass < 4; pass++) {
 // 3. Toponymes
 // ---------------------------------------------------------------------------
 
+function deName(n: string): string {
+  return /^[aeiouyàâäéèêëîïôöûüœh]/i.test(n) ? `d’${n}` : `de ${n}`;
+}
 const NAMEABLE_MODERN = new Set<MacroRegion>(['europe', 'mena', 'india', 'eastasia', 'seasia']);
 const provName: string[] = new Array(P).fill('');
 const provSeat: ([number, number] | null)[] = new Array(P).fill(null);
@@ -401,6 +404,45 @@ for (const [name, lon, lat, imp] of HISTORIC_PLACES) {
     provImportance[p] = b.score / 20;
   }
 }
+// Lieux voisins (≤ 70 km) encore inutilisés, pour les régions où les noms
+// modernes sont acceptables : évite de nommer des provinces d'après un fleuve.
+{
+  const places = readGeo(path.join(NE_DIR, 'ne_10m_populated_places_simple.geojson'));
+  const used = new Set(ids.map((i) => provName[i]).filter(Boolean));
+  const cands: { name: string; lon: number; lat: number; score: number }[] = [];
+  for (const f of places.features) {
+    const pr = f.properties as { name: string; scalerank: number; pop_max: number; featurecla: string };
+    if (/Station/.test(pr.featurecla)) continue;
+    let name: string | null = pr.name;
+    if (Object.prototype.hasOwnProperty.call(PLACE_RENAMES, pr.name)) name = PLACE_RENAMES[pr.name]!;
+    if (!name) continue;
+    const [lon, lat] = (f.geometry as GeoPoint).coordinates as [number, number];
+    cands.push({ name, lon, lat, score: (10 - pr.scalerank) * 10 + Math.log10(1 + pr.pop_max) });
+  }
+  for (const i of ids) {
+    if (provName[i]) continue;
+    const p = prov[i]!;
+    if (!NAMEABLE_MODERN.has(p.macro)) continue;
+    let best: (typeof cands)[number] | null = null;
+    let bestScore = -Infinity;
+    for (const c of cands) {
+      if (used.has(c.name) || Math.abs(c.lat - p.lat) > 1 || Math.abs(c.lon - p.lon) > 1.6) continue;
+      const d = kmBetween(p.lon, p.lat, c.lon, c.lat);
+      if (d > 70) continue;
+      const score = c.score - d / 3;
+      if (score > bestScore) {
+        bestScore = score;
+        best = c;
+      }
+    }
+    if (best) {
+      provName[i] = best.name;
+      provSeat[i] = [p.lon, p.lat];
+      used.add(best.name);
+    }
+  }
+}
+const riverNamed = new Set<number>();
 // Géographie physique pour les provinces sans lieu nommé.
 {
   const rivers = readGeo(path.join(NE_DIR, 'ne_10m_rivers_lake_centerlines.geojson'));
@@ -464,10 +506,49 @@ for (const [name, lon, lat, imp] of HISTORIC_PLACES) {
     }
     const rs = riverScore.get(i);
     const river = rs ? [...rs.entries()].sort((a, b) => b[1] - a[1])[0] : undefined;
-    if (river && river[1] >= 12) provName[i] = river[0];
-    else if (ph) provName[i] = ph.name;
-    else if (river) provName[i] = river[0];
+    if (river && river[1] >= 12) {
+      provName[i] = river[0];
+      riverNamed.add(i);
+    } else if (ph) provName[i] = ph.name;
+    else if (river) {
+      provName[i] = river[0];
+      riverNamed.add(i);
+    }
     else provName[i] = REGIONS.find((r) => r.id === p.region)?.name ?? MACRO_NAMES[p.macro];
+  }
+}
+// Grandes régions génériques (« Deccan » ×26…) : dans les régions où les
+// toponymes actuels sont admissibles, on préfère « Pays de <ville proche> ».
+{
+  const places = readGeo(path.join(NE_DIR, 'ne_10m_populated_places_simple.geojson'))
+    .features.map((f) => {
+      const pr = f.properties as { name: string; featurecla: string };
+      const name = Object.prototype.hasOwnProperty.call(PLACE_RENAMES, pr.name) ? PLACE_RENAMES[pr.name]! : pr.name;
+      const [lon, lat] = (f.geometry as GeoPoint).coordinates as [number, number];
+      return { name, lon, lat, ok: !/Station/.test(pr.featurecla) };
+    })
+    .filter((x): x is { name: string; lon: number; lat: number; ok: boolean } => !!x.name && x.ok);
+  const count = new Map<string, number>();
+  for (const i of ids) count.set(provName[i]!, (count.get(provName[i]!) ?? 0) + 1);
+  const taken = new Set(ids.map((i) => provName[i]!));
+  for (const i of ids) {
+    const p = prov[i]!;
+    if ((count.get(provName[i]!) ?? 0) < 6 || !NAMEABLE_MODERN.has(p.macro)) continue;
+    let best: string | null = null;
+    let bestD = 300;
+    for (const c of places) {
+      if (Math.abs(c.lat - p.lat) > 3 || Math.abs(c.lon - p.lon) > 4) continue;
+      const d = kmBetween(p.lon, p.lat, c.lon, c.lat);
+      const candidate = `Pays ${deName(c.name)}`;
+      if (d < bestD && !taken.has(candidate)) {
+        bestD = d;
+        best = candidate;
+      }
+    }
+    if (best) {
+      taken.add(best);
+      provName[i] = best;
+    }
   }
 }
 // Homonymes : qualificatif d'orientation, puis numéro.
@@ -477,6 +558,13 @@ for (const [name, lon, lat, imp] of HISTORIC_PLACES) {
   const DIRS = ['est', 'nord-est', 'nord', 'nord-ouest', 'ouest', 'sud-ouest', 'sud', 'sud-est'];
   for (const [name, list] of groups) {
     if (list.length < 2) continue;
+    // Vallées : amont / moyen / aval selon l'altitude.
+    if (list.length <= 3 && list.every((i) => riverNamed.has(i))) {
+      const sorted = [...list].sort((a, b) => prov[b]!.elevation - prov[a]!.elevation);
+      const tags = list.length === 2 ? ['amont', 'aval'] : ['amont', 'cours moyen', 'aval'];
+      sorted.forEach((i, k) => (provName[i] = `${name} (${tags[k]})`));
+      continue;
+    }
     const cx = list.reduce((s, i) => s + prov[i]!.lon, 0) / list.length;
     const cy = list.reduce((s, i) => s + prov[i]!.lat, 0) / list.length;
     const used = new Map<string, number>();
@@ -525,7 +613,7 @@ function hashStr(s: string): number {
   return h >>> 0;
 }
 const CULTURE_BY = new Map(CULTURES_1400.map((c) => [c.id, c]));
-const deName = (n: string) => (/^[aeiouyàâäéèêëîïôöûüœh]/i.test(n) ? `d’${n}` : `de ${n}`);
+
 {
   const free = new Set(ids.filter((i) => owner[i] === -1 && !WASTE.has(i)));
   let fk = 0;

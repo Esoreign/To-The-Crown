@@ -10,7 +10,7 @@ export const NAV: { id: Exclude<ScreenId, null>; label: string; icon: string; ke
   { id: 'military', label: 'Armées', icon: '⚔', key: 'L' },
   { id: 'marriage', label: 'Mariages', icon: '❤', key: 'G' },
   { id: 'decisions', label: 'Décisions', icon: '✧', key: 'N' },
-  { id: 'chronicle', label: 'Chronique', icon: '✎', key: 'H' },
+  { id: 'chronicle', label: 'Chronique', icon: '✎', key: 'J' },
 ];
 
 export function NavBar({ onBell, unread, onChat, chatUnread, multiplayer }: { onBell(): void; unread: number; onChat(): void; chatUnread: number; multiplayer: boolean }) {

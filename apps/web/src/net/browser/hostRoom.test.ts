@@ -4,7 +4,7 @@ import { createGameState } from '@ttc/game-core';
 import type { ClockState } from '@ttc/shared';
 import { HostRoom, type HostOutput, type HostSave, type HostStep } from './hostRoom';
 
-const scenario = getScenario('couronne_brisee');
+const scenario = getScenario('monde_1400');
 const HOST = 'host-user';
 const GUEST = 'guest-user';
 

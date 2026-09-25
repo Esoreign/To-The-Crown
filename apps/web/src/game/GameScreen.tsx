@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PROVINCE_GEO, TITLE_DEFS, capitalProvinceOf, realmProvinceIds } from '@ttc/game-core';
 import { MapView } from '../map/MapView';
-import type { MapRenderer } from '../map/MapRenderer';
+import type { WorldMap } from '../map/WorldMap';
 import { connectGame, leaveGame, sendCommand } from '../net/socket';
 import { useGame } from '../state/game';
 import { useUi, type MapMode, type ScreenId } from '../state/ui';
@@ -68,6 +68,13 @@ function GameHud({ gameId, meId }: { gameId: string; meId: string }) {
   const notifications = useGame((s) => s.notifications);
   const chat = useGame((s) => s.chat);
   const me = view.characters[meId]!;
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeTimer = useRef<number | null>(null);
+  const toast = (text: string) => {
+    setNotice(text);
+    if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
+    noticeTimer.current = window.setTimeout(() => setNotice(null), 1800);
+  };
   const selection = useUi((s) => s.selection);
   const screen = useUi((s) => s.screen);
   const mapMode = useUi((s) => s.mapMode);
@@ -77,7 +84,7 @@ function GameHud({ gameId, meId }: { gameId: string; meId: string }) {
   const chatOpen = useUi((s) => s.chatOpen);
   const status = useGame((s) => s.status);
   const tutorial = useSettings((s) => s.tutorialEnabled);
-  const renderer = useRef<MapRenderer | null>(null);
+  const renderer = useRef<WorldMap | null>(null);
   const mouse = useRef({ x: 0, y: 0 });
   const [bell, setBell] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -156,9 +163,51 @@ function GameHud({ gameId, meId }: { gameId: string; meId: string }) {
     (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('input, textarea, select, [contenteditable]')) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const k = e.key;
       const ui = useUi.getState();
+      const map = renderer.current;
+      // Recherche mondiale (Ctrl+F remplace la recherche du navigateur).
+      if ((e.ctrlKey || e.metaKey) && (k === 'f' || k === 'F')) {
+        e.preventDefault();
+        ui.openScreen('search');
+        return;
+      }
+      // Historique de caméra : Alt+← / Alt+→.
+      if (e.altKey && (k === 'ArrowLeft' || k === 'ArrowRight')) {
+        e.preventDefault();
+        map?.historyStep(k === 'ArrowLeft' ? -1 : 1);
+        return;
+      }
+      // Signets de caméra : Ctrl/Alt+1..5 pour y aller, avec Maj pour enregistrer.
+      const digit = /^Digit([1-5])$/.exec(e.code)?.[1];
+      if (digit && (e.ctrlKey || e.altKey) && map) {
+        e.preventDefault();
+        const key = `ttc.bookmarks.${gameId}`;
+        let marks: Record<string, ReturnType<typeof map.getCamera>> = {};
+        try {
+          marks = JSON.parse(localStorage.getItem(key) ?? '{}') as typeof marks;
+        } catch {
+          marks = {};
+        }
+        if (e.shiftKey) {
+          marks[digit] = map.getCamera();
+          try {
+            localStorage.setItem(key, JSON.stringify(marks));
+          } catch {
+            // Stockage indisponible : le signet vit le temps de la session.
+          }
+          toast(`Signet ${digit} enregistré`);
+        } else if (marks[digit]) map.setCamera(marks[digit]);
+        else toast(`Aucun signet ${digit} (Maj+Ctrl+${digit} pour l’enregistrer)`);
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Royaume du joueur : H ; capitale : Maj+H.
+      if (k === 'h' || k === 'H') {
+        if (e.shiftKey) map?.focusCapital(me.id);
+        else map?.focusRealm(me.id);
+        return;
+      }
       if (k === ' ') {
         e.preventDefault();
         clock.toggle();
@@ -211,7 +260,7 @@ function GameHud({ gameId, meId }: { gameId: string; meId: string }) {
       const nav = NAV.find((n) => n.key === upper);
       if (nav) ui.openScreen(ui.screen === nav.id ? null : (nav.id as ScreenId));
     },
-    [clock, me, bell, devTools, dev],
+    [clock, me, bell, devTools, dev, gameId],
   );
   useEffect(() => {
     window.addEventListener('keydown', onKey);
@@ -244,6 +293,11 @@ function GameHud({ gameId, meId }: { gameId: string; meId: string }) {
 
   return (
     <div className={`game-screen mode-${mapMode}`} data-testid="game-screen">
+      {notice && (
+        <div className="map-notice" role="status">
+          {notice}
+        </div>
+      )}
       <MapView
         styleMode="game"
         view={view}

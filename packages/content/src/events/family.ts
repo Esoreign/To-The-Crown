@@ -890,7 +890,7 @@ export const EVENTS_FAMILY: EventDef[] = [
       },
       {
         id: 'renown',
-        label: '« Je jure que mon nom sera connu jusqu’aux confins de Caldria. »',
+        label: '« Je jure que mon nom sera connu jusqu’aux confins du monde. »',
         effects: [{ addPrestige: 40 }, { addStress: 10 }, { chance: 40, then: [{ addTrait: 'ambitious' }] }],
         tags: ['ambitious'],
         ai: { base: 5, traits: { ambitious: 15, arrogant: 10 }, personality: { ambition: 0.2 } },

@@ -3,7 +3,7 @@ import type { GameView, ScenarioData } from '@ttc/shared';
 /** Vue de jeu minimale construite depuis un scénario (écrans hors partie). */
 export function scenarioView(s: ScenarioData): GameView {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     gameId: 'preview',
     scenarioId: s.id,
     seed: 0,
@@ -29,6 +29,7 @@ export function scenarioView(s: ScenarioData): GameView {
     secrets: {},
     hooks: {},
     factions: s.factions,
+    pacts: s.pacts,
     activeEvents: {},
     scheduledEvents: {},
     proposals: {},

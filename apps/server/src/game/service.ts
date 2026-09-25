@@ -15,7 +15,7 @@ import { HttpError } from '../lib/errors';
 import type { RoomManager } from './manager';
 import type { GameRepository, GameRow, GameSettingsRow } from './repository';
 
-export const SCENARIO_ID = 'couronne_brisee';
+export const SCENARIO_ID = 'monde_1400';
 
 export class GameService {
   io: IoServer | null = null;

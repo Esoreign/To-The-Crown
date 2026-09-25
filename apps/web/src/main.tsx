@@ -11,6 +11,7 @@ import './styles/base.css';
 import './styles/screens.css';
 import './styles/hud.css';
 import './styles/panels.css';
+import './styles/map.css';
 import { applyDocumentSettings } from './state/settings';
 import { App } from './App';
 

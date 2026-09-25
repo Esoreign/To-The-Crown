@@ -9,7 +9,7 @@ export function CreditsScreen() {
       <div className="page-card panel">
         <h1 className="display page-title">To The Crown</h1>
         <p className="narrative">
-          Grand jeu de stratégie dynastique médiévale se déroulant sur le continent imaginaire de Caldria. Chaque serment a un prix.
+          Grand jeu de stratégie dynastique médiévale sur la Terre de 1400, de l’Atlantique au Pacifique. Chaque serment a un prix.
         </p>
         <div className="divider" />
         <h3 className="section-title">Conception et développement</h3>

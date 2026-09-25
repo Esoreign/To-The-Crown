@@ -150,6 +150,7 @@ export class BrowserSession {
 
   private fatal(code: string, message: string): void {
     if (this.closed) return;
+    console.error('[partie]', code, message);
     useGame.setState({ status: 'error', error: errorMessage(code, message) });
   }
 

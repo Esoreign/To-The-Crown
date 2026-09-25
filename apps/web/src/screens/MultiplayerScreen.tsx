@@ -34,7 +34,7 @@ export function MultiplayerScreen() {
     setError('');
     try {
       const res = await api<{ id: string }>('POST', '/api/games', {
-        name: name.trim() || 'Conclave de Caldria',
+        name: name.trim() || 'Concile des couronnes',
         mode: 'multiplayer',
         maxPlayers,
         settings: { maxSpeed: 3, autosave: true, aiDifficulty: 'normal', eventFrequency: 'normal', visibility },
@@ -159,7 +159,7 @@ export function MultiplayerScreen() {
               <div className="panel-body col" style={{ gap: 10 }}>
                 <div className="field">
                   <label htmlFor="mp-name">Nom</label>
-                  <input id="mp-name" className="input" maxLength={48} placeholder="Conclave de Caldria" value={name} onChange={(e) => setName(e.target.value)} />
+                  <input id="mp-name" className="input" maxLength={48} placeholder="Concile des couronnes" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                 <div className="row" style={{ gap: 8 }}>
                   <div className="field grow">

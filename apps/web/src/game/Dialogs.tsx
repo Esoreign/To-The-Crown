@@ -93,7 +93,7 @@ function WarDialog({ view, me, target }: { view: GameView; me: Character; target
           ))}
         </div>
         <p className="muted" style={{ fontSize: 12.5, margin: 0 }}>
-          Déclarer la guerre attire l’attention de tout Caldria. Une trêve de plusieurs années suivra la paix.
+          Déclarer la guerre attire l’attention de toutes les cours voisines. Une trêve de plusieurs années suivra la paix.
         </p>
         <ActionButton
           className="btn-danger btn-lg"

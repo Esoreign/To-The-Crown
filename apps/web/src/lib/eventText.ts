@@ -47,7 +47,7 @@ function charVar(view: View, c: Character, key: string, root: Character | undefi
     case 'realm': {
       const top = view.characters[topLiegeId(view, c.id)] ?? c;
       const pt = primaryTitleId(top) ?? primaryTitleId(c);
-      return pt ? titleName(pt) : 'Caldria';
+      return pt ? titleName(pt) : 'le monde';
     }
     case 'rel':
       return relTo(view, c, root) || c.firstName;

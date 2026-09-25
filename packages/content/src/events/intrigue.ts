@@ -345,7 +345,7 @@ export const EVENTS_INTRIGUE: EventDef[] = [
     choices: [
       {
         id: 'denounce',
-        label: '« Que toute la Caldria l’apprenne. »',
+        label: '« Que toutes les cours l’apprennent. »',
         effects: [
           { addPrestige: 80 },
           { addOpinion: { towards: 'root', value: -40, reason: 'opinion.reason.intrigue_denounced' }, who: 'other' },
@@ -1423,7 +1423,7 @@ export const EVENTS_INTRIGUE: EventDef[] = [
     category: 'diplomacy',
     title: 'Pupilles et otages',
     text:
-      'Pour garantir la paix fragile qui vous lie à {target.fullname}, ses conseillers proposent un usage ancien : l’échange de pupilles. Un enfant de votre sang grandirait à sa cour, un enfant du sien à la vôtre, chacun à la fois otage et invité. La coutume a épargné bien des guerres à la Caldria. Elle a aussi rempli bien des tombes, les années où l’un des deux parents oubliait sa parole.',
+      'Pour garantir la paix fragile qui vous lie à {target.fullname}, ses conseillers proposent un usage ancien : l’échange de pupilles. Un enfant de votre sang grandirait à sa cour, un enfant du sien à la vôtre, chacun à la fois otage et invité. La coutume a épargné bien des guerres. Elle a aussi rempli bien des tombes, les années où l’un des deux parents oubliait sa parole.',
     illustration: 'castle_walls',
     trigger: 'pulse',
     weight: 6,
@@ -1922,7 +1922,7 @@ export const EVENTS_INTRIGUE: EventDef[] = [
     category: 'war',
     title: 'La Compagnie du Chardon',
     text:
-      'Le capitaine de la Compagnie du Chardon a dressé sa tente à portée de flèche de la vôtre, par courtoisie ou par défi. Deux cents piquiers aguerris, une centaine de cavaliers légers : des hommes qui ont vendu leur fer sur toutes les frontières de la Caldria. Son prix est élevé, sa parole réputée solide — tant que l’or arrive. On murmure qu’un émissaire de votre ennemi lui a déjà rendu visite.',
+      'Le capitaine de la Compagnie du Chardon a dressé sa tente à portée de flèche de la vôtre, par courtoisie ou par défi. Deux cents piquiers aguerris, une centaine de cavaliers légers : des hommes qui ont vendu leur fer sur toutes les frontières du monde connu. Son prix est élevé, sa parole réputée solide — tant que l’or arrive. On murmure qu’un émissaire de votre ennemi lui a déjà rendu visite.',
     illustration: 'war_camp',
     trigger: 'pulse',
     weight: 9,

@@ -26,6 +26,11 @@ export const TERRAIN_COLORS: Record<Terrain, string> = {
   marsh: '#5f7263',
   steppe: '#b99d6a',
   coast_cliffs: '#9a9282',
+  jungle: '#2f5a32',
+  desert: '#d8c28a',
+  savanna: '#b8a45c',
+  tundra: '#9aa294',
+  ice: '#e6ecef',
 };
 
 export const hexToNum = (hex: string): number => parseInt(hex.replace('#', ''), 16);

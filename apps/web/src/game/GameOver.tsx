@@ -39,7 +39,7 @@ export function GameOverScreen({ view, userId }: { view: GameView; userId: strin
           La lignée s’éteint
         </h1>
         <p className="narrative soft" style={{ textAlign: 'center' }}>
-          La maison {house?.name ?? ''} ne compte plus d’héritier. Le {formatDateFr(view.date)}, son histoire rejoint les chroniques de Caldria.
+          La maison {house?.name ?? ''} ne compte plus d’héritier. Le {formatDateFr(view.date)}, son histoire rejoint les chroniques du monde.
         </p>
         <div className="gameover-score">
           <span className="muted">Score dynastique</span>

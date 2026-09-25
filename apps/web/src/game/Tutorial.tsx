@@ -11,7 +11,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     title: 'Bienvenue à la cour',
-    text: 'Vous incarnez un souverain de Caldria. Votre but : faire prospérer votre dynastie à travers les générations. Si votre lignée s’éteint, la partie est perdue.',
+    text: 'Nous sommes le 1er janvier 1400 et vous incarnez un souverain de ce monde. Votre but : faire prospérer votre dynastie à travers les générations. Si votre lignée s’éteint, la partie est perdue.',
     anchor: 'center',
   },
   {

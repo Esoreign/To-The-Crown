@@ -17,7 +17,7 @@ import { presimplify, simplify } from 'topojson-simplify';
 import type { Topology, GeometryCollection } from 'topojson-specification';
 import { chaikin, clipRing, ringArea, round, simplifyDP } from './geom';
 import { NE_DIR, PUBLIC_WORLD, WORK } from './paths';
-import { H, W, loadGridI32, loadGridU8, polygonsOf, readGeo } from './raster';
+import { H, W, latToY, loadGridI32, loadGridU8, lonToX, polygonsOf, readGeo } from './raster';
 import { ringsToMultiPolygon, traceLabels } from './vectorize';
 
 const BAND = 4;
@@ -95,6 +95,84 @@ function writeJson(name: string, data: unknown): void {
   console.log(`${name} : ${(fs.statSync(file).size / 1e6).toFixed(2)} Mo`);
 }
 
+/**
+ * Frontières partagées exactes, issues de la topologie lissée avant découpe
+ * par les côtes (la découpe renumérote les sommets et casserait le partage
+ * des arcs). Chaque arc intérieur est densifié puis limité aux terres
+ * (grille terres/mers), et enregistré avec ses deux provinces : le client
+ * compose ainsi toutes les frontières (provinces, vassaux, royaumes) sans
+ * doublon. Format : { a[], b[], p: [[x0, y0, dx, dy, …] par morceau][] }
+ * en millièmes de degré.
+ */
+function writeBorderArcs(topo: Topo, land: Uint8Array): void {
+  console.time('arcs de frontière');
+  const owners: number[][] = topo.arcs.map(() => []);
+  for (const g of topo.objects.f.geometries) {
+    const id = Number((g as { id?: number }).id);
+    const walk = (arcs: unknown): void => {
+      if (typeof arcs === 'number') owners[arcs < 0 ? ~arcs : arcs]!.push(id);
+      else if (Array.isArray(arcs)) for (const x of arcs) walk(x);
+    };
+    walk((g as { arcs?: unknown }).arcs);
+  }
+  const onLand = (lon: number, lat: number) => {
+    const x = Math.floor(lonToX(lon));
+    const y = Math.floor(latToY(lat));
+    if (y < 0 || y >= H) return false;
+    return land[y * W + (((x % W) + W) % W)]! !== 0;
+  };
+  const A: number[] = [];
+  const B: number[] = [];
+  const P: number[][][] = [];
+  topo.arcs.forEach((arc, i) => {
+    const o = owners[i]!;
+    if (o.length < 2 || o[0] === o[1]) return;
+    // Densification (pas ≤ 0,02°) puis découpe en morceaux terrestres.
+    const pts: [number, number][] = [];
+    for (let k = 0; k < arc.length; k++) {
+      const [x, y] = arc[k]! as [number, number];
+      if (k > 0) {
+        const [px, py] = arc[k - 1]! as [number, number];
+        const steps = Math.ceil(Math.hypot(x - px, y - py) / 0.02);
+        for (let s = 1; s < steps; s++) pts.push([px + ((x - px) * s) / steps, py + ((y - py) * s) / steps]);
+      }
+      pts.push([x, y]);
+    }
+    const pieces: [number, number][][] = [];
+    let cur: [number, number][] = [];
+    for (const p of pts) {
+      if (onLand(p[0], p[1])) cur.push(p);
+      else {
+        if (cur.length >= 2) pieces.push(cur);
+        cur = [];
+      }
+    }
+    if (cur.length >= 2) pieces.push(cur);
+    if (!pieces.length) return;
+    A.push(o[0]!);
+    B.push(o[1]!);
+    P.push(
+      pieces.map((piece) => {
+        const simple = simplifyDP(piece, 0.004);
+        const out: number[] = [];
+        let lx = 0;
+        let ly = 0;
+        simple.forEach(([x, y], k) => {
+          const qx = Math.round(x! * 1000);
+          const qy = Math.round(y! * 1000);
+          if (k === 0) out.push(qx, qy);
+          else out.push(qx - lx, qy - ly);
+          lx = qx;
+          ly = qy;
+        });
+        return out;
+      }),
+    );
+  });
+  writeJson('borders.json', { a: A, b: B, p: P });
+  console.timeEnd('arcs de frontière');
+}
+
 function main(): void {
   const label = loadGridI32('provinces');
   const seaLabel = loadGridI32('seas');
@@ -113,6 +191,7 @@ function main(): void {
   smoothArcs(topo, 0.018, 1);
   const smoothed = toFeatures(topo);
   console.timeEnd('topologie');
+  writeBorderArcs(topo, land);
 
   // --- Découpe par les terres (côtes nettes) --------------------------------
   console.time('côtes');
@@ -128,6 +207,20 @@ function main(): void {
       }
     }
   }
+  // Littoral : contours des terres simplifiés (les mêmes qui découpent les provinces).
+  writeJson('coast.geojson', {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'MultiLineString',
+          coordinates: landParts.flatMap((poly) => poly.filter((r) => Math.abs(ringArea(r)) > 1e-4).map((r) => r.map((q) => round(q, 3)))),
+        },
+      },
+    ],
+  });
   const index = new Flatbush(landParts.length);
   for (const p of landParts) {
     const [a, b, c, d] = bboxOf([p]);

@@ -136,7 +136,7 @@ export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Charac
 
 export function NewGameScreen() {
   const go = useRouter((s) => s.go);
-  const scenario = useMemo(() => getScenario('couronne_brisee'), []);
+  const scenario = useMemo(() => getScenario('monde_1400'), []);
   const view = useMemo(() => scenarioView(scenario), [scenario]);
   const [selected, setSelected] = useState<string>(scenario.recommended[0]!.characterId);
   const [name, setName] = useState('');
@@ -144,7 +144,7 @@ export function NewGameScreen() {
   const [eventFrequency, setFreq] = useState<'low' | 'normal' | 'high'>('normal');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [focus, setFocus] = useState<{ provinceId: string; at: number; zoom?: number } | null>(null);
+  const [focus, setFocus] = useState<{ provinceId: string; at: number; zoom?: number; realmOf?: string } | null>(null);
 
   const c = view.characters[selected];
   const rec = scenario.recommended.find((r) => r.characterId === selected);
@@ -156,7 +156,7 @@ export function NewGameScreen() {
     playSound('click');
     setSelected(id);
     const cap = capitalProvinceOf(ch);
-    if (center && cap) setFocus({ provinceId: cap, at: performance.now() });
+    if (center && cap) setFocus({ provinceId: cap, at: performance.now(), realmOf: id });
   };
 
   async function start() {

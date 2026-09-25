@@ -30,7 +30,7 @@ export function chronicleText(view: View, e: ChronicleEntry): string {
   const v = e.vars;
   switch (e.kind) {
     case 'game_start':
-      return 'La Couronne est brisée : les grandes maisons de Caldria se disputent l’héritage des anciens rois.';
+      return '1er janvier 1400 : de Paris à Pékin, de Tombouctou à Tenochtitlan, chaque dynastie écrit son histoire.';
     case 'coronation':
       return `${who(view, v.name)} est couronné et proclame le ${titleFullName(String(v.title)).toLowerCase()}.`;
     case 'title_created':

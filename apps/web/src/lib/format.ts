@@ -1,16 +1,48 @@
 /**
  * Mise en forme des noms, titres et dates pour l'interface.
  */
-import { CONTENT } from '@ttc/content';
+import { CONTENT, GOVERNMENT_BY_ID, getScenario, type GovernmentId } from '@ttc/content';
 import { TITLE_DEFS, ageOf, fullName, primaryTitleId, rankName } from '@ttc/game-core';
 import { formatDateFr, type Character, type GameView } from '@ttc/shared';
 import { t } from './i18n';
 
 const VOWEL = /^[aeiouyàâäéèêëîïôöûüœ]/i;
 
-/** « de Valorie » / « d’Aurevanne ». */
+/** Noms de peuples ou d'ensembles au pluriel (« des Ottomans »). */
+const PLURAL = /^(Îles|Pays|Terres|Tribus|Peuples|Quatre|Yuan|Chefferies|Seigneuries|Cités|Menceyats|Évêchés|Duchés|Principautés|Nations|Cacicazgos)\b|[^s]s$|x$/;
+
+/** « de Charles » / « d’Isabeau » (personnes et noms singuliers). */
 export function deName(name: string): string {
   return VOWEL.test(name) ? `d’${name}` : `de ${name}`;
+}
+
+/** « de France » / « d’Angleterre » / « des Ottomans » (territoires et peuples). */
+export function deLand(name: string): string {
+  if (PLURAL.test(name) && !/^[A-Z]{2,}/.test(name)) return `des ${name}`;
+  return deName(name);
+}
+
+/** Intitulés propres à certaines entités (Doge, Mansa, Sapa Inka…), par titre principal. */
+const POLITY_TITLES: Record<string, [string, string]> = (() => {
+  const out: Record<string, [string, string]> = {};
+  try {
+    for (const p of Object.values(getScenario('monde_1400').polities ?? {})) if (p.rulerTitle) out[p.titleId] = p.rulerTitle;
+  } catch {
+    // Scénario indisponible : intitulés génériques.
+  }
+  return out;
+})();
+
+/** Intitulé du dirigeant selon son titre principal, son gouvernement et son sexe. */
+export function holderTitle(c: Character): string {
+  const rank = rankName(c);
+  const pt = primaryTitleId(c);
+  if (!rank || !pt) return t(`rank.holder.${c.sex}.none`);
+  const own = POLITY_TITLES[pt];
+  if (own) return own[c.sex === 'F' ? 1 : 0];
+  const gov = c.government ? GOVERNMENT_BY_ID[c.government as GovernmentId] : undefined;
+  if (gov) return gov.rulerTitles[rank][c.sex === 'F' ? 1 : 0];
+  return t(`rank.holder.${c.sex}.${rank}`);
 }
 
 export function titleName(titleId: string | null | undefined): string {
@@ -20,6 +52,8 @@ export function titleName(titleId: string | null | undefined): string {
 
 /** Nom du territoire sans la forme de gouvernement (« Empire de Hrovmark » → « Hrovmark »). */
 export function titleLandName(titleId: string): string {
+  const short = TITLE_DEFS[titleId]?.short;
+  if (short) return short;
   const name = titleName(titleId);
   return name.replace(/^(Empire|Hégémonie|Haute-Couronne|Royaume|Duché|Comté) (de |d’|d')/, '');
 }
@@ -30,7 +64,7 @@ export function titleFullName(titleId: string | null | undefined): string {
   const def = TITLE_DEFS[titleId];
   if (!def) return titleId;
   if (titleLandName(titleId) !== def.name) return def.name;
-  return `${t(`rank.${def.rank}`)} ${deName(def.name)}`;
+  return `${t(`rank.${def.rank}`)} ${deLand(def.name)}`;
 }
 
 /** « Reine de Valorie », « Comte d’Ardan », « Seigneur » pour un non-titré. */
@@ -38,7 +72,7 @@ export function rulerTitle(c: Character): string {
   const rank = rankName(c);
   const pt = primaryTitleId(c);
   if (!rank || !pt) return '';
-  return `${t(`rank.holder.${c.sex}.${rank}`)} ${deName(titleLandName(pt))}`;
+  return `${holderTitle(c)} ${deLand(titleLandName(pt))}`;
 }
 
 /** « Reine Aélis de Valorie » ; nom complet pour un non-titré. */
@@ -47,7 +81,7 @@ export function styledName(view: Pick<GameView, 'houses'>, c: Character | undefi
   const rank = rankName(c);
   const pt = primaryTitleId(c);
   if (!rank || !pt) return fullName(view, c);
-  return `${t(`rank.holder.${c.sex}.${rank}`)} ${c.firstName} ${deName(titleLandName(pt))}`;
+  return `${holderTitle(c)} ${c.firstName} ${deLand(titleLandName(pt))}`;
 }
 
 export function charName(view: Pick<GameView, 'houses'>, c: Character | undefined): string {

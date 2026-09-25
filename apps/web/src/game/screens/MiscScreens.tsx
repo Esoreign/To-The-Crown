@@ -79,7 +79,7 @@ export function ChronicleScreen({ view, me }: { view: GameView; me: Character })
     byYear.set(y, arr);
   }
   return (
-    <ScreenFrame title="Chronique de Caldria" icon="✎" wide>
+    <ScreenFrame title="Chronique du monde" icon="✎" wide>
       <div className="tabs">
         <button className={`tab${filter === 'all' ? ' active' : ''}`} onClick={() => setFilter('all')}>
           Tout le continent

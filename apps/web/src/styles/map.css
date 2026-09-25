@@ -1,0 +1,142 @@
+/* ---------------------------------------------------------------- Carte du monde */
+/* MapLibre force position: relative sur son conteneur : on garde l'hôte plein cadre. */
+.map-host.world-map.maplibregl-map {
+  position: absolute;
+  inset: 0;
+}
+.world-map .maplibregl-canvas {
+  outline: none;
+}
+.world-map--parchment .maplibregl-canvas {
+  filter: sepia(0.35) saturate(0.8) brightness(1.02);
+}
+.world-map--ambient {
+  pointer-events: none;
+}
+.map-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.maplibregl-marker {
+  z-index: 2;
+}
+
+/* Armées : bannière aux couleurs de la maison, effectif lisible. */
+.army-marker {
+  --banner: #6b5a3a;
+  min-width: 42px;
+  height: 22px;
+  padding: 0 6px 0 14px;
+  border-radius: 3px;
+  border: 1.5px solid #c9a24b;
+  background:
+    linear-gradient(90deg, var(--banner) 0 9px, transparent 9px),
+    rgba(26, 19, 13, 0.92);
+  color: #f2e6c8;
+  font: 700 12px/19px var(--font-ui, Inter, sans-serif);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  transition: transform 0.12s ease;
+}
+.army-marker:hover,
+.army-marker:focus-visible {
+  transform: scale(1.1);
+}
+.army-marker[data-rel='mine'] {
+  border-color: #f2c95b;
+}
+.army-marker[data-rel='enemy'] {
+  border-color: #d0493a;
+}
+.army-marker[data-rel='ally'] {
+  border-color: #5fae6a;
+}
+.army-marker.is-selected {
+  outline: 2px solid #fff3c4;
+  outline-offset: 2px;
+}
+.army-marker.is-shattered {
+  opacity: 0.55;
+}
+.battle-marker {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #e0a060;
+  background: rgba(74, 16, 16, 0.9);
+  color: #f2e6c8;
+  font-size: 16px;
+  line-height: 26px;
+  cursor: pointer;
+  animation: pulse-battle 1.4s ease-in-out infinite;
+}
+@keyframes pulse-battle {
+  50% {
+    box-shadow: 0 0 0 7px rgba(224, 160, 96, 0.15);
+  }
+}
+.siege-marker {
+  --p: 0%;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid #6b5a3a;
+  background: conic-gradient(#c9a24b var(--p), rgba(26, 19, 13, 0.85) 0);
+  box-shadow: inset 0 0 0 6px rgba(26, 19, 13, 0.85);
+}
+
+/* Mini-carte et indicateur du royaume. */
+.minimap {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  width: 168px;
+  height: 168px;
+  border: 1px solid rgba(201, 162, 75, 0.7);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  cursor: crosshair;
+  z-index: 3;
+  background: #16324a;
+}
+.offscreen-realm {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid #f2c95b;
+  background: rgba(26, 19, 13, 0.88);
+  color: #f2c95b;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 3;
+  box-shadow: 0 0 12px rgba(242, 201, 91, 0.45);
+}
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+@media (max-width: 720px) {
+  .minimap {
+    width: 110px;
+    height: 110px;
+  }
+}
+
+.map-notice {
+  position: absolute;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border: 1px solid rgba(201, 162, 75, 0.7);
+  border-radius: 4px;
+  background: rgba(20, 15, 10, 0.92);
+  color: #f2e6c8;
+  font-size: 13px;
+  z-index: 40;
+  pointer-events: none;
+}

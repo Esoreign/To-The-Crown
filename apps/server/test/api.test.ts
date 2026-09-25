@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { users, gameCommands } from '../src/db/schema';
 import { Client, emitAck, once, startServer, waitFor } from './helpers';
 
-const scenario = getScenario('couronne_brisee');
+const scenario = getScenario('monde_1400');
 const byName = (n: string) => scenario.recommended.find((r) => scenario.characters[r.characterId]!.firstName === n)!.characterId;
 
 let app: FastifyInstance;

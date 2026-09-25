@@ -3,34 +3,40 @@ import { getScenario } from '@ttc/content';
 import type { Effect } from '@ttc/shared';
 import { scenarioView } from '../map/scenarioView';
 import { describeEffects, resolveEventText } from './eventText';
-import { deName, rulerTitle, styledName, titleFullName } from './format';
+import { deLand, deName, rulerTitle, styledName, titleFullName } from './format';
 import { chronicleText } from './chronicle';
 
-const view = scenarioView(getScenario('couronne_brisee'));
-const aelis = view.characters.ch1!;
-const aldren = view.characters.ch30!;
-const torvald = view.characters.ch320!;
+const scenario = getScenario('monde_1400');
+const view = scenarioView(scenario);
+const rulerOf = (polity: string) => view.characters[view.titles[scenario.polities![polity]!.titleId]!.holderId!]!;
+const aelis = rulerOf('brb');
+const aldren = rulerOf('fra');
+const torvald = rulerOf('ott');
 
 describe('noms et titres', () => {
-  it('élide devant une voyelle mais pas devant un h', () => {
-    expect(deName('Aurevanne')).toBe('d’Aurevanne');
-    expect(deName('Valorie')).toBe('de Valorie');
-    expect(deName('Hrovmark')).toBe('de Hrovmark');
+  it('élide devant une voyelle, pas devant un h, et accorde les pluriels', () => {
+    expect(deName('Angleterre')).toBe('d’Angleterre');
+    expect(deName('France')).toBe('de France');
+    expect(deName('Hongrie')).toBe('de Hongrie');
+    expect(deLand('Ottomans')).toBe('des Ottomans');
+    expect(deName('Charles')).toBe('de Charles');
   });
 
-  it('forme les titres selon le rang et le sexe', () => {
-    expect(rulerTitle(aelis)).toBe('Reine de Valorie');
-    expect(styledName(view, aelis)).toBe('Reine Aélis de Valorie');
-    expect(rulerTitle(torvald)).toBe('Empereur de Hrovmark');
-    expect(titleFullName('e_hrovmark')).toBe('Empire de Hrovmark');
-    expect(titleFullName('k_valorie')).toBe('Royaume de Valorie');
+  it('forme les titres selon le rang, le sexe et le gouvernement', () => {
+    expect(rulerTitle(aelis)).toBe('Duchesse de Brabant');
+    expect(styledName(view, aelis)).toBe('Duchesse Jeanne de Brabant');
+    expect(rulerTitle(aldren)).toBe('Roi de France');
+    expect(rulerTitle(torvald)).toBe('Sultan des Ottomans');
+    expect(rulerTitle(rulerOf('ven'))).toBe('Doge de Venise');
+    expect(titleFullName('k_fra')).toBe('Royaume de France');
+    expect(titleFullName('e_ott')).toBe('Sultanat ottoman');
   });
 });
 
 describe('texte des événements', () => {
   it('remplace les variables de portée et accorde en genre', () => {
     const text = resolveEventText(view, '{target.name} est venu{target.e} voir {root.name}, {target.il} attend.', { root: aelis.id, target: aldren.id });
-    expect(text).toBe('Aldren est venu voir Aélis, il attend.');
+    expect(text).toBe('Charles est venu voir Jeanne, il attend.');
     const fem = resolveEventText(view, '{target.le} {target.seigneur} est venu{target.e}.', { root: aldren.id, target: aelis.id });
     expect(fem).toBe('la dame est venue.');
   });
@@ -47,7 +53,7 @@ describe('texte des événements', () => {
     ];
     const lines = describeEffects(view, effects, { root: aelis.id, target: aldren.id });
     expect(lines[0]).toMatchObject({ text: '−50 or', tone: 'neg', depth: 0 });
-    expect(lines[1]!.text).toBe('Opinion d’Aldren envers vous : +15');
+    expect(lines[1]!.text).toBe('Opinion de Charles envers vous : +15');
     expect(lines[2]!.text).toBe('40 % de chances :');
     expect(lines[3]!.depth).toBe(1);
     expect(lines.some((l) => l.text === 'Sinon :')).toBe(true);
@@ -65,6 +71,8 @@ describe('chronique', () => {
       characterIds: [],
       houseIds: [],
     });
-    expect(text).toContain('Aldren de Veyr déclare la guerre à Aélis de Valorie');
+    expect(text).toContain('déclare la guerre à');
+    expect(text).toContain('Charles');
+    expect(text).toContain('Jeanne');
   });
 });

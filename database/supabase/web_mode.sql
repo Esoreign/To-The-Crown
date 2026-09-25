@@ -453,7 +453,7 @@ begin
   -- crée l'état initial et l'enregistre à la première ouverture.
   insert into public.games (name, mode, status, host_id, max_players, visibility, settings, scenario_id, seed, started_at)
   values (v_name, v_mode, case when v_mode = 'solo' then 'running' else 'lobby' end, v_user, v_max, v_settings ->> 'visibility', v_settings,
-          'couronne_brisee', 1 + floor(random() * 2147483646)::int, case when v_mode = 'solo' then now() end)
+          'monde_1400', 1 + floor(random() * 2147483646)::int, case when v_mode = 'solo' then now() end)
   returning * into v_game;
   insert into public.game_players (game_id, user_id, is_host, character_id, ready)
   values (v_game.id, v_user, true, v_char, v_mode = 'solo');

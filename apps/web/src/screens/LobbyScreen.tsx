@@ -19,7 +19,7 @@ import { RulerSheet } from './NewGameScreen';
 export function LobbyScreen({ gameId }: { gameId: string }) {
   const go = useRouter((s) => s.go);
   const user = useAuth((s) => s.user)!;
-  const scenario = useMemo(() => getScenario('couronne_brisee'), []);
+  const scenario = useMemo(() => getScenario('monde_1400'), []);
   const view = useMemo(() => scenarioView(scenario), [scenario]);
   const [lobby, setLobby] = useState<LobbyState | null>(null);
   const [preview, setPreview] = useState<string | null>(null);

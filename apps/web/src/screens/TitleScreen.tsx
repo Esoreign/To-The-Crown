@@ -16,7 +16,7 @@ import { MusicButton, NowPlaying } from '../ui/music';
 export function TitleScreen() {
   const { user, logout } = useAuth();
   const go = useRouter((s) => s.go);
-  const view = useMemo(() => scenarioView(getScenario('couronne_brisee')), []);
+  const view = useMemo(() => scenarioView(getScenario('monde_1400')), []);
   const [auth, setAuth] = useState<null | 'login' | 'register'>(null);
   const [after, setAfter] = useState<null | (() => void)>(null);
   const [settings, setSettings] = useState(false);
