@@ -1,5 +1,8 @@
 import type { LocaleTable } from '@ttc/shared';
 import { EVENTS_LOC } from '../events';
+import { CULTURE_1400_NAMES } from '../world1400/cultures';
+import { FAITH_1400_NAMES } from '../world1400/faiths';
+import { GOVERNMENTS } from '../world1400/governments';
 
 /**
  * Table de localisation française. Clés hiérarchiques « domaine.clé ».
@@ -67,49 +70,24 @@ const T: Record<string, Record<string, string>> = {
     marsh: 'Marais',
     steppe: 'Steppe',
     coast_cliffs: 'Falaises',
+    jungle: 'Forêt tropicale',
+    desert: 'Désert',
+    savanna: 'Savane',
+    tundra: 'Toundra',
+    ice: 'Glaces',
   },
-  culture: {
-    caldrien: 'Caldrienne',
-    valorien: 'Valorienne',
-    hrovar: 'Hrovar',
-    sarrhan: 'Sarrhane',
-    vesnar: 'Vesnare',
-    ardhe: 'Ardhe',
-    myrrhain: 'Myrrhaine',
-    kharzul: 'Kharzule',
-  },
-  'culture.desc': {
-    caldrien: 'Héritiers de l’ancienne Haute-Couronne, fiers de leurs cités et de leurs lettres.',
-    valorien: 'Chevaliers des marches occidentales, attachés à l’honneur et à la lignée.',
-    hrovar: 'Clans des fjords et des hautes terres, rudes et solidaires.',
-    sarrhan: 'Princes-marchands des rivages du sud, lecteurs d’étoiles.',
-    vesnar: 'Peuples des forêts de l’est, patients bâtisseurs de villages.',
-    ardhe: 'Gens des landes et des pierres levées, conteurs et juristes.',
-    myrrhain: 'Marins et armateurs des îles et des marais de Myrrh.',
-    kharzul: 'Cavaliers des steppes orientales, pour qui seule compte la force.',
-  },
-  faith: {
-    aube: 'Foi de l’Aube',
-    veilleurs: 'Veilleurs de l’Aube',
-    anciens_chemins: 'Anciens Chemins',
-    marees: 'Cercle des Marées',
-    sceau_azar: 'Sceau d’Azar',
-    ciel_eternel: 'Ciel Éternel',
-  },
-  'faith.desc': {
-    aube: 'Église du soleil levant, gardienne de l’ancienne couronne.',
-    veilleurs: 'Réforme austère de l’Aube : la lanterne plutôt que le trône.',
-    anciens_chemins: 'Culte des pierres levées et des ancêtres du Nord.',
-    marees: 'Foi tolérante des marins, qui honore le flux et le reflux.',
-    sceau_azar: 'Religion astrale du sud, où tout est écrit dans les étoiles.',
-    ciel_eternel: 'Voie des steppes : le ciel voit tout et juge les braves.',
-  },
+  culture: {},
+  'culture.desc': {},
+  faith: {},
+  'faith.desc': {},
   unit: {
     levy: 'Levées',
     footmen: 'Hommes d’armes',
     archers: 'Archers',
     pikemen: 'Piquiers',
     light_cavalry: 'Cavalerie légère',
+    horse_archers: 'Archers montés',
+    war_elephants: 'Éléphants de guerre',
     heavy_cavalry: 'Cavalerie lourde',
     siege_engines: 'Engins de siège',
   },
@@ -209,7 +187,7 @@ const T: Record<string, Record<string, string>> = {
     paranoid: 'Méfiant', lustful: 'Passionné', chaste: 'Chaste', loyal: 'Loyal', fickle: 'Inconstant',
     strategist: 'Stratège', aggressive_attacker: 'Assaillant', unyielding_defender: 'Défenseur inflexible',
     forest_fighter: 'Combattant des bois', rough_terrain_expert: 'Montagnard', open_terrain_expert: 'Cavalier des plaines',
-    ill: 'Malade', grey_fever: 'Fièvre grise', wounded: 'Blessé', maimed: 'Estropié', infirm: 'Infirme', depressed: 'Mélancolique',
+    ill: 'Malade', grey_fever: 'Fièvre grise', wounded: 'Blessé', maimed: 'Estropié', infirm: 'Infirme', depressed: 'Mélancolique', lunatic: 'Folie',
     robust: 'Robuste', frail: 'Chétif', sharp: 'Vif d’esprit', dull: 'Lent d’esprit', comely: 'Beau', homely: 'Disgracieux',
     murderer: 'Meurtrier', kinslayer: 'Parricide', adulterer: 'Adultère', heretic: 'Hérétique', war_hero: 'Héros de guerre',
     poet: 'Poète', mystic: 'Mystique', administrator: 'Administrateur',
@@ -227,7 +205,7 @@ const T: Record<string, Record<string, string>> = {
     lustful: 'Passionnée', chaste: 'Chaste', loyal: 'Loyale', fickle: 'Inconstante', wounded: 'Blessée', maimed: 'Estropiée',
     ill: 'Malade', robust: 'Robuste', frail: 'Chétive', comely: 'Belle', homely: 'Disgracieuse', murderer: 'Meurtrière',
     kinslayer: 'Parricide', war_hero: 'Héroïne de guerre', mystic: 'Mystique', administrator: 'Administratrice',
-    strategist: 'Stratège', depressed: 'Mélancolique',
+    strategist: 'Stratège', depressed: 'Mélancolique', lunatic: 'Folie',
   },
   'trait.desc': {
     ambitious: 'Rien ne suffit jamais. Toutes les compétences, mais un stress accru.',
@@ -264,6 +242,7 @@ const T: Record<string, Record<string, string>> = {
     maimed: 'Une blessure a laissé des séquelles.',
     infirm: 'L’âge a eu raison de ses forces.',
     depressed: 'Une mélancolie profonde.',
+    lunatic: 'Des accès de folie imprévisibles : absences, terreurs, fureurs soudaines.',
     robust: 'Une santé de fer.',
     frail: 'Une constitution fragile.',
     sharp: 'Un esprit vif et brillant.',
@@ -757,6 +736,21 @@ const T: Record<string, Record<string, string>> = {
     host_offline: 'En attente de l’hôte (sa page doit rester ouverte)',
   },
 };
+
+const GROUP_FR: Record<string, string> = {
+  christian: 'chrétienne', islam: 'musulmane', abrahamic: 'abrahamique', dharmic: 'dharmique', buddhist: 'bouddhiste', east_asian: 'd’Asie orientale',
+  traditional: 'traditionnelle', african: 'africaine', american: 'amérindienne', oceanian: 'océanienne',
+};
+for (const [id, { name, group }] of Object.entries(CULTURE_1400_NAMES)) {
+  T.culture![id] = name;
+  T['culture.desc']![id] = `Groupe linguistique : ${group.replace(/_/g, ' ')}.`;
+}
+for (const [id, { name, family }] of Object.entries(FAITH_1400_NAMES)) {
+  T.faith![id] = name;
+  T['faith.desc']![id] = `Famille ${GROUP_FR[family] ?? family}.`;
+}
+T.government = Object.fromEntries(GOVERNMENTS.map((g) => [g.id, g.name]));
+T['government.desc'] = Object.fromEntries(GOVERNMENTS.map((g) => [g.id, g.description]));
 
 function flatten(): LocaleTable {
   const out: LocaleTable = {};

@@ -6,6 +6,7 @@ import type {
   Faction,
   Hook,
   House,
+  Pact,
   ProvinceState,
   Relation,
   Secret,
@@ -25,6 +26,21 @@ export interface RecommendedStart {
   objective: string;
 }
 
+export interface PolityInfo {
+  id: string;
+  name: string;
+  short: string;
+  adjective: string;
+  titleId: string;
+  government: string;
+  confidence: 'high' | 'medium' | 'low' | 'gameplayApproximation';
+  note: string;
+  generated: boolean;
+  capitalProvinceId: string;
+  /** Intitulé propre du dirigeant [masculin, féminin]. */
+  rulerTitle?: [string, string];
+}
+
 export interface ScenarioData {
   id: string;
   name: string;
@@ -42,6 +58,9 @@ export interface ScenarioData {
   secrets: Record<string, Secret>;
   hooks: Record<string, Hook>;
   factions: Record<string, Faction>;
+  pacts: Record<string, Pact>;
   recommended: RecommendedStart[];
   nextId: number;
+  /** Fiche historique de chaque entité jouable (confiance, notes). */
+  polities?: Record<string, PolityInfo>;
 }

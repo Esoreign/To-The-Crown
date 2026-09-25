@@ -1,0 +1,36 @@
+{
+  "name": "@ttc/worldgen",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pipeline géospatial reproductible du scénario Monde 1400 (données physiques, provinces, tuiles de relief).",
+  "scripts": {
+    "fetch": "tsx src/fetch-sources.ts",
+    "rasters": "tsx src/build-rasters.ts",
+    "provinces": "tsx src/build-provinces.ts",
+    "geometry": "tsx src/build-geometry.ts",
+    "tiles": "tsx src/build-tiles.ts",
+    "world": "tsx src/build-world.ts",
+    "all": "pnpm fetch && pnpm rasters && pnpm provinces && pnpm geometry && pnpm tiles && pnpm world",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ttc/shared": "workspace:*",
+    "@ttc/content": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/geojson": "7946.0.16",
+    "@types/node": "24.13.6",
+    "@types/topojson-client": "3.1.5",
+    "@types/topojson-server": "3.0.4",
+    "@types/topojson-simplify": "3.0.3",
+    "@types/topojson-specification": "1.0.5",
+    "flatbush": "4.6.2",
+    "polygon-clipping": "0.15.7",
+    "sharp": "0.35.4",
+    "topojson-client": "3.1.0",
+    "topojson-server": "3.0.1",
+    "topojson-simplify": "3.0.3",
+    "tsx": "4.23.15"
+  }
+}

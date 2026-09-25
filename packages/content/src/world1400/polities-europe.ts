@@ -1,0 +1,641 @@
+/**
+ * Europe au 1er janvier 1400. Sources générales : chronologies dynastiques
+ * standard (voir docs/DATA_SOURCES.md). Les territoires sont des ancrages
+ * approximatifs ; les principautés mineures du Saint-Empire sont regroupées.
+ */
+import { P } from './polity-types';
+
+export const POLITIES_EUROPE = [
+  // --- Royaume de France et grands apanages --------------------------------
+  P({
+    id: 'fra', name: 'Royaume de France', short: 'France', adj: 'français', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'french', faith: 'catholic', color: '#2d4f9e', cap: [2.35, 48.86, 'Paris'],
+    at: [[1.1, 49.44], [0.69, 47.39], [4.83, 45.76], [1.44, 43.6], [2.35, 43.21], [3.88, 43.61], [1.26, 45.83], [5.72, 45.19], [4.03, 49.26], [4.07, 48.3], [2.3, 49.9], [-0.37, 49.18], [-1.62, 49.64], [0.1, 46.0], [2.0, 44.6], [4.36, 43.84]],
+    w: 1.1, house: 'Valois', ruler: ['Charles', 1368, 'M', 'VI'], spouse: ['Isabeau', 1370, 'F'],
+    kids: [['Louis', 1397], ['Jean', 1398], ['Isabelle', 1389, 'F'], ['Jeanne', 1391, 'F'], ['Marie', 1393, 'F'], ['Michelle', 1395, 'F']],
+    conf: 'high', note: 'Charles VI subit des crises de folie depuis 1392 ; les princes des fleurs de lys se disputent le Conseil. Trêve de vingt-huit ans avec l’Angleterre (1396).',
+  }),
+  P({
+    id: 'bur', name: 'Duché de Bourgogne', short: 'Bourgogne', adj: 'bourguignon', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'french', faith: 'catholic', color: '#7a2d52', cap: [5.04, 47.32, 'Dijon'],
+    at: [[6.02, 47.24], [3.22, 51.21], [3.72, 51.05], [2.78, 50.29], [3.16, 46.99], [4.4, 50.9, 40]],
+    w: 1.1, house: 'Valois-Bourgogne', ruler: ['Philippe', 1342, 'M', 'le Hardi'], spouse: ['Marguerite', 1350, 'F'],
+    kids: [['Jean', 1371], ['Antoine', 1384], ['Philippe', 1389], ['Marguerite', 1374, 'F'], ['Catherine', 1378, 'F']],
+    liege: 'fra', subject: 'autonomous_vassal', conf: 'high',
+    note: 'Bourgogne, Flandre, Artois et Franche-Comté (terre d’Empire) réunis par mariage en 1384.',
+  }),
+  P({
+    id: 'bre', name: 'Duché de Bretagne', short: 'Bretagne', adj: 'breton', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'breton', faith: 'catholic', color: '#e6e0cf', cap: [-1.55, 47.22, 'Nantes'],
+    at: [[-1.68, 48.11], [-4.49, 48.39], [-2.76, 47.66], [-4.1, 48.0], [-2.8, 48.5]], house: 'Montfort',
+    ruler: ['Jean', 1389, 'M', 'V'], liege: 'fra', subject: 'autonomous_vassal', conf: 'high',
+    note: 'Jean V est mineur ; sa mère Jeanne de Navarre gouverne jusqu’en 1402.',
+  }),
+  P({
+    id: 'orl', name: 'Duché d’Orléans', short: 'Orléans', adj: 'orléanais', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'french', faith: 'catholic', color: '#5f7ec2', cap: [1.9, 47.9, 'Orléans'], at: [[1.33, 47.59], [2.87, 49.25, 50]], reach: 120,
+    house: 'Valois-Orléans', ruler: ['Louis', 1372, 'M', 'Ier'], spouse: ['Valentine', 1368, 'F'], kids: [['Charles', 1394], ['Philippe', 1396], ['Jean', 1399]],
+    liege: 'fra', subject: 'direct_vassal', conf: 'high', note: 'Frère du roi, rival de Philippe de Bourgogne au Conseil.',
+  }),
+  P({
+    id: 'ber', name: 'Duché de Berry', short: 'Berry', adj: 'berrichon', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'french', faith: 'catholic', color: '#8aa0d8', cap: [2.4, 47.08, 'Bourges'], at: [[0.34, 46.58], [3.08, 45.78], [2.6, 45.2]],
+    house: 'Valois', ruler: ['Jean', 1340, 'M', 'de Berry'], spouse: ['Jeanne', 1378, 'F'], liege: 'fra', subject: 'direct_vassal', conf: 'high',
+    note: 'Berry, Auvergne et Poitou ; mécène des « Très Riches Heures ».',
+  }),
+  P({
+    id: 'bou', name: 'Duché de Bourbon', short: 'Bourbon', adj: 'bourbonnais', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'french', faith: 'catholic', color: '#4a5fa0', cap: [3.33, 46.57, 'Moulins'], at: [[4.06, 45.6]], reach: 130,
+    house: 'Bourbon', ruler: ['Louis', 1337, 'M', 'II'], spouse: ['Anne', 1358, 'F'], kids: [['Jean', 1381]], liege: 'fra', subject: 'direct_vassal', conf: 'high',
+  }),
+  P({
+    id: 'anj', name: 'Duché d’Anjou', short: 'Anjou', adj: 'angevin', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'french', faith: 'catholic', color: '#9fb4e0', cap: [-0.55, 47.47, 'Angers'], at: [[0.2, 48.0], [5.45, 43.53], [5.37, 43.3], [6.2, 43.9]],
+    house: 'Valois-Anjou', ruler: ['Louis', 1377, 'M', 'II'], liege: 'fra', subject: 'direct_vassal', conf: 'high',
+    note: 'Anjou, Maine et comté de Provence (terre d’Empire) ; roi titulaire de Naples chassé en 1399.',
+  }),
+  P({
+    id: 'foi', name: 'Comté de Foix-Béarn', short: 'Foix-Béarn', adj: 'fuxéen', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'occitan', faith: 'catholic', color: '#d8b33a', cap: [-0.37, 43.3, 'Orthez'], at: [[1.6, 42.96]], reach: 90,
+    house: 'Grailly', ruler: ['Archambaud', 1330, 'M'], spouse: ['Isabelle', 1361, 'F'], kids: [['Jean', 1382], ['Gaston', 1385]],
+    liege: 'fra', subject: 'autonomous_vassal', conf: 'medium', note: 'Le Béarn se dit souverain ; Isabelle de Foix apporte l’héritage à Archambaud de Grailly (1398).',
+  }),
+  P({
+    id: 'arm', name: 'Comté d’Armagnac', short: 'Armagnac', adj: 'armagnac', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'occitan', faith: 'catholic', color: '#b0452e', cap: [0.62, 43.93, 'Lectoure'], at: [[2.57, 44.35]], reach: 100,
+    house: 'Armagnac', ruler: ['Bernard', 1360, 'M', 'VII'], spouse: ['Bonne', 1362, 'F'], liege: 'fra', subject: 'direct_vassal', conf: 'high',
+  }),
+  P({
+    id: 'bar', name: 'Duché de Bar', short: 'Bar', adj: 'barrois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'french', faith: 'catholic', color: '#7c8fb8', cap: [5.16, 48.77, 'Bar-le-Duc'], reach: 70,
+    house: 'Montbéliard', ruler: ['Robert', 1344, 'M', 'Ier'], liege: 'fra', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  // --- Îles Britanniques ---------------------------------------------------
+  P({
+    id: 'eng', name: 'Royaume d’Angleterre', short: 'Angleterre', adj: 'anglais', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'english', faith: 'catholic', color: '#b8262e', cap: [-0.12, 51.51, 'Londres'],
+    at: [[-1.08, 53.96], [-2.59, 51.45], [1.3, 52.63], [-2.89, 53.19], [-3.53, 50.72], [-0.54, 53.23], [-4.31, 51.86], [-4.27, 53.14], [-1.61, 54.97], [-2.93, 54.89], [-1.9, 52.5], [-3.4, 52.4],
+      [-0.58, 44.84, 120], [-1.47, 43.49, 60], [1.86, 50.95, 30], [-6.26, 53.35, 70], [-2.1, 49.2, 20]],
+    w: 1.1, house: 'Lancastre', ruler: ['Henri', 1367, 'M', 'IV'],
+    kids: [['Henri', 1386], ['Thomas', 1387], ['Jean', 1389], ['Humphrey', 1390], ['Blanche', 1392, 'F'], ['Philippa', 1394, 'F']],
+    conf: 'high', note: 'Henri IV a déposé Richard II en septembre 1399 ; Richard meurt à Pontefract en février 1400. Guyenne, Calais et la Pale d’Irlande relèvent de la couronne.',
+  }),
+  P({
+    id: 'sco', name: 'Royaume d’Écosse', short: 'Écosse', adj: 'écossais', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'scottish', faith: 'catholic', color: '#3b6fb6', cap: [-3.19, 55.95, 'Édimbourg'],
+    at: [[-3.43, 56.4], [-2.1, 57.15], [-4.22, 57.48], [-3.6, 55.07], [-4.25, 55.86], [-3.0, 58.4]],
+    house: 'Stuart', ruler: ['Robert', 1337, 'M', 'III'], spouse: ['Annabella', 1350, 'F'], kids: [['David', 1378], ['Jacques', 1394], ['Marguerite', 1380, 'F']],
+    conf: 'high', note: 'Le duc d’Albany et le jeune duc de Rothesay gouvernent à la place d’un roi infirme.',
+  }),
+  P({
+    id: 'isl', name: 'Seigneurie des Îles', short: 'Îles', adj: 'des Îles', rank: 'duchy', gov: 'clan_realm',
+    culture: 'gaelic', faith: 'catholic', color: '#2f8a73', cap: [-6.17, 55.83, 'Finlaggan'], at: [[-6.2, 57.3], [-6.6, 58.2], [-5.6, 55.5], [-5.7, 56.6]], reach: 90,
+    house: 'MacDonald', ruler: ['Domhnall', 1350, 'M'], liege: 'sco', subject: 'autonomous_vassal', conf: 'medium', title: ['Seigneur des Îles', 'Dame des Îles'],
+  }),
+  P({
+    id: 'tyr', name: 'Tír Eoghain', short: 'Tír Eoghain', adj: 'des Uí Néill', rank: 'duchy', gov: 'clan_realm',
+    culture: 'gaelic', faith: 'catholic', color: '#3c9a52', cap: [-6.77, 54.5, 'Dún Geanainn'], at: [[-6.0, 54.9]], reach: 90,
+    house: 'Ó Néill', ruler: ['Niall', 1360, 'M', 'Óg'], conf: 'medium',
+  }),
+  P({
+    id: 'tco', name: 'Tír Conaill', short: 'Tír Conaill', adj: 'des Ó Domhnaill', rank: 'county', gov: 'clan_realm',
+    culture: 'gaelic', faith: 'catholic', color: '#6aae4a', cap: [-8.11, 54.65, 'Dún na nGall'], reach: 70,
+    house: 'Ó Domhnaill', ruler: ['Toirdhealbhach', 1360, 'M'], conf: 'medium',
+  }),
+  P({
+    id: 'con', name: 'Connacht', short: 'Connacht', adj: 'connachtais', rank: 'duchy', gov: 'clan_realm',
+    culture: 'gaelic', faith: 'catholic', color: '#4f8f3a', cap: [-8.19, 53.63, 'Ros Comáin'], at: [[-9.0, 53.3], [-9.3, 53.9]], reach: 90,
+    house: 'Ó Conchobhair', ruler: ['Toirdhealbhach', 1355, 'M', 'Ruadh'], conf: 'medium', note: 'Pouvoir partagé entre deux branches rivales des Ó Conchobhair et les Burke.',
+  }),
+  P({
+    id: 'tho', name: 'Tuadhmhumhain', short: 'Thomond', adj: 'des Ó Briain', rank: 'county', gov: 'clan_realm',
+    culture: 'gaelic', faith: 'catholic', color: '#8fbf5a', cap: [-8.98, 52.84, 'Inis'], reach: 70, house: 'Ó Briain', ruler: ['Conchobhar', 1360, 'M'], conf: 'medium',
+  }),
+  P({
+    id: 'dsm', name: 'Deasmhumhain', short: 'Desmond', adj: 'des Mac Cárthaigh', rank: 'county', gov: 'clan_realm',
+    culture: 'gaelic', faith: 'catholic', color: '#2e7a4a', cap: [-9.5, 52.06, 'Cill Airne'], at: [[-8.6, 51.9]], reach: 80, house: 'Mac Cárthaigh Mór', ruler: ['Tadhg', 1365, 'M'], conf: 'medium',
+  }),
+  P({
+    id: 'lei', name: 'Laighin', short: 'Leinster', adj: 'des Mac Murchadha', rank: 'county', gov: 'clan_realm',
+    culture: 'gaelic', faith: 'catholic', color: '#5c9e7a', cap: [-6.5, 52.59, 'Fearna'], reach: 70, house: 'Mac Murchadha Caomhánach', ruler: ['Art', 1357, 'M', 'Mór'], conf: 'high',
+    note: 'Art Mór a tenu tête aux deux expéditions de Richard II (1394, 1399).',
+  }),
+  P({
+    id: 'orm', name: 'Comté d’Ormond', short: 'Ormond', adj: 'd’Ormond', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'english', faith: 'catholic', color: '#c65a4a', cap: [-7.25, 52.65, 'Kilkenny'], reach: 60, house: 'Butler', ruler: ['James', 1362, 'M', 'III'],
+    liege: 'eng', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  // --- Péninsule Ibérique ---------------------------------------------------
+  P({
+    id: 'cas', name: 'Couronne de Castille', short: 'Castille', adj: 'castillan', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'castilian', faith: 'catholic', color: '#d3a93a', cap: [-4.02, 39.86, 'Tolède'],
+    at: [[-3.7, 42.34], [-5.57, 42.6], [-8.54, 42.88], [-5.85, 43.36], [-5.98, 37.39], [-4.78, 37.89], [-1.13, 37.99], [-4.72, 41.65], [-6.97, 38.88], [-2.13, 40.07], [-3.79, 37.77], [-5.66, 40.96], [-2.93, 43.26], [-7.55, 43.0], [-3.0, 41.5], [-6.4, 39.5], [-6.3, 36.6]],
+    w: 1.1, house: 'Trastamare', ruler: ['Henri', 1379, 'M', 'III'], spouse: ['Catherine', 1373, 'F'], conf: 'high',
+    note: 'Henri III « le Maladif » restaure l’autorité royale ; son frère Ferdinand d’Antequera est le plus riche seigneur du royaume.',
+  }),
+  P({
+    id: 'ara', name: 'Couronne d’Aragon', short: 'Aragon', adj: 'aragonais', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'catalan', faith: 'catholic', color: '#c9a227', cap: [2.17, 41.39, 'Barcelone'],
+    at: [[-0.88, 41.65], [-0.38, 39.47], [2.65, 39.57, 80], [-0.41, 42.14], [0.62, 41.62], [2.9, 42.7], [-1.1, 40.35], [1.25, 41.12], [9.11, 39.22, 70], [8.32, 40.56, 30], [-0.48, 38.35]],
+    house: 'Barcelone', ruler: ['Martin', 1356, 'M', 'Ier'], spouse: ['Marie', 1358, 'F'], conf: 'high',
+    note: 'Aragon, Catalogne, Valence, Majorque ; la Sardaigne est disputée avec l’Arborée.',
+  }),
+  P({
+    id: 'sic', name: 'Royaume de Sicile', short: 'Sicile', adj: 'sicilien', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#e0b84a', cap: [13.36, 38.12, 'Palerme'], at: [[15.09, 37.5], [15.55, 38.19], [13.58, 37.31], [14.51, 35.9, 30]],
+    house: 'Barcelone', ruler: ['Martin', 1376, 'M', 'le Jeune'], spouse: ['Marie', 1363, 'F'], liege: 'ara', subject: 'personal_union', conf: 'high',
+    note: 'Fils du roi d’Aragon, Martin le Jeune règne en Sicile par sa femme la reine Marie.',
+  }),
+  P({
+    id: 'arb', name: 'Judicat d’Arborée', short: 'Arborée', adj: 'arboréen', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'sardinian', faith: 'catholic', color: '#b86a2e', cap: [8.59, 39.9, 'Oristano'], at: [[8.56, 40.73], [9.3, 40.3]], reach: 90,
+    house: 'Doria-Bas', ruler: ['Mariano', 1379, 'M', 'V'], title: ['Juge', 'Juge'], conf: 'medium', note: 'Brancaleone Doria gouverne pour le jeune juge.',
+  }),
+  P({
+    id: 'por', name: 'Royaume de Portugal', short: 'Portugal', adj: 'portugais', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'portuguese', faith: 'catholic', color: '#2e7d4f', cap: [-9.14, 38.72, 'Lisbonne'],
+    at: [[-8.61, 41.15], [-8.42, 40.2], [-7.91, 38.57], [-7.93, 37.02], [-8.43, 41.55], [-6.76, 41.8], [-7.5, 39.8]],
+    house: 'Aviz', ruler: ['Jean', 1357, 'M', 'Ier'], spouse: ['Philippa', 1360, 'F'],
+    kids: [['Édouard', 1391], ['Pierre', 1392], ['Henri', 1394], ['Isabelle', 1397, 'F'], ['Jean', 1400]], conf: 'high',
+  }),
+  P({
+    id: 'nav', name: 'Royaume de Navarre', short: 'Navarre', adj: 'navarrais', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'basque', faith: 'catholic', color: '#a33a6a', cap: [-1.64, 42.82, 'Pampelune'], at: [[-1.6, 42.06]], reach: 90,
+    house: 'Évreux', ruler: ['Charles', 1361, 'M', 'III'], spouse: ['Éléonore', 1363, 'F'], kids: [['Jeanne', 1382, 'F'], ['Blanche', 1387, 'F'], ['Isabelle', 1395, 'F']], conf: 'high',
+  }),
+  P({
+    id: 'gra', name: 'Émirat de Grenade', short: 'Grenade', adj: 'grenadin', rank: 'kingdom', gov: 'centralized_monarchy',
+    culture: 'andalusi', faith: 'sunni', color: '#3e8f5a', cap: [-3.6, 37.18, 'Grenade'], at: [[-4.42, 36.72], [-2.46, 36.84], [-5.17, 36.74], [-5.35, 36.14, 30]], reach: 110,
+    house: 'Nasrides', ruler: ['Muhammad', 1370, 'M', 'VII'], title: ['Sultan', 'Sultane'], conf: 'high',
+  }),
+  // --- Italie ---------------------------------------------------------------
+  P({
+    id: 'mil', name: 'Duché de Milan', short: 'Milan', adj: 'milanais', rank: 'duchy', gov: 'centralized_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#3a7a4a', cap: [9.19, 45.46, 'Milan'],
+    at: [[9.16, 45.19], [9.67, 45.7], [10.22, 45.54], [10.99, 45.44], [11.55, 45.55], [10.33, 44.8], [9.69, 45.05], [10.02, 45.13], [8.62, 45.45], [9.08, 45.81], [10.4, 43.72], [11.33, 43.32], [12.39, 43.11], [12.22, 46.14]],
+    w: 1.15, house: 'Visconti', ruler: ['Jean Galéas', 1351, 'M'], spouse: ['Catherine', 1360, 'F'], kids: [['Jean Marie', 1388], ['Philippe Marie', 1392]],
+    liege: 'hre', subject: 'autonomous_vassal', conf: 'high', note: 'Duc depuis 1395 ; Pise, Sienne et Pérouse se sont données à lui en 1399–1400.',
+  }),
+  P({
+    id: 'ven', name: 'République de Venise', short: 'Venise', adj: 'vénitien', rank: 'duchy', gov: 'merchant_republic',
+    culture: 'italian', faith: 'catholic', color: '#c23b3b', cap: [12.33, 45.44, 'Venise'],
+    at: [[12.24, 45.67], [13.73, 45.55, 50], [25.13, 35.34, 90], [24.02, 35.51, 60], [23.6, 38.46, 50], [19.92, 39.62, 40], [21.7, 36.8, 30], [22.8, 37.57, 30], [19.45, 41.32, 30], [19.51, 42.07, 30], [23.73, 37.98, 25]],
+    house: 'Venier', ruler: ['Antonio', 1330, 'M'], title: ['Doge', 'Dogaresse'], conf: 'high',
+    note: 'Crète, Nègrepont, Corfou, Modon et Coron, Durazzo et Scutari ; Venise tient aussi Athènes depuis 1395.',
+  }),
+  P({
+    id: 'gen', name: 'Seigneurie de Gênes', short: 'Gênes', adj: 'génois', rank: 'duchy', gov: 'merchant_republic',
+    culture: 'italian', faith: 'catholic', color: '#d86a6a', cap: [8.93, 44.41, 'Gênes'],
+    at: [[8.48, 44.31], [9.82, 44.11], [9.45, 42.7, 70], [35.38, 45.03, 50], [26.14, 38.37, 30], [33.94, 35.12, 30]],
+    house: 'Calleville', ruler: ['Colart', 1350, 'M'], title: ['Gouverneur', 'Gouverneure'], liege: 'fra', subject: 'client_state', conf: 'medium',
+    note: 'Gênes s’est donnée au roi de France en 1396 ; un gouverneur français la dirige. Caffa, Chio et Famagouste sont génoises.',
+  }),
+  P({
+    id: 'flo', name: 'République de Florence', short: 'Florence', adj: 'florentin', rank: 'duchy', gov: 'city_republic',
+    culture: 'italian', faith: 'catholic', color: '#8c3a8c', cap: [11.25, 43.77, 'Florence'], at: [[11.88, 43.46], [10.92, 43.93]], reach: 90,
+    house: 'Albizzi', ruler: ['Maso', 1343, 'M'], title: ['Gonfalonier', 'Gonfalonière'], conf: 'medium',
+    note: 'La république est dominée par l’oligarchie de Maso degli Albizzi.',
+  }),
+  P({
+    id: 'luc', name: 'République de Lucques', short: 'Lucques', adj: 'lucquois', rank: 'county', gov: 'city_republic',
+    culture: 'italian', faith: 'catholic', color: '#b86ab8', cap: [10.5, 43.84, 'Lucques'], reach: 30,
+    house: 'Guinigi', ruler: ['Paolo', 1372, 'M'], title: ['Gonfalonier', 'Gonfalonière'], conf: 'high', note: 'Paolo Guinigi se fera seigneur de la ville en octobre 1400.',
+  }),
+  P({
+    id: 'man', name: 'Seigneurie de Mantoue', short: 'Mantoue', adj: 'mantouan', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#e07a2e', cap: [10.79, 45.16, 'Mantoue'], reach: 40,
+    house: 'Gonzague', ruler: ['François', 1366, 'M', 'Ier'], title: ['Capitaine du peuple', 'Capitaine du peuple'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'fer', name: 'Marquisat de Ferrare', short: 'Ferrare', adj: 'ferrarais', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#e6c34a', cap: [11.62, 44.84, 'Ferrare'], at: [[10.93, 44.65]], reach: 50,
+    house: 'Este', ruler: ['Nicolas', 1383, 'M', 'III'], title: ['Marquis', 'Marquise'], liege: 'pap', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'pad', name: 'Seigneurie de Padoue', short: 'Padoue', adj: 'padouan', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#a64a2e', cap: [11.88, 45.41, 'Padoue'], reach: 40,
+    house: 'Carrare', ruler: ['François', 1359, 'M', 'Novello'], conf: 'high',
+  }),
+  P({
+    id: 'mof', name: 'Marquisat de Montferrat', short: 'Montferrat', adj: 'montferrin', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#c28a5a', cap: [8.45, 45.13, 'Casal'], at: [[8.2, 44.6]], reach: 50,
+    house: 'Paléologue', ruler: ['Théodore', 1364, 'M', 'II'], title: ['Marquis', 'Marquise'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'sav', name: 'Comté de Savoie', short: 'Savoie', adj: 'savoyard', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'french', faith: 'catholic', color: '#b33a3a', cap: [5.92, 45.57, 'Chambéry'], at: [[7.68, 45.07], [7.32, 45.74], [7.26, 43.7], [5.22, 46.2], [6.63, 46.52], [6.4, 45.9]],
+    house: 'Savoie', ruler: ['Amédée', 1383, 'M', 'VIII'], spouse: ['Marie', 1386, 'F'], title: ['Comte', 'Comtesse'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'pap', name: 'États pontificaux', short: 'Rome', adj: 'pontifical', rank: 'kingdom', gov: 'theocracy',
+    culture: 'italian', faith: 'catholic', color: '#e8e2c0', cap: [12.49, 41.9, 'Rome'], at: [[13.52, 43.62], [12.1, 42.42], [12.74, 42.73], [11.34, 44.49], [12.9, 43.3], [13.2, 42.0]],
+    house: 'Tomacelli', ruler: ['Boniface', 1350, 'M', 'IX'], title: ['Pape', 'Pape'], conf: 'high',
+    note: 'Grand Schisme : Rome et Avignon ont chacune leur pape. 1400 est proclamée année jubilaire.',
+  }),
+  P({
+    id: 'avi', name: 'Papauté d’Avignon', short: 'Avignon', adj: 'avignonnais', rank: 'county', gov: 'theocracy',
+    culture: 'occitan', faith: 'catholic', color: '#f0e6b0', cap: [4.81, 43.95, 'Avignon'], reach: 40,
+    house: 'Luna', ruler: ['Benoît', 1328, 'M', 'XIII'], title: ['Pape', 'Pape'], conf: 'high',
+    note: 'Assiégé dans son palais en 1398–1403 après la soustraction d’obédience de la France.',
+  }),
+  P({
+    id: 'nap', name: 'Royaume de Naples', short: 'Naples', adj: 'napolitain', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#5a8ac2', cap: [14.25, 40.85, 'Naples'],
+    at: [[16.87, 41.12], [17.24, 40.47], [13.4, 42.35], [14.77, 40.68], [16.25, 39.3], [15.65, 38.11], [18.17, 40.35], [15.55, 41.46], [14.66, 41.56], [15.8, 40.64]],
+    house: 'Anjou-Durazzo', ruler: ['Ladislas', 1377, 'M', 'Ier'], conf: 'high', note: 'Ladislas a repris Naples à Louis II d’Anjou en juillet 1399.',
+  }),
+  P({
+    id: 'mal', name: 'Seigneurie des Malatesta', short: 'Rimini', adj: 'malatestien', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#6ab86a', cap: [12.57, 44.06, 'Rimini'], reach: 40,
+    house: 'Malatesta', ruler: ['Charles', 1368, 'M', 'Ier'], liege: 'pap', subject: 'autonomous_vassal', conf: 'high', title: ['Vicaire pontifical', 'Vicaire pontificale'],
+  }),
+  P({
+    id: 'urb', name: 'Comté d’Urbino', short: 'Urbino', adj: 'urbinate', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#4a9ab8', cap: [12.64, 43.73, 'Urbino'], reach: 35,
+    house: 'Montefeltro', ruler: ['Guidantonio', 1378, 'M'], liege: 'pap', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'swi', name: 'Confédération des VIII cantons', short: 'Confédération', adj: 'confédéré', rank: 'duchy', gov: 'city_republic',
+    culture: 'swiss', faith: 'catholic', color: '#d84a3a', cap: [8.31, 47.05, 'Lucerne'], at: [[8.54, 47.37], [7.45, 46.95], [8.65, 47.02], [9.05, 47.05]], reach: 70,
+    house: 'Reding', ruler: ['Ital', 1370, 'M'], title: ['Landammann', 'Landammann'], liege: 'hre', subject: 'confederate_member', conf: 'medium',
+    note: 'Ligue de cantons ruraux et urbains ; le dirigeant représente la diète confédérale (approximation de jeu).',
+  }),
+  // --- Saint-Empire ---------------------------------------------------------
+  P({
+    id: 'hre', name: 'Saint-Empire romain', short: 'Saint-Empire', adj: 'impérial', rank: 'empire', gov: 'elective_monarchy',
+    culture: 'german', faith: 'catholic', color: '#e0c050', cap: [14.42, 50.08, 'Prague'], union: 'boh',
+    house: 'Luxembourg', ruler: ['Venceslas', 1361, 'M', 'IV'], title: ['Roi des Romains', 'Reine des Romains'], conf: 'high',
+    note: 'Venceslas, roi de Bohême et roi des Romains, sera déposé par les princes-électeurs en août 1400 au profit de Robert du Palatinat.',
+  }),
+  P({
+    id: 'boh', name: 'Royaume de Bohême', short: 'Bohême', adj: 'bohémien', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'czech', faith: 'catholic', color: '#d9b23a', cap: [14.42, 50.08, 'Prague'], at: [[13.38, 49.75], [14.47, 48.97], [15.83, 50.21], [14.42, 51.18], [15.0, 50.77], [13.5, 50.5]],
+    house: 'Luxembourg', ruler: ['Venceslas', 1361, 'M', 'IV'], spouse: ['Sophie', 1376, 'F'], liege: 'hre', subject: 'personal_union', conf: 'high',
+  }),
+  P({
+    id: 'mrv', name: 'Margraviat de Moravie', short: 'Moravie', adj: 'morave', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'czech', faith: 'catholic', color: '#c28a3a', cap: [16.61, 49.2, 'Brno'], at: [[17.25, 49.59], [17.9, 49.9]], reach: 90,
+    house: 'Luxembourg', ruler: ['Josse', 1351, 'M'], title: ['Margrave', 'Margravine'], liege: 'boh', subject: 'autonomous_vassal', conf: 'high',
+    note: 'Josse de Moravie tient aussi en gage le Brandebourg et le Luxembourg.',
+  }),
+  P({
+    id: 'bra', name: 'Margraviat de Brandebourg', short: 'Brandebourg', adj: 'brandebourgeois', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#8a6a3a', cap: [13.4, 52.52, 'Berlin-Cölln'], at: [[12.55, 52.41], [14.55, 52.35], [11.86, 52.6], [13.9, 53.1]], union: 'mrv',
+    house: 'Luxembourg', ruler: ['Josse', 1351, 'M'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high', title: ['Margrave', 'Margravine'],
+  }),
+  P({
+    id: 'lux', name: 'Duché de Luxembourg', short: 'Luxembourg', adj: 'luxembourgeois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#b89a5a', cap: [6.13, 49.61, 'Luxembourg'], reach: 60, union: 'mrv',
+    house: 'Luxembourg', ruler: ['Josse', 1351, 'M'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'sil', name: 'Duchés de Silésie', short: 'Silésie', adj: 'silésien', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#b8b04a', cap: [17.04, 51.11, 'Breslau'], at: [[16.2, 51.2], [18.0, 50.6], [17.9, 51.4], [15.5, 51.6]],
+    house: 'Piast', ruler: ['Conrad', 1359, 'M', 'III'], liege: 'boh', subject: 'direct_vassal', conf: 'medium',
+    note: 'Une vingtaine de duchés piastes vassaux de la Bohême, regroupés ici pour le jeu.',
+  }),
+  P({
+    id: 'aus', name: 'Duché d’Autriche', short: 'Autriche', adj: 'autrichien', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#c83a3a', cap: [16.37, 48.21, 'Vienne'], at: [[14.29, 48.31], [15.63, 48.2], [16.0, 47.8]],
+    house: 'Habsbourg', ruler: ['Albert', 1377, 'M', 'IV'], spouse: ['Jeanne', 1377, 'F'], kids: [['Albert', 1397]], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'inn', name: 'Autriche intérieure et Tyrol', short: 'Styrie-Tyrol', adj: 'styrien', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#a82e4a', cap: [15.44, 47.07, 'Graz'], at: [[14.31, 46.62], [14.51, 46.05], [13.77, 45.65, 30], [11.4, 47.27], [11.35, 46.5], [7.85, 48.0, 50], [8.05, 47.39, 40], [13.5, 47.0]],
+    house: 'Habsbourg', ruler: ['Guillaume', 1370, 'M'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+    note: 'Branche léopoldienne : Guillaume gouverne avec ses frères Léopold IV, Ernest et Frédéric.',
+  }),
+  P({
+    id: 'bvm', name: 'Duché de Bavière-Munich', short: 'Bavière-Munich', adj: 'bavarois', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#5a9ad8', cap: [11.58, 48.14, 'Munich'], reach: 70, house: 'Wittelsbach', ruler: ['Ernest', 1373, 'M'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'bvl', name: 'Duché de Bavière-Landshut', short: 'Bavière-Landshut', adj: 'bavarois', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#7ab0e0', cap: [12.15, 48.54, 'Landshut'], at: [[12.83, 48.17]], reach: 70, house: 'Wittelsbach', ruler: ['Henri', 1386, 'M', 'XVI'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'bvi', name: 'Duché de Bavière-Ingolstadt', short: 'Bavière-Ingolstadt', adj: 'bavarois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#3a7ab8', cap: [11.43, 48.76, 'Ingolstadt'], reach: 50, house: 'Wittelsbach', ruler: ['Étienne', 1337, 'M', 'III'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'pal', name: 'Électorat palatin', short: 'Palatinat', adj: 'palatin', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#3a5ab0', cap: [8.69, 49.4, 'Heidelberg'], at: [[11.86, 49.44], [8.2, 49.6]], reach: 80,
+    house: 'Wittelsbach', ruler: ['Robert', 1352, 'M', 'III'], spouse: ['Élisabeth', 1358, 'F'], kids: [['Louis', 1378], ['Jean', 1383], ['Étienne', 1385], ['Othon', 1390]],
+    liege: 'hre', subject: 'autonomous_vassal', conf: 'high', title: ['Comte palatin', 'Comtesse palatine'],
+  }),
+  P({
+    id: 'mei', name: 'Margraviat de Misnie', short: 'Misnie', adj: 'misnien', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#e0d060', cap: [13.47, 51.16, 'Meissen'], at: [[13.74, 51.05], [12.37, 51.34], [12.9, 50.8]],
+    house: 'Wettin', ruler: ['Frédéric', 1370, 'M', 'IV'], title: ['Margrave', 'Margravine'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'thu', name: 'Landgraviat de Thuringe', short: 'Thuringe', adj: 'thuringien', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#c0b050', cap: [10.32, 50.98, 'Eisenach'], at: [[11.3, 50.9]], reach: 70,
+    house: 'Wettin', ruler: ['Balthasar', 1336, 'M'], title: ['Landgrave', 'Landgravine'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'swb', name: 'Duché de Saxe-Wittemberg', short: 'Saxe', adj: 'saxon', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#d8c880', cap: [12.65, 51.87, 'Wittemberg'], reach: 60, house: 'Ascanie', ruler: ['Rodolphe', 1373, 'M', 'III'],
+    liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'mai', name: 'Électorat de Mayence', short: 'Mayence', adj: 'mayençais', rank: 'county', gov: 'theocracy',
+    culture: 'german', faith: 'catholic', color: '#e8e8e8', cap: [8.27, 50.0, 'Mayence'], at: [[9.15, 49.97], [10.2, 51.4, 30], [11.03, 50.98, 25]], reach: 60,
+    house: 'Nassau', ruler: ['Jean', 1360, 'M', 'II'], title: ['Archevêque-électeur', 'Archevêque-électrice'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'col', name: 'Électorat de Cologne', short: 'Cologne', adj: 'colonais', rank: 'county', gov: 'theocracy',
+    culture: 'german', faith: 'catholic', color: '#d0d0d0', cap: [7.1, 50.73, 'Bonn'], at: [[8.06, 51.4]], reach: 60,
+    house: 'Saarwerden', ruler: ['Frédéric', 1348, 'M', 'III'], title: ['Archevêque-électeur', 'Archevêque-électrice'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'tri', name: 'Électorat de Trèves', short: 'Trèves', adj: 'trévire', rank: 'county', gov: 'theocracy',
+    culture: 'german', faith: 'catholic', color: '#c8c8b0', cap: [6.64, 49.75, 'Trèves'], at: [[7.59, 50.36]], reach: 60,
+    house: 'Falkenstein', ruler: ['Werner', 1355, 'M'], title: ['Archevêque-électeur', 'Archevêque-électrice'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'hes', name: 'Landgraviat de Hesse', short: 'Hesse', adj: 'hessois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#b05a8a', cap: [9.48, 51.31, 'Cassel'], at: [[8.77, 50.8]], reach: 70,
+    house: 'Hesse', ruler: ['Hermann', 1341, 'M', 'II'], title: ['Landgrave', 'Landgravine'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'wue', name: 'Comté de Wurtemberg', short: 'Wurtemberg', adj: 'wurtembergeois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#d8a03a', cap: [9.18, 48.78, 'Stuttgart'], at: [[9.05, 48.52], [9.9, 48.4]], reach: 60,
+    house: 'Wurtemberg', ruler: ['Eberhard', 1364, 'M', 'III'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'bad', name: 'Margraviat de Bade', short: 'Bade', adj: 'badois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#e0703a', cap: [8.24, 48.76, 'Bade'], reach: 50,
+    house: 'Zähringen', ruler: ['Bernard', 1364, 'M', 'Ier'], title: ['Margrave', 'Margravine'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'nur', name: 'Burgraviat de Nuremberg', short: 'Nuremberg', adj: 'franconien', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#8a8a8a', cap: [10.57, 49.3, 'Ansbach'], at: [[11.58, 49.95], [11.08, 49.45, 25]], reach: 60,
+    house: 'Hohenzollern', ruler: ['Frédéric', 1371, 'M', 'VI'], title: ['Burgrave', 'Burgravine'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'wzb', name: 'Évêchés de Franconie', short: 'Wurtzbourg', adj: 'franconien', rank: 'county', gov: 'theocracy',
+    culture: 'german', faith: 'catholic', color: '#e8dcc0', cap: [9.93, 49.79, 'Wurtzbourg'], at: [[10.89, 49.89]], reach: 60,
+    house: 'Schwarzbourg', ruler: ['Gérard', 1330, 'M'], title: ['Prince-évêque', 'Princesse-abbesse'], liege: 'hre', subject: 'autonomous_vassal', conf: 'medium',
+    note: 'Wurtzbourg et Bamberg regroupés.',
+  }),
+  P({
+    id: 'bru', name: 'Duché de Brunswick-Lunebourg', short: 'Brunswick', adj: 'brunswickois', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#e0c89a', cap: [10.52, 52.27, 'Brunswick'], at: [[10.41, 53.25], [10.08, 52.62], [9.93, 51.53], [9.73, 52.37]],
+    house: 'Welf', ruler: ['Frédéric', 1357, 'M', 'Ier'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+    note: 'Candidat pressenti au trône impérial, il sera assassiné en juin 1400.',
+  }),
+  P({
+    id: 'mec', name: 'Duché de Mecklembourg', short: 'Mecklembourg', adj: 'mecklembourgeois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#e8d84a', cap: [11.41, 53.63, 'Schwerin'], at: [[12.14, 54.09], [13.0, 53.5]], reach: 60,
+    house: 'Mecklembourg', ruler: ['Albert', 1338, 'M', 'III'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high', note: 'Ancien roi de Suède, déposé par Marguerite en 1389.',
+  }),
+  P({
+    id: 'pom', name: 'Duchés de Poméranie', short: 'Poméranie', adj: 'poméranien', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#5a8a8a', cap: [14.55, 53.43, 'Stettin'], at: [[13.77, 54.05], [17.03, 54.46], [13.08, 54.31], [16.2, 54.1]],
+    house: 'Griffons', ruler: ['Swantibor', 1351, 'M', 'Ier'], liege: 'hre', subject: 'autonomous_vassal', conf: 'medium', note: 'Stettin, Wolgast et Stolp regroupés.',
+  }),
+  P({
+    id: 'hol', name: 'Comtés de Hollande et Hainaut', short: 'Hollande', adj: 'hollandais', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'dutch', faith: 'catholic', color: '#e87a2e', cap: [4.3, 52.08, 'La Haye'], at: [[3.95, 50.45], [3.61, 51.5], [4.64, 52.38], [12.57, 48.88, 40]],
+    house: 'Wittelsbach', ruler: ['Albert', 1336, 'M', 'Ier'], kids: [['Guillaume', 1365], ['Jean', 1374]], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+    note: 'Hollande, Zélande, Hainaut et Bavière-Straubing.',
+  }),
+  P({
+    id: 'brb', name: 'Duché de Brabant', short: 'Brabant', adj: 'brabançon', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'dutch', faith: 'catholic', color: '#e0b060', cap: [4.35, 50.85, 'Bruxelles'], at: [[4.4, 51.22], [5.3, 51.69], [4.7, 50.88], [5.9, 50.7]], reach: 70,
+    house: 'Brabant', ruler: ['Jeanne', 1322, 'F'], title: ['Duc', 'Duchesse'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+    note: 'La vieille duchesse Jeanne a désigné Antoine de Bourgogne comme héritier.',
+  }),
+  P({
+    id: 'gel', name: 'Duchés de Gueldre et Juliers', short: 'Gueldre', adj: 'gueldrois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'dutch', faith: 'catholic', color: '#8ab04a', cap: [5.86, 51.84, 'Nimègue'], at: [[6.36, 50.92], [6.0, 51.2]], reach: 50,
+    house: 'Juliers', ruler: ['Guillaume', 1364, 'M', 'Ier'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'lie', name: 'Principauté de Liège', short: 'Liège', adj: 'liégeois', rank: 'county', gov: 'theocracy',
+    culture: 'french', faith: 'catholic', color: '#d8d0b0', cap: [5.57, 50.63, 'Liège'], at: [[5.2, 50.3]], reach: 50,
+    house: 'Wittelsbach', ruler: ['Jean', 1374, 'M'], title: ['Prince-évêque', 'Princesse-abbesse'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'utr', name: 'Principauté d’Utrecht', short: 'Utrecht', adj: 'utrechtois', rank: 'county', gov: 'theocracy',
+    culture: 'dutch', faith: 'catholic', color: '#c8c0a0', cap: [5.12, 52.09, 'Utrecht'], at: [[6.16, 52.25]], reach: 50,
+    house: 'Blankenheim', ruler: ['Frédéric', 1355, 'M'], title: ['Prince-évêque', 'Princesse-abbesse'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'cle', name: 'Comté de Clèves et de la Marck', short: 'Clèves', adj: 'clévois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#b83a2e', cap: [6.14, 51.79, 'Clèves'], at: [[7.82, 51.68]], reach: 50,
+    house: 'La Marck', ruler: ['Adolphe', 1373, 'M'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'lor', name: 'Duché de Lorraine', short: 'Lorraine', adj: 'lorrain', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'french', faith: 'catholic', color: '#e0e05a', cap: [6.18, 48.69, 'Nancy'], at: [[6.45, 48.17], [6.6, 49.0]], reach: 60,
+    house: 'Lorraine', ruler: ['Charles', 1364, 'M', 'II'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'mun', name: 'Évêchés de Westphalie', short: 'Münster', adj: 'westphalien', rank: 'county', gov: 'theocracy',
+    culture: 'german', faith: 'catholic', color: '#d0c8a8', cap: [7.63, 51.96, 'Münster'], at: [[8.05, 52.28]], reach: 60,
+    house: 'Hoya', ruler: ['Othon', 1367, 'M', 'IV'], title: ['Prince-évêque', 'Princesse-abbesse'], liege: 'hre', subject: 'autonomous_vassal', conf: 'medium', note: 'Münster et Osnabrück regroupés.',
+  }),
+  P({
+    id: 'brm', name: 'Archevêché de Brême', short: 'Brême', adj: 'brêmois', rank: 'county', gov: 'theocracy',
+    culture: 'german', faith: 'catholic', color: '#dcd4bc', cap: [9.48, 53.6, 'Stade'], at: [[8.8, 53.08]], reach: 50,
+    house: 'Welf', ruler: ['Othon', 1364, 'M', 'II'], title: ['Archevêque', 'Archevêque'], liege: 'hre', subject: 'autonomous_vassal', conf: 'medium',
+  }),
+  P({
+    id: 'mag', name: 'Archevêché de Magdebourg', short: 'Magdebourg', adj: 'magdebourgeois', rank: 'county', gov: 'theocracy',
+    culture: 'german', faith: 'catholic', color: '#e4dcc4', cap: [11.63, 52.13, 'Magdebourg'], at: [[11.97, 51.48]], reach: 50,
+    house: 'Querfurt', ruler: ['Albert', 1350, 'M', 'IV'], title: ['Archevêque', 'Archevêque'], liege: 'hre', subject: 'autonomous_vassal', conf: 'medium',
+  }),
+  P({
+    id: 'sbg', name: 'Archevêché de Salzbourg', short: 'Salzbourg', adj: 'salzbourgeois', rank: 'county', gov: 'theocracy',
+    culture: 'german', faith: 'catholic', color: '#ece4cc', cap: [13.04, 47.8, 'Salzbourg'], reach: 60,
+    house: 'Schenk', ruler: ['Grégoire', 1350, 'M'], title: ['Prince-archevêque', 'Princesse-abbesse'], liege: 'hre', subject: 'autonomous_vassal', conf: 'medium',
+  }),
+  P({
+    id: 'old', name: 'Comté d’Oldenbourg', short: 'Oldenbourg', adj: 'oldenbourgeois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#b0703a', cap: [8.21, 53.14, 'Oldenbourg'], reach: 40, house: 'Oldenbourg', ruler: ['Christian', 1342, 'M', 'V'],
+    liege: 'hre', subject: 'autonomous_vassal', conf: 'medium',
+  }),
+  P({
+    id: 'fri', name: 'Chefferies de Frise orientale', short: 'Frise', adj: 'frison', rank: 'county', gov: 'clan_realm',
+    culture: 'dutch', faith: 'catholic', color: '#6a9ab0', cap: [7.2, 53.37, 'Emden'], at: [[5.8, 53.2]], reach: 50, house: 'tom Brok', ruler: ['Keno', 1345, 'M', 'II'],
+    title: ['Chef', 'Cheffe'], liege: 'hre', subject: 'autonomous_vassal', conf: 'medium', note: 'La « liberté frisonne » : chefs locaux (hovetlinge) sans seigneur territorial.',
+  }),
+  P({
+    id: 'hst', name: 'Comté de Holstein', short: 'Holstein', adj: 'holsteinois', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'german', faith: 'catholic', color: '#8ab0d0', cap: [9.67, 54.3, 'Rendsbourg'], at: [[9.57, 54.52], [10.1, 54.3]], reach: 60,
+    house: 'Schauenbourg', ruler: ['Gérard', 1367, 'M', 'VI'], liege: 'hre', subject: 'autonomous_vassal', conf: 'high', note: 'Tient aussi le Schleswig en fief danois.',
+  }),
+  P({
+    id: 'lub', name: 'Ville libre de Lübeck', short: 'Lübeck', adj: 'lubeckois', rank: 'county', gov: 'merchant_republic',
+    culture: 'german', faith: 'catholic', color: '#c83a5a', cap: [10.69, 53.87, 'Lübeck'], reach: 25, house: 'Pleskow', ruler: ['Jordan', 1340, 'M'],
+    title: ['Bourgmestre', 'Bourgmestre'], liege: 'hre', subject: 'autonomous_vassal', conf: 'medium', note: 'Tête de la Hanse.',
+  }),
+  P({
+    id: 'hbg', name: 'Ville libre de Hambourg', short: 'Hambourg', adj: 'hambourgeois', rank: 'county', gov: 'merchant_republic',
+    culture: 'german', faith: 'catholic', color: '#d85a7a', cap: [9.99, 53.55, 'Hambourg'], reach: 25, house: 'Hoyer', ruler: ['Hein', 1350, 'M'],
+    title: ['Bourgmestre', 'Bourgmestre'], liege: 'hre', subject: 'autonomous_vassal', conf: 'gameplayApproximation',
+  }),
+  // --- Europe du Nord et de l'Est -------------------------------------------
+  P({
+    id: 'teu', name: 'État de l’ordre Teutonique', short: 'Ordre Teutonique', adj: 'teutonique', rank: 'kingdom', gov: 'holy_order',
+    culture: 'german', faith: 'catholic', color: '#f0f0f0', cap: [19.03, 54.04, 'Marienbourg'],
+    at: [[20.51, 54.71], [18.65, 54.35], [18.6, 53.01], [21.13, 55.71], [22.5, 55.6], [18.29, 57.64, 70], [21.5, 53.8], [20.0, 53.5]],
+    house: 'Jungingen', ruler: ['Conrad', 1355, 'M'], title: ['Grand maître', 'Grande maîtresse'], conf: 'high',
+    note: 'Au sommet de sa puissance : la Samogitie (1398) et Gotland (1398) lui appartiennent.',
+  }),
+  P({
+    id: 'liv', name: 'Confédération livonienne', short: 'Livonie', adj: 'livonien', rank: 'duchy', gov: 'holy_order',
+    culture: 'german', faith: 'catholic', color: '#e0e0e0', cap: [25.27, 57.31, 'Wenden'], at: [[24.1, 56.95], [24.75, 59.44], [26.72, 58.38], [26.54, 55.87], [21.97, 56.97], [23.5, 58.4], [27.5, 57.8]],
+    house: 'Brüggenei', ruler: ['Wennemar', 1350, 'M'], title: ['Maître de Livonie', 'Maîtresse de Livonie'], liege: 'teu', subject: 'autonomous_vassal', conf: 'medium',
+    note: 'L’ordre livonien et les évêques de Riga, Dorpat et Ösel se partagent le pays.',
+  }),
+  P({
+    id: 'kal', name: 'Union de Kalmar', short: 'Kalmar', adj: 'scandinave', rank: 'empire', gov: 'feudal_monarchy',
+    culture: 'danish', faith: 'catholic', color: '#b83a4a', cap: [12.57, 55.68, 'Copenhague'],
+    at: [[13.19, 55.7], [10.2, 56.16], [9.4, 56.45], [10.39, 55.4], [18.07, 59.33], [17.64, 59.86], [16.36, 56.66], [15.62, 58.41], [11.9, 57.7], [5.32, 60.39], [10.75, 59.91], [10.4, 63.43], [18.95, 69.65], [22.27, 60.45], [28.73, 60.71], [15.63, 60.6], [17.94, 62.63], [14.2, 57.8], [8.0, 58.2], [13.0, 67.3], [25.47, 65.01, 90], [24.0, 61.5], [-6.9, 62.0, 40]],
+    w: 1.1, house: 'Griffons', ruler: ['Éric', 1382, 'M', 'de Poméranie'], title: ['Roi', 'Reine'], conf: 'high',
+    note: 'Couronné en 1397 ; sa grand-tante Marguerite Ire gouverne réellement les trois royaumes jusqu’en 1412.',
+  }),
+  P({
+    id: 'ice', name: 'Islande', short: 'Islande', adj: 'islandais', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'icelandic', faith: 'catholic', color: '#8ab0c8', cap: [-20.52, 64.13, 'Skálholt'], at: [[-18.1, 65.7], [-14.4, 65.2]], reach: 250,
+    house: 'Skálholt', ruler: ['Vigfús', 1350, 'M'], title: ['Hirðstjóri', 'Hirðstjóri'], liege: 'kal', subject: 'direct_vassal', conf: 'medium',
+    note: 'Gouverneur royal ; la peste noire frappe l’île en 1402.',
+  }),
+  P({
+    id: 'grn', name: 'Établissements norrois du Groenland', short: 'Groenland', adj: 'groenlandais', rank: 'county', gov: 'clan_realm',
+    culture: 'icelandic', faith: 'catholic', color: '#a0c0d0', cap: [-45.4, 61.0, 'Garðar'], reach: 90,
+    house: 'Garðar', ruler: ['Þorsteinn', 1360, 'M'], title: ['Lögmaðr', 'Lögmaðr'], liege: 'kal', subject: 'autonomous_vassal', conf: 'low',
+    note: 'L’établissement de l’Est subsiste ; celui de l’Ouest est abandonné vers 1350. Dirigeant de jeu.',
+  }),
+  P({
+    id: 'pol', name: 'Royaume de Pologne', short: 'Pologne', adj: 'polonais', rank: 'kingdom', gov: 'elective_monarchy',
+    culture: 'polish', faith: 'catholic', color: '#c8303a', cap: [19.94, 50.06, 'Cracovie'],
+    at: [[16.93, 52.41], [17.6, 52.53], [18.09, 51.76], [19.25, 52.08], [22.57, 51.25], [21.75, 50.68], [24.03, 49.84], [22.77, 49.78], [24.72, 49.12], [26.57, 48.68], [20.0, 51.3], [18.0, 53.2]],
+    w: 1.1, house: 'Jagellon', ruler: ['Ladislas', 1362, 'M', 'II Jagellon'], conf: 'high',
+    note: 'Veuf de la reine Hedwige (juillet 1399), le roi doit se faire confirmer par les seigneurs polonais.',
+  }),
+  P({
+    id: 'maz', name: 'Duché de Mazovie', short: 'Mazovie', adj: 'mazovien', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'polish', faith: 'catholic', color: '#e0707a', cap: [21.01, 52.23, 'Varsovie'], at: [[19.7, 52.55], [21.7, 53.1]], reach: 80,
+    house: 'Piast', ruler: ['Janusz', 1346, 'M', 'Ier'], liege: 'pol', subject: 'autonomous_vassal', conf: 'high',
+  }),
+  P({
+    id: 'lit', name: 'Grand-duché de Lituanie', short: 'Lituanie', adj: 'lituanien', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'lithuanian', faith: 'catholic', color: '#c8b43a', cap: [25.28, 54.69, 'Vilnius'],
+    at: [[23.9, 54.9], [23.83, 53.68], [23.69, 52.1], [27.56, 53.9], [28.78, 55.49], [30.2, 55.19], [32.05, 54.78], [30.52, 50.45], [31.29, 51.5], [28.65, 50.25], [25.33, 50.75], [28.86, 48.82], [33.25, 52.0], [34.36, 53.25], [30.0, 52.5], [26.5, 52.2], [32.0, 49.5], [30.72, 46.48, 150], [35.0, 51.5]],
+    w: 1.15, house: 'Gediminides', ruler: ['Vytautas', 1350, 'M', 'le Grand'], spouse: ['Anna', 1355, 'F'], kids: [['Sophie', 1371, 'F']],
+    liege: 'pol', subject: 'autonomous_vassal', title: ['Grand-duc', 'Grande-duchesse'], conf: 'high',
+    note: 'Vytautas gouverne sous la suzeraineté de son cousin Jagellon. Sa défaite à la Vorskla (août 1399) face à la Horde a brisé ses ambitions orientales.',
+  }),
+  P({
+    id: 'hun', name: 'Royaume de Hongrie', short: 'Hongrie', adj: 'hongrois', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'hungarian', faith: 'catholic', color: '#2e9a8a', cap: [19.04, 47.5, 'Buda'],
+    at: [[18.74, 47.79], [17.11, 48.15], [21.26, 48.72], [21.92, 47.07], [23.6, 46.77], [25.6, 45.65], [20.15, 46.25], [18.23, 46.07], [15.98, 45.81], [15.23, 44.12, 60], [21.23, 45.76], [19.4, 48.7], [22.6, 47.8], [24.4, 46.5], [17.0, 46.5], [16.4, 43.5, 40]],
+    w: 1.1, house: 'Luxembourg', ruler: ['Sigismond', 1368, 'M'], conf: 'high',
+    note: 'Veuf de la reine Marie ; les barons l’emprisonneront en 1401. La Dalmatie est disputée avec Ladislas de Naples.',
+  }),
+  P({
+    id: 'bos', name: 'Royaume de Bosnie', short: 'Bosnie', adj: 'bosnien', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'serbian', faith: 'catholic', color: '#5a5ab0', cap: [18.19, 44.1, 'Bobovac'], at: [[17.27, 44.34], [17.81, 43.34], [18.9, 44.5], [16.9, 44.8]], reach: 100,
+    house: 'Kotromanić', ruler: ['Étienne', 1350, 'M', 'Ostoja'], conf: 'medium', note: 'Les grands voïvodes (Hrvoje Vukčić, Sandalj Hranić) font et défont les rois.',
+  }),
+  P({
+    id: 'srb', name: 'Principauté de Serbie', short: 'Serbie', adj: 'serbe', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'serbian', faith: 'orthodox', color: '#b04a4a', cap: [21.33, 43.58, 'Kruševac'], at: [[21.43, 42.61], [20.5, 44.1], [20.3, 43.2], [19.5, 43.6]], reach: 100,
+    house: 'Lazarević', ruler: ['Stefan', 1377, 'M'], title: ['Prince', 'Princesse'], liege: 'ott', subject: 'tributary', conf: 'high',
+    note: 'Vassal ottoman depuis Kosovo (1389) ; il combat aux côtés de Bayezid.',
+  }),
+  P({
+    id: 'zet', name: 'Seigneurie de Zeta', short: 'Zeta', adj: 'zétan', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'serbian', faith: 'orthodox', color: '#8a3a5a', cap: [19.1, 42.1, 'Bar'], at: [[19.0, 42.6]], reach: 50,
+    house: 'Balšić', ruler: ['Đurađ', 1360, 'M', 'II'], liege: 'ott', subject: 'tributary', conf: 'medium',
+  }),
+  P({
+    id: 'alb', name: 'Seigneuries albanaises', short: 'Albanie', adj: 'albanais', rank: 'duchy', gov: 'clan_realm',
+    culture: 'albanian', faith: 'orthodox', color: '#a83a3a', cap: [19.79, 41.51, 'Kruja'], at: [[20.2, 41.9], [20.0, 40.8], [19.9, 42.2]], reach: 80,
+    house: 'Thopia', ruler: ['Niketa', 1360, 'M'], title: ['Seigneur', 'Dame'], liege: 'ott', subject: 'tributary', conf: 'medium',
+    note: 'Les maisons Thopia, Kastrioti, Dukagjini et Zenebishi sont regroupées ; confessions catholique et orthodoxe mêlées.',
+  }),
+  P({
+    id: 'epi', name: 'Despotat d’Épire', short: 'Épire', adj: 'épirote', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'greek', faith: 'orthodox', color: '#5a8ab0', cap: [20.85, 39.66, 'Ioannina'], reach: 60,
+    house: 'Buondelmonti', ruler: ['Ésaü', 1350, 'M'], title: ['Despote', 'Despote'], liege: 'ott', subject: 'tributary', conf: 'medium',
+  }),
+  P({
+    id: 'toc', name: 'Comté palatin de Céphalonie', short: 'Céphalonie', adj: 'céphalonien', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'italian', faith: 'catholic', color: '#6ab0a0', cap: [20.5, 38.18, 'Céphalonie'], at: [[20.7, 38.83], [20.9, 37.78], [21.2, 38.6]], reach: 50,
+    house: 'Tocco', ruler: ['Charles', 1372, 'M', 'Ier'], title: ['Comte palatin', 'Comtesse palatine'], conf: 'high',
+  }),
+  P({
+    id: 'ath', name: 'Duché d’Athènes', short: 'Athènes', adj: 'athénien', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'greek', faith: 'orthodox', color: '#9ac0e0', cap: [23.32, 38.32, 'Thèbes'], at: [[22.87, 38.44]], reach: 50,
+    house: 'Acciaioli', ruler: ['Antoine', 1360, 'M', 'Ier'], liege: 'ott', subject: 'tributary', conf: 'medium',
+    note: 'Antoine Acciaioli tient Thèbes et reprendra Athènes aux Vénitiens en 1402–1403.',
+  }),
+  P({
+    id: 'ach', name: 'Principauté d’Achaïe', short: 'Achaïe', adj: 'achéen', rank: 'county', gov: 'feudal_monarchy',
+    culture: 'catalan', faith: 'catholic', color: '#d8a0a0', cap: [21.27, 37.9, 'Andravida'], at: [[21.8, 37.3]], reach: 60,
+    house: 'San Superano', ruler: ['Pierre', 1350, 'M'], title: ['Prince', 'Princesse'], conf: 'medium', note: 'Tenue par un chef de la Compagnie navarraise.',
+  }),
+  P({
+    id: 'mra', name: 'Despotat de Morée', short: 'Morée', adj: 'moréote', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'greek', faith: 'orthodox', color: '#7a5ab0', cap: [22.37, 37.07, 'Mistra'], at: [[23.05, 36.69], [22.4, 37.6]], reach: 70,
+    house: 'Paléologue', ruler: ['Théodore', 1355, 'M', 'Ier'], title: ['Despote', 'Despote'], liege: 'byz', subject: 'autonomous_vassal', conf: 'high',
+    note: 'Théodore a vendu Corinthe aux Hospitaliers (1397) pour la protéger des Ottomans.',
+  }),
+  P({
+    id: 'byz', name: 'Empire romain d’Orient', short: 'Byzance', adj: 'byzantin', rank: 'empire', gov: 'imperial_bureaucracy',
+    culture: 'greek', faith: 'orthodox', color: '#8a3ab0', cap: [28.98, 41.01, 'Constantinople'], at: [[28.25, 41.07, 40], [27.73, 42.66, 30], [25.24, 39.9, 30], [24.7, 40.7, 20]], reach: 45,
+    house: 'Paléologue', ruler: ['Manuel', 1350, 'M', 'II'], spouse: ['Hélène', 1372, 'F'], kids: [['Jean', 1392], ['Théodore', 1396]],
+    title: ['Basileus', 'Basilissa'], conf: 'high',
+    note: 'Constantinople est sous blocus ottoman depuis 1394. Manuel II parcourt l’Occident pour chercher de l’aide ; son neveu Jean VII tient la ville.',
+  }),
+  P({
+    id: 'wal', name: 'Principauté de Valachie', short: 'Valachie', adj: 'valaque', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'romanian', faith: 'orthodox', color: '#d8b060', cap: [25.46, 44.93, 'Târgoviște'], at: [[24.68, 45.14], [23.8, 44.32], [27.96, 45.27], [25.97, 43.9], [26.1, 44.43]],
+    house: 'Basarab', ruler: ['Mircea', 1355, 'M', 'l’Ancien'], title: ['Voïvode', 'Voïvodesse'], conf: 'high', note: 'Allié de Sigismond, rival des Ottomans sur le Danube.',
+  }),
+  P({
+    id: 'mld', name: 'Principauté de Moldavie', short: 'Moldavie', adj: 'moldave', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'romanian', faith: 'orthodox', color: '#b08a3a', cap: [26.26, 47.65, 'Suceava'], at: [[27.6, 47.16], [30.35, 46.19], [28.2, 46.4], [26.9, 46.6]],
+    house: 'Bogdan-Mușat', ruler: ['Iuga', 1360, 'M'], title: ['Voïvode', 'Voïvodesse'], liege: 'pol', subject: 'tributary', conf: 'medium',
+    note: 'Iuga sera renversé par Alexandre le Bon au printemps 1400.',
+  }),
+  P({
+    id: 'msc', name: 'Grande-principauté de Moscou', short: 'Moscou', adj: 'moscovite', rank: 'kingdom', gov: 'feudal_monarchy',
+    culture: 'russian', faith: 'orthodox', color: '#3a8a3a', cap: [37.62, 55.75, 'Moscou'],
+    at: [[40.4, 56.13], [44.0, 56.33], [40.93, 57.77], [39.87, 57.63], [39.89, 59.22], [37.8, 60.03], [38.75, 55.1], [42.05, 55.57], [37.41, 54.92], [46.3, 60.76, 150], [50.9, 62.2, 150], [36.3, 55.3], [42.9, 57.4]],
+    house: 'Riourikides', ruler: ['Vassili', 1371, 'M', 'Ier'], spouse: ['Sophie', 1371, 'F'], kids: [['Ivan', 1396]], title: ['Grand-prince', 'Grande-princesse'],
+    liege: 'gh', subject: 'tributary', conf: 'high', note: 'Vassili Ier a annexé Nijni Novgorod (1392) ; le tribut à la Horde est versé irrégulièrement.',
+  }),
+  P({
+    id: 'tve', name: 'Grande-principauté de Tver', short: 'Tver', adj: 'tvérien', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'russian', faith: 'orthodox', color: '#6ab06a', cap: [35.9, 56.86, 'Tver'], at: [[37.5, 57.3]], reach: 90,
+    house: 'Riourikides', ruler: ['Mikhaïl', 1333, 'M', 'II'], title: ['Grand-prince', 'Grande-princesse'], liege: 'gh', subject: 'tributary', conf: 'high',
+  }),
+  P({
+    id: 'rya', name: 'Grande-principauté de Riazan', short: 'Riazan', adj: 'riazanais', rank: 'duchy', gov: 'feudal_monarchy',
+    culture: 'russian', faith: 'orthodox', color: '#8ac08a', cap: [39.74, 54.63, 'Pereïaslavl-Riazanski'], at: [[40.9, 53.8], [39.4, 53.5]], reach: 110,
+    house: 'Riourikides', ruler: ['Oleg', 1335, 'M', 'Ivanovitch'], title: ['Grand-prince', 'Grande-princesse'], liege: 'gh', subject: 'tributary', conf: 'high',
+  }),
+  P({
+    id: 'nov', name: 'République de Novgorod', short: 'Novgorod', adj: 'novgorodien', rank: 'kingdom', gov: 'merchant_republic',
+    culture: 'novgorodian', faith: 'orthodox', color: '#3a6a8a', cap: [31.27, 58.52, 'Novgorod'],
+    at: [[32.3, 60.0], [30.1, 61.03], [35.0, 62.5], [41.9, 64.22], [39.0, 64.5], [31.36, 58.0], [34.96, 57.04], [37.0, 61.0], [44.5, 62.5], [47.0, 65.0], [34.8, 64.9], [38.5, 67.0, 150]],
+    reach: 350, house: 'Novgorod', ruler: ['Jean', 1330, 'M'], title: ['Archevêque', 'Archevêque'], conf: 'medium',
+    note: 'République gouvernée par l’archevêque, le posadnik et l’assemblée (vétché) ; ses terres s’étendent jusqu’à la mer Blanche.',
+  }),
+  P({
+    id: 'psk', name: 'République de Pskov', short: 'Pskov', adj: 'pskovien', rank: 'county', gov: 'city_republic',
+    culture: 'novgorodian', faith: 'orthodox', color: '#5a8aaa', cap: [28.33, 57.82, 'Pskov'], reach: 60,
+    house: 'Pskov', ruler: ['Ivan', 1360, 'M'], title: ['Posadnik', 'Posadnitsa'], conf: 'gameplayApproximation',
+  }),
+  P({
+    id: 'vya', name: 'Terre de Viatka', short: 'Viatka', adj: 'viatkien', rank: 'county', gov: 'city_republic',
+    culture: 'russian', faith: 'orthodox', color: '#7aa07a', cap: [49.66, 58.6, 'Khlynov'], reach: 180,
+    house: 'Khlynov', ruler: ['Ivan', 1360, 'M'], title: ['Voïévode', 'Voïévode'], conf: 'low', note: 'Communauté libre de colons russes ; dirigeant de jeu.',
+  }),
+] satisfies ReturnType<typeof P>[];

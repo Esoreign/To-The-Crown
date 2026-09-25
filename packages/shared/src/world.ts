@@ -1,6 +1,9 @@
 /**
- * Données géographiques et politiques statiques du monde (générées une fois,
- * versionnées dans @ttc/content/data/world.json).
+ * Données géographiques et politiques statiques du monde (générées par le
+ * pipeline `tools/worldgen`, versionnées dans @ttc/content/data/world1400).
+ * Les géométries (contours, frontières, relief) ne sont pas ici : elles sont
+ * servies à part au client de rendu (apps/web/public/world).
+ * Coordonnées en degrés : [longitude, latitude].
  */
 import type { CultureDef, SuccessionLaw, Terrain, TitleRank } from './content-schema';
 
@@ -8,20 +11,22 @@ export type Point = [number, number];
 
 export interface ProvinceGeo {
   id: string;
+  /** Indice numérique (identifiant des entités géométriques). */
+  index: number;
   name: string;
-  /** Contour extérieur (anneau fermé implicite). */
-  polygon: Point[];
-  /** Trous éventuels (enclaves). */
-  holes?: Point[][];
+  /** Point représentatif (pôle d'inaccessibilité) [lon, lat]. */
   centroid: Point;
-  /** Position de la capitale / du marqueur principal. */
+  /** Lieu principal (ville, siège) [lon, lat]. */
   capital: Point;
-  /** Position du label et orientation (radians). */
-  label: { at: Point; angle: number; size: number };
+  /** Emprise [ouest, sud, est, nord]. */
+  bbox: [number, number, number, number];
+  /** Superficie (km²). */
   area: number;
   neighbors: string[];
   /** Voisins via un détroit (coût de traversée supérieur). */
   straits: string[];
+  /** Zones maritimes adjacentes. */
+  seas: string[];
   terrain: Terrain;
   coastal: boolean;
   cultureId: string;
@@ -40,7 +45,13 @@ export interface ProvinceGeo {
   /** Nombre d'emplacements de bâtiments. */
   buildingSlots: number;
   elevation: number;
+  /** Densité de peuplement relative (1 ≈ médiane). */
+  density: number;
+  regionId: string;
+  macroId: string;
   isIsland?: boolean;
+  /** Terres inhabitées (inlandsis) : aucun titulaire. */
+  wasteland?: boolean;
 }
 
 export interface TitleDef {
@@ -57,48 +68,34 @@ export interface TitleDef {
   successionLaw: SuccessionLaw;
   /** Adjectif (pour les noms de royaume). */
   adjective?: string;
+  /** Nom court du territoire (« France »). */
+  short?: string;
+  /** Entité politique historique dont c'est le titre principal. */
+  polityId?: string;
 }
 
-export interface River {
+export interface SeaZone {
   id: string;
-  name?: string;
-  points: Point[];
-  /** Largeur finale (embouchure). */
-  width: number;
+  index: number;
+  centroid: Point;
+  neighbors: string[];
+  deep: boolean;
 }
 
-export interface TerrainFeature {
-  kind: 'mountain' | 'hill' | 'tree' | 'marsh' | 'wheat' | 'dune';
-  at: Point;
-  scale: number;
-  variant: number;
-}
-
-export interface SeaLabel {
+export interface RegionInfo {
+  id: string;
   name: string;
-  at: Point;
-  angle: number;
-  size: number;
+  macroId: string;
 }
 
 export interface WorldData {
   version: number;
-  seed: number;
-  width: number;
-  height: number;
-  /** Contours de terre émergée (côtes) pour le rendu. */
-  landmasses: Point[][];
-  lakes: Point[][];
+  scenarioId: string;
   provinces: ProvinceGeo[];
   titles: TitleDef[];
-  rivers: River[];
-  features: TerrainFeature[];
-  seas: SeaLabel[];
-  /**
-   * Arêtes de frontière partagées : chaque arête sépare deux provinces
-   * (ou une province et la mer si b === null).
-   */
-  borders: { a: string; b: string | null; points: Point[] }[];
+  seas: SeaZone[];
+  regions: RegionInfo[];
+  macros: { id: string; name: string }[];
 }
 
 export type { CultureDef };

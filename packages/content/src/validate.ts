@@ -14,14 +14,10 @@ export function validateWorld(world: WorldData): string[] {
   for (const p of world.provinces) {
     if (provinceIds.has(p.id)) errors.push(`Province dupliquée : ${p.id}`);
     provinceIds.add(p.id);
-    if (p.polygon.length < 3) errors.push(`${p.id} : polygone invalide`);
-    for (const pt of p.polygon) {
-      if (!Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) {
-        errors.push(`${p.id} : coordonnée non finie`);
-        break;
-      }
-    }
-    if (p.neighbors.length + p.straits.length === 0) errors.push(`${p.id} : aucun voisin`);
+    const [lon, lat] = p.centroid;
+    if (!Number.isFinite(lon) || !Number.isFinite(lat) || Math.abs(lon) > 180 || Math.abs(lat) > 90) errors.push(`${p.id} : coordonnées invalides`);
+    if (!p.name) errors.push(`${p.id} : nom manquant`);
+    if (!(p.area > 0)) errors.push(`${p.id} : superficie invalide`);
     for (const key of ['countyTitleId', 'duchyTitleId', 'kingdomTitleId', 'empireTitleId'] as const) {
       if (!titleIds.has(p[key])) errors.push(`${p.id} : titre inexistant ${p[key]}`);
     }
@@ -34,6 +30,7 @@ export function validateWorld(world: WorldData): string[] {
   }
 
   const byId = new Map(world.provinces.map((p) => [p.id, p]));
+  const seaIds = new Set(world.seas.map((s) => s.id));
   for (const p of world.provinces) {
     for (const n of p.neighbors) {
       const other = byId.get(n);
@@ -45,22 +42,9 @@ export function validateWorld(world: WorldData): string[] {
       const other = byId.get(n);
       if (!other || !other.straits.includes(p.id)) errors.push(`${p.id} ↔ ${n} : détroit non symétrique`);
     }
-  }
-
-  // Connexité du graphe (voisins + détroits).
-  if (world.provinces.length) {
-    const seen = new Set<string>([world.provinces[0]!.id]);
-    const stack = [world.provinces[0]!.id];
-    while (stack.length) {
-      const cur = byId.get(stack.pop()!)!;
-      for (const n of [...cur.neighbors, ...cur.straits]) {
-        if (!seen.has(n)) {
-          seen.add(n);
-          stack.push(n);
-        }
-      }
-    }
-    if (seen.size !== world.provinces.length) errors.push(`Graphe non connexe : ${seen.size}/${world.provinces.length}`);
+    for (const s of p.seas) if (!seaIds.has(s)) errors.push(`${p.id} : zone maritime inconnue ${s}`);
+    // Une province sans voisin terrestre doit au moins toucher la mer (île).
+    if (p.neighbors.length + p.straits.length === 0 && p.seas.length === 0) errors.push(`${p.id} : isolée (ni voisin ni mer)`);
   }
 
   for (const t of world.titles) {

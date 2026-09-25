@@ -26,6 +26,8 @@ export const unitSchema = z.enum([
   'pikemen',
   'light_cavalry',
   'heavy_cavalry',
+  'horse_archers',
+  'war_elephants',
   'siege_engines',
 ]);
 export const schemeTypeSchema = z.enum(['murder', 'discover_secrets', 'fabricate_hook', 'seduce', 'befriend', 'sway', 'claim']);

@@ -19,7 +19,12 @@ export type Terrain =
   | 'forest'
   | 'marsh'
   | 'steppe'
-  | 'coast_cliffs';
+  | 'coast_cliffs'
+  | 'jungle'
+  | 'desert'
+  | 'savanna'
+  | 'tundra'
+  | 'ice';
 
 export type UnitType =
   | 'levy'
@@ -28,6 +33,8 @@ export type UnitType =
   | 'pikemen'
   | 'light_cavalry'
   | 'heavy_cavalry'
+  | 'horse_archers'
+  | 'war_elephants'
   | 'siege_engines';
 
 /**

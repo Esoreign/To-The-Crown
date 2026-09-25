@@ -18,7 +18,7 @@ import type {
   UnitType,
 } from './content-schema';
 
-export const SAVE_SCHEMA_VERSION = 1;
+export const SAVE_SCHEMA_VERSION = 2;
 
 export type Sex = 'M' | 'F';
 
@@ -135,6 +135,10 @@ export interface Character {
   aiNextThink: number;
   /** Un joueur contrôle ce personnage. */
   isPlayer: boolean;
+  /** Forme de gouvernement du domaine (dirigeants). */
+  government?: string;
+  /** Légitimité du dirigeant 0..100. */
+  legitimacy?: number;
 }
 
 export interface House {
@@ -201,6 +205,27 @@ export interface ProvinceState {
   /** Garnison actuelle. */
   garrison: number;
   modifiers: Modifier[];
+}
+
+/** Type de sujétion d'une entité envers une autre. */
+export type SubjectType = 'direct_vassal' | 'autonomous_vassal' | 'tributary' | 'personal_union' | 'client_state' | 'confederate_member';
+
+/**
+ * Contrat de sujétion entre deux titres principaux (il survit aux successions).
+ * Les vassaux (direct, autonome, confédéré, union) sont dans le royaume de leur
+ * suzerain ; les tributaires et clients restent des royaumes distincts qui
+ * versent un tribut et doivent soutenir leur suzerain.
+ */
+export interface Pact {
+  id: string;
+  subjectTitleId: string;
+  overlordTitleId: string;
+  type: SubjectType;
+  since: number;
+  /** Part du revenu mensuel versée au suzerain (0..1). */
+  tribute: number;
+  /** Part des levées dues en guerre (0..1). */
+  levies: number;
 }
 
 export interface Relation {
@@ -510,6 +535,7 @@ export interface GameState {
   secrets: Record<string, Secret>;
   hooks: Record<string, Hook>;
   factions: Record<string, Faction>;
+  pacts: Record<string, Pact>;
   activeEvents: Record<string, ActiveEvent>;
   scheduledEvents: Record<string, ScheduledEvent>;
   proposals: Record<string, Proposal>;

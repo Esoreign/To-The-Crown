@@ -245,6 +245,11 @@ export const TRAITS: TraitDef[] = [
     modifiers: { health: -0.5, stress_gain_mult: 0.2 }, skills: { diplomacy: -2, stewardship: -1 },
     disease: { recoveryChance: 0.08, deathChance: 0.004 },
   },
+  {
+    id: 'lunatic', category: 'health', icon: 'broken-crown',
+    modifiers: { stress_gain_mult: 0.3, vassal_opinion: -10 }, skills: { diplomacy: -2, stewardship: -2, martial: -1 },
+    ai: { caution: -20 },
+  },
 
   // --- Congénitaux --------------------------------------------------------
   {

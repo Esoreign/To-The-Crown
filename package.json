@@ -27,7 +27,9 @@
     "db:generate": "pnpm --filter @ttc/server db:generate",
     "db:migrate": "pnpm --filter @ttc/server db:migrate",
     "db:seed": "pnpm --filter @ttc/server db:seed",
-    "start": "pnpm --filter @ttc/server start"
+    "start": "pnpm --filter @ttc/server start",
+    "world:build": "pnpm --filter @ttc/worldgen all",
+    "world:politics": "pnpm --filter @ttc/worldgen world"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

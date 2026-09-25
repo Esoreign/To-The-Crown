@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./world1400": "./src/world1400/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

@@ -29,6 +29,14 @@ export const UNITS: UnitDef[] = [
     badTerrain: ['forest', 'mountains', 'marsh', 'hills'],
   },
   {
+    id: 'horse_archers', icon: 'horse-archer', damage: 34, toughness: 14, pursuit: 35, screen: 30, siege: 0, cost: 70, upkeep: 1.3,
+    counters: ['footmen', 'levy', 'heavy_cavalry'], goodTerrain: ['steppe', 'plains', 'desert', 'savanna'], badTerrain: ['forest', 'jungle', 'mountains', 'marsh'],
+  },
+  {
+    id: 'war_elephants', icon: 'elephant', damage: 60, toughness: 40, pursuit: 5, screen: 5, siege: 0.3, cost: 150, upkeep: 3,
+    counters: ['footmen', 'levy', 'light_cavalry', 'heavy_cavalry'], goodTerrain: ['plains', 'farmlands', 'savanna', 'jungle'], badTerrain: ['mountains', 'marsh', 'hills'],
+  },
+  {
     id: 'siege_engines', icon: 'trebuchet', damage: 4, toughness: 6, pursuit: 0, screen: 0, siege: 1, cost: 80, upkeep: 1.2,
   },
 ];
