@@ -47,7 +47,15 @@ const AUTH_DESC = [
 
 type Tab = 'government' | 'vassals' | 'subjects' | 'laws' | 'factions' | 'domain' | 'titles';
 
-export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Character; tab: string | null }) {
+export function RealmScreen({
+  view,
+  me,
+  tab: initial,
+}: {
+  view: GameView;
+  me: Character;
+  tab: string | null;
+}) {
   const [tab, setTab] = useState<Tab>((initial as Tab) ?? 'government');
   const vassals = useMemo(() => directVassals(view, me.id).filter((v) => v.titleIds.length), [view, me.id]);
   const factions = Object.values(view.factions).filter((f) => f.targetId === me.id);
@@ -123,14 +131,29 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
                   <td>{charName(view, v)}</td>
                   <td className="soft">{rulerTitle(v)}</td>
                   <td className="num">
-                    <Tip content={() => <Breakdown title="Opinion envers vous" rows={op.rows.map((r) => ({ label: opinionReason(r.reason), value: r.value }))} total={op.total} decimals={0} />}>
+                    <Tip
+                      content={() => (
+                        <Breakdown
+                          title="Opinion envers vous"
+                          rows={op.rows.map((r) => ({ label: opinionReason(r.reason), value: r.value }))}
+                          total={op.total}
+                          decimals={0}
+                        />
+                      )}
+                    >
                       <span className={op.total >= 0 ? 'pos' : 'neg'}>{Math.round(op.total)}</span>
                     </Tip>
                   </td>
                   <td className="num">{Math.round(vassalTaxShare(view, me, v) * 100)} %</td>
                   <td className="num">{Math.round(vassalLevyShare(view, me, v) * 100)} %</td>
                   <td className="num">{fmt(militaryStrength(view, v))}</td>
-                  <td>{fac ? <span className="badge danger">{t(`faction.${fac.type}`)}</span> : <span className="muted">—</span>}</td>
+                  <td>
+                    {fac ? (
+                      <span className="badge danger">{t(`faction.${fac.type}`)}</span>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -158,15 +181,30 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
                         {AUTH_DESC[lvl]}
                       </div>
                       <div className="muted num" style={{ fontSize: 12 }}>
-                        Impôt vassal {Math.round((BALANCE.economy.vassalTaxByAuthority[lvl] ?? 0) * 100)} % · Levées {Math.round((BALANCE.economy.vassalLevyByAuthority[lvl] ?? 0) * 100)} % · Opinion {BALANCE.authority.crownAuthorityOpinion[lvl]}
+                        Impôt vassal {Math.round((BALANCE.economy.vassalTaxByAuthority[lvl] ?? 0) * 100)} % ·
+                        Levées {Math.round((BALANCE.economy.vassalLevyByAuthority[lvl] ?? 0) * 100)} % ·
+                        Opinion {BALANCE.authority.crownAuthorityOpinion[lvl]}
                       </div>
-                      {next && !allowed && <div className="muted" style={{ fontSize: 12 }}>Hors de portée de votre forme de gouvernement.</div>}
+                      {next && !allowed && (
+                        <div className="muted" style={{ fontSize: 12 }}>
+                          Hors de portée de votre forme de gouvernement.
+                        </div>
+                      )}
                       {next && allowed && (
                         <ActionButton
                           className="btn-sm"
                           disabled={cd || me.authority < cost}
-                          title={cd ? `Changement possible après le ${formatDateFr(me.cooldowns.crown_authority!)}` : undefined}
-                          onClick={() => act({ type: 'realm.crownAuthority', payload: { level: lvl } }, `Nouvelle loi : ${name}`)}
+                          title={
+                            cd
+                              ? `Changement possible après le ${formatDateFr(me.cooldowns.crown_authority!)}`
+                              : undefined
+                          }
+                          onClick={() =>
+                            act(
+                              { type: 'realm.crownAuthority', payload: { level: lvl } },
+                              `Nouvelle loi : ${name}`,
+                            )
+                          }
                         >
                           {lvl > me.crownAuthority ? `Renforcer (${cost} autorité)` : 'Assouplir'}
                         </ActionButton>
@@ -182,7 +220,8 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
             {me.titleIds[0] ? (
               <div className="row" style={{ gap: 10 }}>
                 <span>
-                  {titleFullName(me.titleIds[0])} : <strong>{t(`law.${view.titles[me.titleIds[0]]?.successionLaw}`)}</strong>
+                  {titleFullName(me.titleIds[0])} :{' '}
+                  <strong>{t(`law.${view.titles[me.titleIds[0]]?.successionLaw}`)}</strong>
                 </span>
                 <button className="btn btn-sm" onClick={() => openTitle(me.titleIds[0]!)}>
                   Modifier…
@@ -196,7 +235,9 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
       )}
       {tab === 'factions' && (
         <div className="col" style={{ gap: 10 }}>
-          {factions.length === 0 && <p className="muted">Aucune faction ne conspire contre vous. Pour l’instant.</p>}
+          {factions.length === 0 && (
+            <p className="muted">Aucune faction ne conspire contre vous. Pour l’instant.</p>
+          )}
           {factions.map((f) => {
             const ratio = factionRatio(view, f);
             const leader = view.characters[f.leaderId];
@@ -204,7 +245,9 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
               <div key={f.id} className="faction-card">
                 <div className="row spread">
                   <div className="display">{t(`faction.${f.type}`)}</div>
-                  <span className={`badge ${f.discontent > 70 ? 'danger' : ''}`}>Mécontentement {Math.round(f.discontent)} %</span>
+                  <span className={`badge ${f.discontent > 70 ? 'danger' : ''}`}>
+                    Mécontentement {Math.round(f.discontent)} %
+                  </span>
                 </div>
                 <div className="soft" style={{ fontSize: 13 }}>
                   Menée par{' '}
@@ -222,7 +265,14 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
                 <ProgressBar value={f.discontent} danger={f.discontent > 70} />
                 <div className="person-grid" style={{ marginTop: 6 }}>
                   {f.members.map((m) => (
-                    <Portrait key={m} c={view.characters[m]} view={view} size={32} onClick={() => openCharacter(m)} title={view.characters[m]?.firstName} />
+                    <Portrait
+                      key={m}
+                      c={view.characters[m]}
+                      view={view}
+                      size={32}
+                      onClick={() => openCharacter(m)}
+                      title={view.characters[m]?.firstName}
+                    />
                   ))}
                 </div>
               </div>
@@ -237,11 +287,21 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
                   <div key={f.id} className="faction-card">
                     <div className="row spread">
                       <span className="display">{t(`faction.${f.type}`)}</span>
-                      <ActionButton className="btn-sm" onClick={() => act({ type: member ? 'faction.leave' : 'faction.join', payload: { factionId: f.id } }, member ? 'Vous quittez la faction' : 'Vous rejoignez la faction')}>
+                      <ActionButton
+                        className="btn-sm"
+                        onClick={() =>
+                          act(
+                            { type: member ? 'faction.leave' : 'faction.join', payload: { factionId: f.id } },
+                            member ? 'Vous quittez la faction' : 'Vous rejoignez la faction',
+                          )
+                        }
+                      >
                         {member ? 'Quitter' : 'Rejoindre'}
                       </ActionButton>
                     </div>
-                    <div className="muted">{f.members.length} membres · mécontentement {Math.round(f.discontent)} %</div>
+                    <div className="muted">
+                      {f.members.length} membres · mécontentement {Math.round(f.discontent)} %
+                    </div>
                   </div>
                 );
               })}
@@ -252,7 +312,8 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
       {tab === 'domain' && (
         <>
           <p className="soft" style={{ marginTop: 0 }}>
-            Limite de domaine : {limit} comtés (selon votre Gestion et votre rang). Au-delà, revenus et levées du domaine sont pénalisés : accordez des comtés à des vassaux.
+            Limite de domaine : {limit} comtés (selon votre Gestion et votre rang). Au-delà, revenus et levées
+            du domaine sont pénalisés : accordez des comtés à des vassaux.
           </p>
           <table className="data-table">
             <thead>
@@ -269,13 +330,19 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
               {domain.map((pid) => {
                 const p = view.provinces[pid]!;
                 return (
-                  <tr key={pid} className="clickable" onClick={() => (openProvince(pid), useUi.getState().focusProvince(pid))}>
+                  <tr
+                    key={pid}
+                    className="clickable"
+                    onClick={() => (openProvince(pid), useUi.getState().focusProvince(pid))}
+                  >
                     <td>{PROVINCE_GEO[pid]?.name}</td>
                     <td className="num">{fmt(p.development, 1)}</td>
                     <td className={`num ${p.control < 50 ? 'neg' : ''}`}>{Math.round(p.control)} %</td>
                     <td className="num">{fmt(provinceTax(view, pid), 1)}</td>
                     <td className="num">{fmt(p.levies)}</td>
-                    <td className="soft">{p.construction ? t(`building.${p.construction.buildingId}`) : '—'}</td>
+                    <td className="soft">
+                      {p.construction ? t(`building.${p.construction.buildingId}`) : '—'}
+                    </td>
                   </tr>
                 );
               })}
@@ -285,7 +352,9 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
       )}
       {tab === 'titles' && (
         <div className="col" style={{ gap: 8 }}>
-          {creatable.length === 0 && <p className="muted">Aucun titre supérieur à fonder dans votre royaume.</p>}
+          {creatable.length === 0 && (
+            <p className="muted">Aucun titre supérieur à fonder dans votre royaume.</p>
+          )}
           {creatable.map(({ id, check }) => (
             <div key={id} className="scheme-option">
               <CoatOfArms seed={TITLE_DEFS[id]?.coaSeed ?? 1} rank={0} size={32} />
@@ -294,10 +363,22 @@ export function RealmScreen({ view, me, tab: initial }: { view: GameView; me: Ch
                   {titleFullName(id)}
                 </button>
                 <div className="muted" style={{ fontSize: 12.5 }}>
-                  {Math.round(check.share * 100)} % des terres de jure (requis : {Math.round(check.required * 100)} %) · {fmt(check.cost.gold)} or · {fmt(check.cost.prestige)} prestige · {(DEJURE_CHILDREN[id] ?? []).length} titres de jure
+                  {Math.round(check.share * 100)} % des terres de jure (requis :{' '}
+                  {Math.round(check.required * 100)} %) · {fmt(check.cost.gold)} or ·{' '}
+                  {fmt(check.cost.prestige)} prestige · {(DEJURE_CHILDREN[id] ?? []).length} titres de jure
                 </div>
               </div>
-              <ActionButton className="btn-sm btn-primary" disabled={!check.ok} onClick={() => act({ type: 'title.create', payload: { titleId: id } }, `${titleFullName(id)} est proclamé !`, null)}>
+              <ActionButton
+                className="btn-sm btn-primary"
+                disabled={!check.ok}
+                onClick={() =>
+                  act(
+                    { type: 'title.create', payload: { titleId: id } },
+                    `${titleFullName(id)} est proclamé !`,
+                    null,
+                  )
+                }
+              >
                 Proclamer
               </ActionButton>
             </div>
@@ -378,7 +459,11 @@ function GovernmentTab({ view, me, asSubject }: { view: GameView; me: Character;
             </div>
             <div className="info-line">
               <span>Sources de légitimité</span>
-              <span>{gov.legitimacyFrom.map((k) => t(`legitimacy.${k === 'victory' ? 'prestige' : k}`)).join(' · ')}</span>
+              <span>
+                {gov.legitimacyFrom
+                  .map((k) => t(`legitimacy.${k === 'victory' ? 'prestige' : k}`))
+                  .join(' · ')}
+              </span>
             </div>
           </div>
         ) : (
@@ -388,15 +473,29 @@ function GovernmentTab({ view, me, asSubject }: { view: GameView; me: Character;
       <section>
         <h3 className="section-title">Légitimité</h3>
         <div className="row" style={{ gap: 12, alignItems: 'center' }}>
-          <Tip content={() => <Breakdown title="Légitimité visée" rows={target.rows.map((r) => ({ label: t(`legitimacy.${r.key}`), value: r.value }))} total={target.total} decimals={0} />}>
-            <span className={`display ${current < 35 ? 'neg' : current >= 65 ? 'pos' : ''}`} style={{ fontSize: 26 }} data-testid="legitimacy">
+          <Tip
+            content={() => (
+              <Breakdown
+                title="Légitimité visée"
+                rows={target.rows.map((r) => ({ label: t(`legitimacy.${r.key}`), value: r.value }))}
+                total={target.total}
+                decimals={0}
+              />
+            )}
+          >
+            <span
+              className={`display ${current < 35 ? 'neg' : current >= 65 ? 'pos' : ''}`}
+              style={{ fontSize: 26 }}
+              data-testid="legitimacy"
+            >
               {Math.round(current)}
             </span>
           </Tip>
           <div className="grow">
             <ProgressBar value={current} danger={current < 35} />
             <div className="muted" style={{ fontSize: 12.5 }}>
-              Tend vers {Math.round(target.total)} chaque mois. Une faible légitimité refroidit vos vassaux ; une forte les rallie.
+              Tend vers {Math.round(target.total)} chaque mois. Une faible légitimité refroidit vos vassaux ;
+              une forte les rallie.
             </div>
           </div>
         </div>
@@ -410,7 +509,9 @@ function GovernmentTab({ view, me, asSubject }: { view: GameView; me: Character;
               <div className="grow soft" style={{ fontSize: 13 }}>
                 <strong>{t(`subject.${p.type}`)}</strong> — {t(`subject.desc.${p.type}`)}
               </div>
-              {isExternalPact(p) && <span className="badge">Tribut {fmt(pactTribute(view, p), 1)} / mois</span>}
+              {isExternalPact(p) && (
+                <span className="badge">Tribut {fmt(pactTribute(view, p), 1)} / mois</span>
+              )}
             </div>
           ))}
         </section>
@@ -448,7 +549,9 @@ function SubjectsTab({ view, me, pacts }: { view: GameView; me: Character; pacts
                   <span className="badge">{t(`subject.${p.type}`)}</span>
                 </Tip>
               </td>
-              <td className="num">{op ? <span className={op.total >= 0 ? 'pos' : 'neg'}>{Math.round(op.total)}</span> : '—'}</td>
+              <td className="num">
+                {op ? <span className={op.total >= 0 ? 'pos' : 'neg'}>{Math.round(op.total)}</span> : '—'}
+              </td>
               <td className="num">{external ? `${fmt(pactTribute(view, p), 1)} / mois` : '—'}</td>
               <td>
                 {external ? (
@@ -460,7 +563,12 @@ function SubjectsTab({ view, me, pacts }: { view: GameView; me: Character; pacts
                           key={level}
                           className={`btn-sm${active ? ' btn-primary' : ''}`}
                           disabled={active}
-                          onClick={() => act({ type: 'subject.tribute', payload: { pactId: p.id, level } }, `Tribut fixé : ${label.toLowerCase()}`)}
+                          onClick={() =>
+                            act(
+                              { type: 'subject.tribute', payload: { pactId: p.id, level } },
+                              `Tribut fixé : ${label.toLowerCase()}`,
+                            )
+                          }
                         >
                           {label} {Math.round(BALANCE.politics.tributeLevels[level] * 100)} %
                         </ActionButton>
@@ -468,11 +576,21 @@ function SubjectsTab({ view, me, pacts }: { view: GameView; me: Character; pacts
                     })}
                   </div>
                 ) : (
-                  <span className="muted">Impôt {Math.round((BALANCE.politics.vassalTaxFactor[p.type] ?? 1) * 100)} % de l’ordinaire</span>
+                  <span className="muted">
+                    Impôt {Math.round((BALANCE.politics.vassalTaxFactor[p.type] ?? 1) * 100)} % de l’ordinaire
+                  </span>
                 )}
               </td>
               <td>
-                <ActionButton className="btn-sm" onClick={() => act({ type: 'subject.release', payload: { pactId: p.id } }, `${titleFullName(p.subjectTitleId)} est affranchi`)}>
+                <ActionButton
+                  className="btn-sm"
+                  onClick={() =>
+                    act(
+                      { type: 'subject.release', payload: { pactId: p.id } },
+                      `${titleFullName(p.subjectTitleId)} est affranchi`,
+                    )
+                  }
+                >
                   Affranchir
                 </ActionButton>
               </td>

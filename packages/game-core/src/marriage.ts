@@ -3,6 +3,7 @@
  * (alliances, cour, chronique).
  */
 import { ErrorCodes, GameError, type Character, type GameView } from '@ttc/shared';
+import { hasPendingProposal } from './pending';
 import { BALANCE } from './balance';
 import { acceptance, type Acceptance, type AcceptRow } from './acceptance';
 import { ageOf, characterModifier, isAdult, isAlive, skill } from './characters';
@@ -163,6 +164,7 @@ export function proposeMarriage(
   const decider = decisionMaker(s, candidateId)!;
   const acc = evaluateMarriage(s, actorId, suitorId, candidateId, useHook);
   if (decider.isPlayer && decider.id !== actorId) {
+    if (hasPendingProposal(s, 'marriage', actorId, decider.id, [suitorId, candidateId])) return { accepted: false, pending: true, acceptance: acc };
     const pid = newId(s, 'pr');
     s.proposals[pid] = {
       id: pid,

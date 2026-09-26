@@ -18,11 +18,37 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import type { FeatureCollection, Geometry } from 'geojson';
 import { WORLD } from '@ttc/content';
-import { PROVINCE_GEO, TITLE_DEFS, areAllied, atWarWith, isInRealmOf, realmProvinceIds, topLiegeId } from '@ttc/game-core';
+import {
+  PROVINCE_GEO,
+  TITLE_DEFS,
+  areAllied,
+  atWarWith,
+  isInRealmOf,
+  realmProvinceIds,
+  topLiegeId,
+} from '@ttc/game-core';
 import type { Army, GameView } from '@ttc/shared';
-import { boundsCenter, fitFeatureSafely, getWrappedBounds, inverseMercator, mercator, mergeBounds, nearestLongitude, unwrapBounds, type Bounds, type LngLat } from './geo';
+import {
+  boundsCenter,
+  fitFeatureSafely,
+  getWrappedBounds,
+  inverseMercator,
+  mercator,
+  mergeBounds,
+  nearestLongitude,
+  unwrapBounds,
+  type Bounds,
+  type LngLat,
+} from './geo';
 import { LabelOverlay, type PlaceLabel, type RealmLabel } from './labels';
-import { WORLD_BASE, asFeature, bordersBy, loadWorldGeometry, outlineOf, type WorldGeometry } from './worldData';
+import {
+  WORLD_BASE,
+  asFeature,
+  bordersBy,
+  loadWorldGeometry,
+  outlineOf,
+  type WorldGeometry,
+} from './worldData';
 import type { ProvinceColor } from './colors';
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -89,7 +115,11 @@ export class WorldMap {
     const interactive = this.style !== 'ambient';
     this.map = new maplibregl.Map({
       container: parent,
-      style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#16324a' } }] },
+      style: {
+        version: 8,
+        sources: {},
+        layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#16324a' } }],
+      },
       center: [20, 35],
       zoom: 1.6,
       minZoom: 0.8,
@@ -106,7 +136,10 @@ export class WorldMap {
     this.map.keyboard.disable();
     this.labels = new LabelOverlay(this.map, this.style === 'parchment');
     try {
-      [this.geo] = await Promise.all([loadWorldGeometry(), new Promise<void>((r) => this.map.once('load', () => r()))]);
+      [this.geo] = await Promise.all([
+        loadWorldGeometry(),
+        new Promise<void>((r) => this.map.once('load', () => r())),
+      ]);
     } catch (e) {
       this.cb.onError?.(e instanceof Error ? e.message : String(e));
       return;
@@ -120,7 +153,14 @@ export class WorldMap {
       this.buildOffscreenIndicator();
     }
     if (this.style === 'ambient') this.startAmbientDrift();
-    this.map.on('moveend', () => this.recordHistory());
+    this.map.on('moveend', () => {
+      this.recordHistory();
+      // Position de la caméra exposée au DOM (tests de bout en bout, outils).
+      const c = this.map.getCenter();
+      const el = this.map.getContainer();
+      el.dataset.center = `${c.lng.toFixed(2)},${c.lat.toFixed(2)}`;
+      el.dataset.zoom = this.map.getZoom().toFixed(2);
+    });
     this.map.on('move', () => {
       this.drawMinimap();
       this.updateOffscreen();
@@ -173,7 +213,12 @@ export class WorldMap {
       type: 'line',
       source: 'seas',
       minzoom: 3,
-      paint: { 'line-color': '#9fc3d6', 'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0, 5, 0.25], 'line-width': 0.6, 'line-dasharray': [3, 3] },
+      paint: {
+        'line-color': '#9fc3d6',
+        'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0, 5, 0.25],
+        'line-width': 0.6,
+        'line-dasharray': [3, 3],
+      },
     });
     m.addSource('prov', { type: 'geojson', data: this.geo.provinces as FeatureCollection, tolerance: 0.25 });
     m.addLayer({
@@ -182,7 +227,17 @@ export class WorldMap {
       source: 'prov',
       paint: {
         'fill-color': ['to-color', ['coalesce', ['feature-state', 'c'], '#8a8070']],
-        'fill-opacity': ((base: unknown) => ['interpolate', ['linear'], ['zoom'], 1, ['*', 1.15, base], 4, ['*', 0.95, base], 7, ['*', 0.7, base]])([
+        'fill-opacity': ((base: unknown) => [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          1,
+          ['*', 1.15, base],
+          4,
+          ['*', 0.95, base],
+          7,
+          ['*', 0.7, base],
+        ])([
           '*',
           ['coalesce', ['feature-state', 'a'], 0],
           ['case', ['boolean', ['feature-state', 'hover'], false], 1.25, 1],
@@ -191,7 +246,12 @@ export class WorldMap {
       },
     });
     m.addSource('lakes', { type: 'geojson', data: this.geo.lakes as FeatureCollection, tolerance: 0.5 });
-    m.addLayer({ id: 'lakes', type: 'fill', source: 'lakes', paint: { 'fill-color': '#3f6f88', 'fill-opacity': 0.9 } });
+    m.addLayer({
+      id: 'lakes',
+      type: 'fill',
+      source: 'lakes',
+      paint: { 'fill-color': '#3f6f88', 'fill-opacity': 0.9 },
+    });
     m.addSource('rivers', { type: 'geojson', data: this.geo.rivers as FeatureCollection, tolerance: 0.5 });
     m.addLayer({
       id: 'rivers',
@@ -201,19 +261,44 @@ export class WorldMap {
       paint: {
         'line-color': '#4a7f99',
         'line-opacity': ['interpolate', ['linear'], ['zoom'], 1, 0.5, 5, 0.85],
-        'line-width': ['interpolate', ['linear'], ['zoom'], 1, ['-', 1.4, ['*', ['get', 'r'], 0.12]], 7, ['-', 3.2, ['*', ['get', 'r'], 0.25]]],
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          1,
+          ['-', 1.4, ['*', ['get', 'r'], 0.12]],
+          7,
+          ['-', 3.2, ['*', ['get', 'r'], 0.25]],
+        ],
       },
       layout: { 'line-cap': 'round', 'line-join': 'round' },
     });
     m.addSource('coasts', { type: 'geojson', data: this.geo.coasts, tolerance: 0.3 });
-    m.addLayer({ id: 'coasts', type: 'line', source: 'coasts', paint: { 'line-color': '#2a2419', 'line-opacity': 0.55, 'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.5, 6, 1.4] } });
-    m.addSource('prov-borders', { type: 'geojson', data: asFeature(this.geo.provinceBorders), tolerance: 0.3 });
+    m.addLayer({
+      id: 'coasts',
+      type: 'line',
+      source: 'coasts',
+      paint: {
+        'line-color': '#2a2419',
+        'line-opacity': 0.55,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.5, 6, 1.4],
+      },
+    });
+    m.addSource('prov-borders', {
+      type: 'geojson',
+      data: asFeature(this.geo.provinceBorders),
+      tolerance: 0.3,
+    });
     m.addLayer({
       id: 'prov-borders',
       type: 'line',
       source: 'prov-borders',
       minzoom: 3,
-      paint: { 'line-color': '#241d14', 'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0, 4, 0.35, 7, 0.55], 'line-width': 0.6 },
+      paint: {
+        'line-color': '#241d14',
+        'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0, 4, 0.35, 7, 0.55],
+        'line-width': 0.6,
+      },
     });
     m.addSource('vassal-borders', { type: 'geojson', data: empty, tolerance: 0.3 });
     m.addLayer({
@@ -221,14 +306,23 @@ export class WorldMap {
       type: 'line',
       source: 'vassal-borders',
       minzoom: 2.3,
-      paint: { 'line-color': '#1c160e', 'line-opacity': ['interpolate', ['linear'], ['zoom'], 2.3, 0, 3.5, 0.6], 'line-width': ['interpolate', ['linear'], ['zoom'], 2.3, 0.6, 7, 1.6], 'line-dasharray': [2, 1.5] },
+      paint: {
+        'line-color': '#1c160e',
+        'line-opacity': ['interpolate', ['linear'], ['zoom'], 2.3, 0, 3.5, 0.6],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 2.3, 0.6, 7, 1.6],
+        'line-dasharray': [2, 1.5],
+      },
     });
     m.addSource('realm-borders', { type: 'geojson', data: empty, tolerance: 0.3 });
     m.addLayer({
       id: 'realm-borders',
       type: 'line',
       source: 'realm-borders',
-      paint: { 'line-color': '#140f09', 'line-opacity': 0.85, 'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.8, 4, 1.8, 7, 3] },
+      paint: {
+        'line-color': '#140f09',
+        'line-opacity': 0.85,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.8, 4, 1.8, 7, 3],
+      },
       layout: { 'line-join': 'round' },
     });
     m.addSource('mine', { type: 'geojson', data: empty, tolerance: 0.3 });
@@ -236,7 +330,12 @@ export class WorldMap {
       id: 'mine-glow',
       type: 'line',
       source: 'mine',
-      paint: { 'line-color': '#f4cf6a', 'line-opacity': 0.45, 'line-width': ['interpolate', ['linear'], ['zoom'], 1, 5, 6, 10], 'line-blur': 4 },
+      paint: {
+        'line-color': '#f4cf6a',
+        'line-opacity': 0.45,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 1, 5, 6, 10],
+        'line-blur': 4,
+      },
       layout: { 'line-join': 'round' },
     });
     m.addLayer({
@@ -252,8 +351,24 @@ export class WorldMap {
       source: 'prov',
       paint: {
         'line-color': ['case', ['boolean', ['feature-state', 'sel'], false], '#fff3c4', '#f2c95b'],
-        'line-width': ['case', ['boolean', ['feature-state', 'sel'], false], 3, ['boolean', ['feature-state', 'hl'], false], 2, 1.5],
-        'line-opacity': ['case', ['boolean', ['feature-state', 'sel'], false], 1, ['boolean', ['feature-state', 'hl'], false], 0.9, ['boolean', ['feature-state', 'hover'], false], 0.7, 0],
+        'line-width': [
+          'case',
+          ['boolean', ['feature-state', 'sel'], false],
+          3,
+          ['boolean', ['feature-state', 'hl'], false],
+          2,
+          1.5,
+        ],
+        'line-opacity': [
+          'case',
+          ['boolean', ['feature-state', 'sel'], false],
+          1,
+          ['boolean', ['feature-state', 'hl'], false],
+          0.9,
+          ['boolean', ['feature-state', 'hover'], false],
+          0.7,
+          0,
+        ],
       },
     });
     m.addSource('route', { type: 'geojson', data: empty });
@@ -261,7 +376,12 @@ export class WorldMap {
       id: 'route',
       type: 'line',
       source: 'route',
-      paint: { 'line-color': '#f6e3a8', 'line-width': 2.5, 'line-dasharray': [1.5, 1.2], 'line-opacity': 0.95 },
+      paint: {
+        'line-color': '#f6e3a8',
+        'line-width': 2.5,
+        'line-dasharray': [1.5, 1.2],
+        'line-opacity': 0.95,
+      },
       layout: { 'line-cap': 'round', 'line-join': 'round' },
     });
     m.addSource('capitals', { type: 'geojson', data: empty });
@@ -271,7 +391,15 @@ export class WorldMap {
       source: 'capitals',
       minzoom: 2.5,
       paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 2.5, ['*', 1.2, ['get', 'r']], 7, ['*', 3, ['get', 'r']]],
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          2.5,
+          ['*', 1.2, ['get', 'r']],
+          7,
+          ['*', 3, ['get', 'r']],
+        ],
         'circle-color': ['case', ['get', 'mine'], '#f2c95b', '#efe4c8'],
         'circle-stroke-color': '#1a130d',
         'circle-stroke-width': 1.2,
@@ -319,11 +447,17 @@ export class WorldMap {
     if (sig === this.structureSig) return;
     this.structureSig = sig;
     const m = this.map;
-    (m.getSource('realm-borders') as GeoJSONSource).setData(asFeature(bordersBy(this.geo, (i) => top.get(i) ?? null)));
-    (m.getSource('vassal-borders') as GeoJSONSource).setData(asFeature(bordersBy(this.geo, (i) => vassal.get(i) ?? null)));
+    (m.getSource('realm-borders') as GeoJSONSource).setData(
+      asFeature(bordersBy(this.geo, (i) => top.get(i) ?? null)),
+    );
+    (m.getSource('vassal-borders') as GeoJSONSource).setData(
+      asFeature(bordersBy(this.geo, (i) => vassal.get(i) ?? null)),
+    );
     const myTop = this.playerId ? topLiegeId(view, this.playerId) : null;
     const mine = this.playerId ? outlineOf(this.geo, (i) => top.get(i) === myTop) : null;
-    (m.getSource('mine') as GeoJSONSource).setData(mine ? asFeature(mine) : { type: 'FeatureCollection', features: [] });
+    (m.getSource('mine') as GeoJSONSource).setData(
+      mine ? asFeature(mine) : { type: 'FeatureCollection', features: [] },
+    );
     this.realmBoundsCache = myTop ? provincesBounds(realmProvinceIds(view, myTop)) : null;
     this.buildLabels(view, top, myTop);
     this.updateOffscreen();
@@ -389,13 +523,26 @@ export class WorldMap {
       const capId = def.capitalProvinceId;
       const cap = PROVINCE_GEO[capId];
       if (cap && top.get(cap.index) === ruler) {
-        const rank = def.rank === 'empire' ? 2.2 : def.rank === 'kingdom' ? 1.7 : def.rank === 'duchy' ? 1.3 : 1;
-        capitals.push({ type: 'Feature', properties: { r: rank, mine: ruler === myTop }, geometry: { type: 'Point', coordinates: cap.capital } });
+        const rank =
+          def.rank === 'empire' ? 2.2 : def.rank === 'kingdom' ? 1.7 : def.rank === 'duchy' ? 1.3 : 1;
+        capitals.push({
+          type: 'Feature',
+          properties: { r: rank, mine: ruler === myTop },
+          geometry: { type: 'Point', coordinates: cap.capital },
+        });
       }
     }
     this.labels.setRealms(realms);
-    (this.map.getSource('capitals') as GeoJSONSource).setData({ type: 'FeatureCollection', features: capitals });
-    const places: PlaceLabel[] = WORLD.provinces.map((p) => ({ text: p.name, at: p.centroid, bounds: unwrapBounds(p.bbox), capital: p.baseFort >= 2 }));
+    (this.map.getSource('capitals') as GeoJSONSource).setData({
+      type: 'FeatureCollection',
+      features: capitals,
+    });
+    const places: PlaceLabel[] = WORLD.provinces.map((p) => ({
+      text: p.name,
+      at: p.centroid,
+      bounds: unwrapBounds(p.bbox),
+      capital: p.baseFort >= 2,
+    }));
     this.labels.setPlaces(places);
   }
 
@@ -416,13 +563,18 @@ export class WorldMap {
       this.pendingFocus = null;
       return;
     }
-    const idx = provinceId ? PROVINCE_GEO[provinceId]?.index ?? null : null;
-    if (this.selected !== null && this.selected !== idx) this.map.setFeatureState({ source: 'prov', id: this.selected }, { sel: false });
+    const idx = provinceId ? (PROVINCE_GEO[provinceId]?.index ?? null) : null;
+    if (this.selected !== null && this.selected !== idx)
+      this.map.setFeatureState({ source: 'prov', id: this.selected }, { sel: false });
     if (idx !== null) this.map.setFeatureState({ source: 'prov', id: idx }, { sel: true });
     this.selected = idx;
-    const next = new Set(highlight.map((h) => PROVINCE_GEO[h]?.index).filter((x): x is number => x !== undefined));
-    for (const i of this.highlighted) if (!next.has(i)) this.map.setFeatureState({ source: 'prov', id: i }, { hl: false });
-    for (const i of next) if (!this.highlighted.has(i)) this.map.setFeatureState({ source: 'prov', id: i }, { hl: true });
+    const next = new Set(
+      highlight.map((h) => PROVINCE_GEO[h]?.index).filter((x): x is number => x !== undefined),
+    );
+    for (const i of this.highlighted)
+      if (!next.has(i)) this.map.setFeatureState({ source: 'prov', id: i }, { hl: false });
+    for (const i of next)
+      if (!this.highlighted.has(i)) this.map.setFeatureState({ source: 'prov', id: i }, { hl: true });
     this.highlighted = next;
   }
 
@@ -459,7 +611,12 @@ export class WorldMap {
     return from;
   }
 
-  private upsertMarker(key: string, at: LngLat, build: () => HTMLElement, update: (el: HTMLElement) => void): void {
+  private upsertMarker(
+    key: string,
+    at: LngLat,
+    build: () => HTMLElement,
+    update: (el: HTMLElement) => void,
+  ): void {
     let entry = this.markers.get(key);
     if (!entry) {
       const el = build();
@@ -563,7 +720,8 @@ export class WorldMap {
     }
     const pts: LngLat[] = [this.armyPos(a), ...a.path.map((p) => PROVINCE_GEO[p]!.centroid)];
     const line: LngLat[] = [];
-    for (const p of pts) line.push(line.length ? [nearestLongitude(p[0], line[line.length - 1]![0]), p[1]] : p);
+    for (const p of pts)
+      line.push(line.length ? [nearestLongitude(p[0], line[line.length - 1]![0]), p[1]] : p);
     src.setData({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: line } });
   }
 
@@ -572,7 +730,8 @@ export class WorldMap {
   // ---------------------------------------------------------------------------
 
   private featureAt(point: maplibregl.PointLike): number | null {
-    const f = this.map.queryRenderedFeatures(point, { layers: ['prov-fill'] })[0] as MapGeoJSONFeature | undefined;
+    const f = this.map.queryRenderedFeatures(point, { layers: ['prov-fill'] })[0] as
+      MapGeoJSONFeature | undefined;
     return f && typeof f.id === 'number' ? f.id : null;
   }
 
@@ -633,7 +792,12 @@ export class WorldMap {
     if (!g) return;
     this.whenReady(() => {
       const c = this.map.getCenter().lng;
-      this.map.flyTo({ center: [nearestLongitude(g.centroid[0], c), g.centroid[1]], zoom: zoom ? 2.5 + zoom * 1.6 : Math.max(this.map.getZoom(), 5), duration: 900, essential: true });
+      this.map.flyTo({
+        center: [nearestLongitude(g.centroid[0], c), g.centroid[1]],
+        zoom: zoom ? 2.5 + zoom * 1.6 : Math.max(this.map.getZoom(), 5),
+        duration: 900,
+        essential: true,
+      });
     });
   }
 
@@ -663,7 +827,13 @@ export class WorldMap {
     const a = this.view?.armies[armyId];
     if (!a) return;
     const [lon, lat] = this.armyPos(a);
-    this.whenReady(() => this.map.flyTo({ center: [nearestLongitude(lon, this.map.getCenter().lng), lat], zoom: Math.max(this.map.getZoom(), 5), duration: 800 }));
+    this.whenReady(() =>
+      this.map.flyTo({
+        center: [nearestLongitude(lon, this.map.getCenter().lng), lat],
+        zoom: Math.max(this.map.getZoom(), 5),
+        duration: 800,
+      }),
+    );
   }
 
   panBy(dx: number, dy: number): void {
@@ -697,7 +867,12 @@ export class WorldMap {
     }
     const cam = this.getCamera();
     const last = this.history[this.historyIndex];
-    if (last && Math.abs(last.zoom - cam.zoom) < 0.3 && Math.hypot(last.center[0] - cam.center[0], last.center[1] - cam.center[1]) < 2 / 2 ** cam.zoom) return;
+    if (
+      last &&
+      Math.abs(last.zoom - cam.zoom) < 0.3 &&
+      Math.hypot(last.center[0] - cam.center[0], last.center[1] - cam.center[1]) < 2 / 2 ** cam.zoom
+    )
+      return;
     this.history = this.history.slice(0, this.historyIndex + 1);
     this.history.push(cam);
     if (this.history.length > 40) this.history.shift();
@@ -751,7 +926,7 @@ export class WorldMap {
     const span = b.getEast() - b.getWest();
     ctx.strokeStyle = '#f2c95b';
     ctx.lineWidth = 1.5;
-    const w = span >= 360 ? S : ((span / 360) * S);
+    const w = span >= 360 ? S : (span / 360) * S;
     const draw = (x: number) => ctx.strokeRect(x, y0 * S, w, (y1 - y0) * S);
     draw(x0 * S);
     if (x0 * S + w > S) draw(x0 * S - S);

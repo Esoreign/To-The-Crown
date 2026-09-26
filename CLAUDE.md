@@ -18,7 +18,7 @@ pnpm test:e2e                                # si l'interface ou le protocole ch
 
 ## Règles non négociables
 
-1. **Serveur autoritaire.** Le client n'envoie que des *commandes* (`packages/shared/src/commands.ts`, validées par zod). Toute règle vit dans `packages/game-core` et est vérifiée côté serveur ; le client ne calcule que des prévisualisations avec les mêmes fonctions.
+1. **Serveur autoritaire.** Le client n'envoie que des _commandes_ (`packages/shared/src/commands.ts`, validées par zod). Toute règle vit dans `packages/game-core` et est vérifiée côté serveur ; le client ne calcule que des prévisualisations avec les mêmes fonctions.
 2. **Déterminisme.** Dans `game-core` : pas de `Math.random`, `Date.now`, `new Date`, ni d'E/S (ESLint l'interdit). Aléa via `ctx.rng` (xoshiro128**, état dans `state.rng`). Une même graine et les mêmes commandes produisent la même partie.
 3. **Mutation transactionnelle.** Les systèmes mutent un brouillon Immer dans `stepDay`/`runCommand` ; une erreur de commande annule tout. Les traitements système passent par `safeRun` pour isoler une entité fautive.
 4. **Index structurels.** Après toute modification de suzerain, cour, décès, naissance, alliance, relation, maison ou guerre : `bumpStructure()`.
@@ -37,14 +37,26 @@ pnpm test:e2e                                # si l'interface ou le protocole ch
 
 ## Où modifier quoi
 
-| Besoin | Fichier(s) |
-| --- | --- |
-| Nouvelle commande joueur | `shared/src/commands.ts` → `game-core/src/commands.ts` → interface (`apps/web/src/game/…`) |
-| Nouveau système mensuel | `game-core/src/tick.ts` (+ `safeRun`) |
-| Nouvel événement | `content/src/events/*.ts` puis `check:events` |
-| Nouvel écran | `apps/web/src/game/screens/` + `ScreenHost.tsx` + `state/ui.ts` (`ScreenId`) |
-| Nouvelle table | `apps/server/src/db/schema.ts` puis `pnpm db:generate` |
-| Protocole réseau | `shared/src/protocol.ts` (incrémenter `PROTOCOL_VERSION` si incompatible) |
+| Besoin                                     | Fichier(s)                                                                                                            |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Nouvelle commande joueur                   | `shared/src/commands.ts` → `game-core/src/commands.ts` → interface (`apps/web/src/game/…`)                            |
+| Nouveau système mensuel                    | `game-core/src/tick.ts` (+ `safeRun`)                                                                                 |
+| Nouvel événement                           | `content/src/events/*.ts` puis `check:events`                                                                         |
+| Nouvel écran                               | `apps/web/src/game/screens/` + `ScreenHost.tsx` + `state/ui.ts` (`ScreenId`)                                          |
+| Entité historique de 1400                  | `content/src/world1400/polities-*.ts` puis `pnpm world:politics` et `pnpm world:validate` (voir `docs/WORLD_1400.md`) |
+| Géographie (provinces, géométries, relief) | `tools/worldgen` puis `pnpm world:build` (voir `docs/MAP_PIPELINE.md`)                                                |
+| Gouvernement, légitimité, sujétion         | données `content/src/world1400/governments.ts`, règles `game-core/src/politics.ts` (voir `docs/POLITICAL_SYSTEM.md`)  |
+| Mode ou couche de carte                    | `apps/web/src/map/colors.ts` (`computeColors`), `map/WorldMap.ts`, `game/hud/MapModes.tsx`                            |
+| Nouvelle table                             | `apps/server/src/db/schema.ts` puis `pnpm db:generate`                                                                |
+| Protocole réseau                           | `shared/src/protocol.ts` (incrémenter `PROTOCOL_VERSION` si incompatible)                                             |
+
+## Monde et carte
+
+- Le monde vient de données ouvertes (Natural Earth, relief AWS) ; **vérifier la licence** de toute nouvelle source (`docs/DATA_SOURCES.md`). Jamais de frontière moderne présentée comme celle de 1400, jamais de carte propriétaire.
+- Chaque entité historique porte un niveau de fiabilité (`conf`) et, si besoin, une note : pas d'affirmation historique inventée présentée comme sûre.
+- Les produits du pipeline sont versionnés (`packages/content/data/world1400`, `apps/web/public/world`) : le jeu ne dépend d'aucune API externe à l'exécution.
+- Dans `game-core`, lire les grandes collections via `ctx.r` (vue de lecture, `view.ts`) et n'écrire que via `ctx.s` ; ne jamais muter un objet obtenu par `ctx.r`.
+- Coordonnées : longitudes toujours passées par `map/geo.ts` (antiméridien) côté client.
 
 ## Style
 

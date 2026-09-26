@@ -1,14 +1,25 @@
 /**
  * Étape 4 — géométries servies au client (apps/web/public/world/) :
- *  - provinces.geojson : polygones lissés, côtes nettes (intersection avec
- *    les terres Natural Earth 10m simplifiées), id numérique = indice ;
- *  - borders.geojson : frontières partagées (a, b) et côtes (b = 0), issues
- *    d'une topologie des polygones finaux (arcs communs exacts) ;
- *  - seas.geojson : zones maritimes ; rivers.geojson, lakes.geojson.
+ *  - provinces.topo.json : polygones lissés, découpés par les terres Natural
+ *    Earth 10m simplifiées (côtes nettes), id numérique = indice ;
+ *  - borders.json : arcs de frontière exacts entre deux provinces voisines
+ *    (a, b), pris dans la topologie lissée AVANT découpage puis réduits aux
+ *    terres : le client compose toutes les frontières (provinces, vassaux,
+ *    royaumes) par un filtre sur (a, b), sans fragment intérieur ;
+ *  - coast.geojson : littoral ; seas.topo.json : zones maritimes ;
+ *    rivers.geojson, lakes.geojson : hydrographie ; minimap.webp.
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Feature, FeatureCollection, LineString, MultiLineString, MultiPolygon, Polygon, Position } from 'geojson';
+import type {
+  Feature,
+  FeatureCollection,
+  LineString,
+  MultiLineString,
+  MultiPolygon,
+  Polygon,
+  Position,
+} from 'geojson';
 import polygonClipping, { type MultiPolygon as PCMulti } from 'polygon-clipping';
 import Flatbush from 'flatbush';
 import { topology } from 'topojson-server';
@@ -61,7 +72,18 @@ type Topo = Topology<{ f: GeometryCollection }>;
 
 /** Lissage des arcs d'une topologie (les frontières partagées restent communes). */
 function smoothArcs(topo: Topo, tolerance: number, iterations: number): void {
-  topo.arcs = topo.arcs.map((arc: number[][]) => simplifyDP(chaikin(simplifyDP(arc.map((p: number[]) => [p[0]!, p[1]!]), tolerance), iterations), tolerance / 3));
+  topo.arcs = topo.arcs.map((arc: number[][]) =>
+    simplifyDP(
+      chaikin(
+        simplifyDP(
+          arc.map((p: number[]) => [p[0]!, p[1]!]),
+          tolerance,
+        ),
+        iterations,
+      ),
+      tolerance / 3,
+    ),
+  );
 }
 
 function toFeatures(topo: Topo): Feature<MultiPolygon | Polygon>[] {
@@ -182,7 +204,8 @@ function main(): void {
   console.time('tracé provinces');
   const rings = traceLabels(bandLabels(label, land));
   const fc: FeatureCollection<MultiPolygon> = { type: 'FeatureCollection', features: [] };
-  for (const [l, r] of rings) fc.features.push({ type: 'Feature', id: l, properties: { i: l }, geometry: ringsToMultiPolygon(r) });
+  for (const [l, r] of rings)
+    fc.features.push({ type: 'Feature', id: l, properties: { i: l }, geometry: ringsToMultiPolygon(r) });
   console.timeEnd('tracé provinces');
   console.time('topologie');
   let topo = topology({ f: fc }) as unknown as Topo;
@@ -216,7 +239,9 @@ function main(): void {
         properties: {},
         geometry: {
           type: 'MultiLineString',
-          coordinates: landParts.flatMap((poly) => poly.filter((r) => Math.abs(ringArea(r)) > 1e-4).map((r) => r.map((q) => round(q, 3)))),
+          coordinates: landParts.flatMap((poly) =>
+            poly.filter((r) => Math.abs(ringArea(r)) > 1e-4).map((r) => r.map((q) => round(q, 3))),
+          ),
         },
       },
     ],
@@ -240,7 +265,12 @@ function main(): void {
     const id = Number(f.id);
     const polys = asMulti(f.geometry);
     if (!hasWaterBand.has(id)) {
-      finalFeatures.push({ type: 'Feature', id, properties: { i: id }, geometry: { type: 'MultiPolygon', coordinates: polys } });
+      finalFeatures.push({
+        type: 'Feature',
+        id,
+        properties: { i: id },
+        geometry: { type: 'MultiPolygon', coordinates: polys },
+      });
       continue;
     }
     const [a, b, c, d] = bboxOf(polys);
@@ -258,7 +288,9 @@ function main(): void {
     }
     let result: Position[][][];
     try {
-      result = parts.length ? (polygonClipping.intersection(polys as never, parts) as unknown as Position[][][]) : [];
+      result = parts.length
+        ? (polygonClipping.intersection(polys as never, parts) as unknown as Position[][][])
+        : [];
     } catch {
       result = [];
     }
@@ -267,14 +299,22 @@ function main(): void {
       fallback++;
       result = polys;
     } else clipped++;
-    finalFeatures.push({ type: 'Feature', id, properties: { i: id }, geometry: { type: 'MultiPolygon', coordinates: result } });
+    finalFeatures.push({
+      type: 'Feature',
+      id,
+      properties: { i: id },
+      geometry: { type: 'MultiPolygon', coordinates: result },
+    });
   }
   console.timeEnd('côtes');
   console.log(`découpées ${clipped}, conservées telles quelles ${fallback}`);
 
   // --- Topologie finale : frontières et côtes --------------------------------
   console.time('frontières');
-  const finalTopo = topology({ f: { type: 'FeatureCollection', features: finalFeatures } as FeatureCollection }, 1e6) as unknown as Topo;
+  const finalTopo = topology(
+    { f: { type: 'FeatureCollection', features: finalFeatures } as FeatureCollection },
+    1e6,
+  ) as unknown as Topo;
   const owners: number[][] = finalTopo.arcs.map(() => []);
   for (const g of finalTopo.objects.f.geometries) {
     const id = Number((g as { id?: number }).id);
@@ -289,7 +329,11 @@ function main(): void {
     objects: {
       f: {
         type: 'GeometryCollection',
-        geometries: owners.map((o, i) => ({ type: 'LineString', arcs: [i], properties: { a: o[0] ?? 0, b: o[1] ?? 0 } })),
+        geometries: owners.map((o, i) => ({
+          type: 'LineString',
+          arcs: [i],
+          properties: { a: o[0] ?? 0, b: o[1] ?? 0 },
+        })),
       },
     },
   } as unknown as Topo;
@@ -297,7 +341,9 @@ function main(): void {
   const borders = {
     type: 'FeatureCollection',
     features: lines
-      .filter((l) => l.geometry && l.geometry.coordinates.length >= 2 && (l.properties as { b: number }).b !== 0)
+      .filter(
+        (l) => l.geometry && l.geometry.coordinates.length >= 2 && (l.properties as { b: number }).b !== 0,
+      )
       .map((l, i) => ({
         type: 'Feature',
         id: i + 1,
@@ -305,16 +351,27 @@ function main(): void {
         geometry: { type: 'LineString', coordinates: l.geometry.coordinates.map((p) => round(p, 3)) },
       })),
   };
-  const provincesOut = (feature(finalTopo, finalTopo.objects.f) as unknown as FeatureCollection<MultiPolygon | Polygon>).features.map((f) => ({
+  const provincesOut = (
+    feature(finalTopo, finalTopo.objects.f) as unknown as FeatureCollection<MultiPolygon | Polygon>
+  ).features.map((f) => ({
     type: 'Feature',
     id: Number(f.id),
     properties: { i: Number(f.id) },
-    geometry: { type: f.geometry.type, coordinates: f.geometry.type === 'Polygon' ? f.geometry.coordinates.map((r) => r.map((p) => round(p, 3))) : f.geometry.coordinates.map((poly) => poly.map((r) => r.map((p) => round(p, 3)))) },
+    geometry: {
+      type: f.geometry.type,
+      coordinates:
+        f.geometry.type === 'Polygon'
+          ? f.geometry.coordinates.map((r) => r.map((p) => round(p, 3)))
+          : f.geometry.coordinates.map((poly) => poly.map((r) => r.map((p) => round(p, 3)))),
+    },
   }));
   console.timeEnd('frontières');
   // Topologie compacte pour le client : provinces (arcs partagés) ; le client
   // en dérive les polygones et toutes les frontières (provinces, royaumes, côtes).
-  const clientTopo = topology({ provinces: { type: 'FeatureCollection', features: provincesOut } as FeatureCollection }, 4e5);
+  const clientTopo = topology(
+    { provinces: { type: 'FeatureCollection', features: provincesOut } as FeatureCollection },
+    4e5,
+  );
   writeJson('provinces.topo.json', clientTopo);
   void borders;
 
@@ -322,7 +379,8 @@ function main(): void {
   console.time('mers');
   const seaRings = traceLabels(seaLabel);
   const seaFc: FeatureCollection<MultiPolygon> = { type: 'FeatureCollection', features: [] };
-  for (const [l, r] of seaRings) seaFc.features.push({ type: 'Feature', id: l, properties: { i: l }, geometry: ringsToMultiPolygon(r) });
+  for (const [l, r] of seaRings)
+    seaFc.features.push({ type: 'Feature', id: l, properties: { i: l }, geometry: ringsToMultiPolygon(r) });
   let seaTopo = topology({ f: seaFc }) as unknown as Topo;
   seaTopo = presimplify(seaTopo) as Topo;
   seaTopo = simplify(seaTopo, 0.08) as Topo;
@@ -331,10 +389,19 @@ function main(): void {
     type: 'Feature',
     id: Number(f.id),
     properties: { i: Number(f.id) },
-    geometry: { type: f.geometry.type, coordinates: f.geometry.type === 'Polygon' ? f.geometry.coordinates.map((r) => r.map((p) => round(p, 2))) : f.geometry.coordinates.map((poly) => poly.map((r) => r.map((p) => round(p, 2)))) },
+    geometry: {
+      type: f.geometry.type,
+      coordinates:
+        f.geometry.type === 'Polygon'
+          ? f.geometry.coordinates.map((r) => r.map((p) => round(p, 2)))
+          : f.geometry.coordinates.map((poly) => poly.map((r) => r.map((p) => round(p, 2)))),
+    },
   }));
   console.timeEnd('mers');
-  writeJson('seas.topo.json', topology({ seas: { type: 'FeatureCollection', features: seaOut } as FeatureCollection }, 1e5));
+  writeJson(
+    'seas.topo.json',
+    topology({ seas: { type: 'FeatureCollection', features: seaOut } as FeatureCollection }, 1e5),
+  );
 
   // --- Fleuves et lacs --------------------------------------------------------
   const rivers = readGeo(path.join(NE_DIR, 'ne_10m_rivers_lake_centerlines.geojson'));
@@ -350,7 +417,10 @@ function main(): void {
       return {
         type: 'Feature',
         properties: { r: p.scalerank, n: p.name ?? '' },
-        geometry: { type: 'MultiLineString', coordinates: lines.map((l) => simplifyDP(l, 0.01).map((q) => round(q, 3))) },
+        geometry: {
+          type: 'MultiLineString',
+          coordinates: lines.map((l) => simplifyDP(l, 0.01).map((q) => round(q, 3))),
+        },
       };
     });
   writeJson('rivers.geojson', { type: 'FeatureCollection', features: riverOut });
@@ -360,7 +430,12 @@ function main(): void {
     .map((f) => ({
       type: 'Feature',
       properties: { n: (f.properties as { name?: string }).name ?? '' },
-      geometry: { type: 'MultiPolygon', coordinates: polygonsOf(f).map((poly) => poly.map((r) => simplifyDP(r, 0.01).map((q) => round(q, 3)))) },
+      geometry: {
+        type: 'MultiPolygon',
+        coordinates: polygonsOf(f).map((poly) =>
+          poly.map((r) => simplifyDP(r, 0.01).map((q) => round(q, 3))),
+        ),
+      },
     }));
   writeJson('lakes.geojson', { type: 'FeatureCollection', features: lakeOut });
   fs.writeFileSync(path.join(WORK, 'geometry.done'), new Date().toISOString());

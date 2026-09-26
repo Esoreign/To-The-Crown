@@ -29,7 +29,17 @@ import { SkillGrid, TraitList } from '../ui/char';
 
 const SCENARIO = getScenario('monde_1400');
 
-export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Character; rec?: RecommendedStart; onPick(id: string): void }) {
+export function RulerSheet({
+  view,
+  c,
+  rec,
+  onPick,
+}: {
+  view: GameView;
+  c: Character;
+  rec?: RecommendedStart;
+  onPick(id: string): void;
+}) {
   const pt = primaryTitleId(c);
   const polityId = pt ? TITLE_DEFS[pt]?.polityId : undefined;
   const polity = polityId ? SCENARIO.polities?.[polityId] : undefined;
@@ -51,7 +61,9 @@ export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Charac
           <div className="ruler-name">{charName(view, c)}</div>
           <div className="ruler-title">{rulerTitle(c)}</div>
           <div className="muted" style={{ fontSize: 12.5 }}>
-            {ageOf(c, view.date)} ans · {CULTURE_BY_ID[c.cultureId] ? t(`culture.${c.cultureId}`) : c.cultureId} · {FAITH_BY_ID[c.faithId] ? t(`faith.${c.faithId}`) : c.faithId}
+            {ageOf(c, view.date)} ans ·{' '}
+            {CULTURE_BY_ID[c.cultureId] ? t(`culture.${c.cultureId}`) : c.cultureId} ·{' '}
+            {FAITH_BY_ID[c.faithId] ? t(`faith.${c.faithId}`) : c.faithId}
           </div>
           {rec && (
             <div>
@@ -61,7 +73,9 @@ export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Charac
             </div>
           )}
         </div>
-        {pt && <CoatOfArms seed={TITLE_DEFS[pt]?.coaSeed ?? 1} rank={rankOf(c)} size={52} title={titleName(pt)} />}
+        {pt && (
+          <CoatOfArms seed={TITLE_DEFS[pt]?.coaSeed ?? 1} rank={rankOf(c)} size={52} title={titleName(pt)} />
+        )}
       </div>
       {rec && (
         <>
@@ -86,7 +100,10 @@ export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Charac
       {bonds.map((p) => (
         <div key={p.id} className="info-line">
           <span>{t(`subject.${p.type}`)}</span>
-          <span>{titleName(p.overlordTitleId)}{isExternalPact(p) ? ` · tribut ${Math.round(p.tribute * 100)} %` : ''}</span>
+          <span>
+            {titleName(p.overlordTitleId)}
+            {isExternalPact(p) ? ` · tribut ${Math.round(p.tribute * 100)} %` : ''}
+          </span>
         </div>
       ))}
       <div className="info-line">
@@ -111,7 +128,9 @@ export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Charac
       </div>
       <div className="info-line">
         <span>Héritier</span>
-        <span>{heir ? `${heir.firstName} (${ageOf(heir, view.date)} ans)` : <span className="neg">Aucun</span>}</span>
+        <span>
+          {heir ? `${heir.firstName} (${ageOf(heir, view.date)} ans)` : <span className="neg">Aucun</span>}
+        </span>
       </div>
       <div className="info-line">
         <span>Conjoint</span>
@@ -159,7 +178,12 @@ export function RulerSheet({ view, c, rec, onPick }: { view: GameView; c: Charac
           <h3 className="section-title">Vassaux jouables</h3>
           <div className="col" style={{ gap: 2 }}>
             {vassals.slice(0, 12).map((v) => (
-              <button key={v.id} className="link-btn" style={{ textAlign: 'left' }} onClick={() => onPick(v.id)}>
+              <button
+                key={v.id}
+                className="link-btn"
+                style={{ textAlign: 'left' }}
+                onClick={() => onPick(v.id)}
+              >
                 {styledName(view, v)}
               </button>
             ))}
@@ -180,7 +204,12 @@ export function NewGameScreen() {
   const [eventFrequency, setFreq] = useState<'low' | 'normal' | 'high'>('normal');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [focus, setFocus] = useState<{ provinceId: string; at: number; zoom?: number; realmOf?: string } | null>(() => {
+  const [focus, setFocus] = useState<{
+    provinceId: string;
+    at: number;
+    zoom?: number;
+    realmOf?: string;
+  } | null>(() => {
     // Ouvre la carte sur le premier royaume conseillé.
     const first = view.characters[scenario.recommended[0]!.characterId];
     const cap = first ? capitalProvinceOf(first) : null;
@@ -244,15 +273,26 @@ export function NewGameScreen() {
                 className={`start-card${selected === r.characterId ? ' active' : ''}`}
                 onClick={() => pick(r.characterId)}
                 data-testid={`start-${r.characterId}`}
+                data-polity={TITLE_DEFS[primaryTitleId(ch) ?? '']?.polityId}
               >
                 <Portrait c={ch} view={view} size={48} />
                 <div style={{ minWidth: 0 }}>
                   <div className="start-name">
                     {ch.firstName}
-                    <span className={`diff-badge diff-${r.difficulty}`}>{t(`difficulty.${r.difficulty}`)}</span>
+                    <span className={`diff-badge diff-${r.difficulty}`}>
+                      {t(`difficulty.${r.difficulty}`)}
+                    </span>
                   </div>
                   <div className="start-sub">{rulerTitle(ch)}</div>
-                  <div className="muted" style={{ fontSize: 11.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div
+                    className="muted"
+                    style={{
+                      fontSize: 11.5,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
                     {r.tagline}
                   </div>
                 </div>
@@ -282,16 +322,32 @@ export function NewGameScreen() {
         <div className="newgame-hint">Choisissez un souverain sur la carte ou dans la liste</div>
       </main>
       <aside className="newgame-side right">
-        {c ? <RulerSheet view={view} c={c} rec={rec} onPick={(id) => pick(id)} /> : <div className="ruler-sheet muted">Aucun souverain choisi.</div>}
+        {c ? (
+          <RulerSheet view={view} c={c} rec={rec} onPick={(id) => pick(id)} />
+        ) : (
+          <div className="ruler-sheet muted">Aucun souverain choisi.</div>
+        )}
         <div className="newgame-footer">
           <div className="field">
             <label htmlFor="game-name">Nom de la partie</label>
-            <input id="game-name" className="input" maxLength={48} placeholder={c ? `Saga de ${c.firstName}` : ''} value={name} onChange={(e) => setName(e.target.value)} />
+            <input
+              id="game-name"
+              className="input"
+              maxLength={48}
+              placeholder={c ? `Saga de ${c.firstName}` : ''}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
           <div className="row" style={{ gap: 8 }}>
             <div className="field grow">
               <label htmlFor="ai-diff">IA</label>
-              <select id="ai-diff" className="input" value={aiDifficulty} onChange={(e) => setAi(e.target.value as typeof aiDifficulty)}>
+              <select
+                id="ai-diff"
+                className="input"
+                value={aiDifficulty}
+                onChange={(e) => setAi(e.target.value as typeof aiDifficulty)}
+              >
                 <option value="easy">Clémente</option>
                 <option value="normal">Normale</option>
                 <option value="hard">Impitoyable</option>
@@ -299,7 +355,12 @@ export function NewGameScreen() {
             </div>
             <div className="field grow">
               <label htmlFor="ev-freq">Événements</label>
-              <select id="ev-freq" className="input" value={eventFrequency} onChange={(e) => setFreq(e.target.value as typeof eventFrequency)}>
+              <select
+                id="ev-freq"
+                className="input"
+                value={eventFrequency}
+                onChange={(e) => setFreq(e.target.value as typeof eventFrequency)}
+              >
                 <option value="low">Rares</option>
                 <option value="normal">Normaux</option>
                 <option value="high">Fréquents</option>
@@ -309,7 +370,12 @@ export function NewGameScreen() {
           <div className="form-error" role="alert">
             {error}
           </div>
-          <button className={`btn btn-primary btn-lg btn-block${busy ? ' loading' : ''}`} disabled={!c || busy} onClick={start} data-testid="start-game">
+          <button
+            className={`btn btn-primary btn-lg btn-block${busy ? ' loading' : ''}`}
+            disabled={!c || busy}
+            onClick={start}
+            data-testid="start-game"
+          >
             Prendre la couronne
           </button>
         </div>

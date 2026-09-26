@@ -102,18 +102,19 @@ localisation (`modifier.<id>`), ajouté par le mainteneur si besoin.
 
 ### Ordres de grandeur
 
-| Effet | Petit | Moyen | Fort |
-|---|---|---|---|
-| Or | 15–40 | 50–120 | 150–300 |
-| Prestige | 15–40 | 50–100 | 150–300 |
-| Opinion | ±5–10 | ±15–25 | ±30–50 |
-| Stress | ±10 | ±20–30 | ±40–60 |
-| Contrôle / développement | ±3–5 | ±8–12 | ±15–25 |
+| Effet                    | Petit | Moyen  | Fort    |
+| ------------------------ | ----- | ------ | ------- |
+| Or                       | 15–40 | 50–120 | 150–300 |
+| Prestige                 | 15–40 | 50–100 | 150–300 |
+| Opinion                  | ±5–10 | ±15–25 | ±30–50  |
+| Stress                   | ±10   | ±20–30 | ±40–60  |
+| Contrôle / développement | ±3–5  | ±8–12  | ±15–25  |
 
 ### Qualité d'écriture
 
-- Français soigné, ton médiéval sobre, **univers original** de Caldria (aucun nom réel, aucune
-  reprise de textes existants).
+- Français soigné, ton médiéval sobre, textes originaux (aucune reprise de textes existants).
+  Le monde est la Terre de 1400 : un événement reste **générique** (variables de personnages,
+  de lieux et de titres) et n'invente aucun fait sur un personnage historique réel.
 - 40 à 120 mots par texte, 2 à 4 choix **réellement différents** (compromis, coûts, risques).
 - Pas deux événements identiques à deux mots près. Privilégier les situations qui touchent la
   famille, les relations, les secrets et la politique.

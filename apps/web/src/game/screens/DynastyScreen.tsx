@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
-import { TITLE_DEFS, childrenOf, dynastyMembers, houseMembers, parentsOf, planSuccession, primogenitureLine, siblingsOf } from '@ttc/game-core';
+import {
+  TITLE_DEFS,
+  childrenOf,
+  dynastyMembers,
+  houseMembers,
+  parentsOf,
+  planSuccession,
+  primogenitureLine,
+  siblingsOf,
+} from '@ttc/game-core';
 import type { Character, GameView } from '@ttc/shared';
 import { fmt, t } from '../../lib/i18n';
 import { charName, rulerTitle, titleName } from '../../lib/format';
@@ -7,17 +16,43 @@ import { CoatOfArms, Portrait } from '../../ui/common';
 import { act, openCharacter } from '../hooks';
 import { ScreenFrame } from './ScreenHost';
 
-function TreeNode({ view, c, focus, onFocus, meId }: { view: GameView; c: Character; focus: boolean; onFocus(id: string): void; meId: string }) {
+function TreeNode({
+  view,
+  c,
+  focus,
+  onFocus,
+  meId,
+}: {
+  view: GameView;
+  c: Character;
+  focus: boolean;
+  onFocus(id: string): void;
+  meId: string;
+}) {
   const spouse = c.spouseId ? view.characters[c.spouseId] : undefined;
   return (
     <div className={`tree-node${focus ? ' focus' : ''}${c.id === meId ? ' me' : ''}`}>
-      <Portrait c={c} view={view} size={focus ? 64 : 48} onClick={() => onFocus(c.id)} title={charName(view, c)} />
+      <Portrait
+        c={c}
+        view={view}
+        size={focus ? 64 : 48}
+        onClick={() => onFocus(c.id)}
+        title={charName(view, c)}
+      />
       <div className="tree-name">{c.firstName}</div>
-      <div className="tree-sub muted">{c.death !== null ? '†' : rulerTitle(c) || `${Math.floor((view.date - c.birth) / 365)} ans`}</div>
+      <div className="tree-sub muted">
+        {c.death !== null ? '†' : rulerTitle(c) || `${Math.floor((view.date - c.birth) / 365)} ans`}
+      </div>
       {focus && spouse && (
         <div className="tree-spouse">
           <span className="muted">❤</span>
-          <Portrait c={spouse} view={view} size={40} onClick={() => openCharacter(spouse.id)} title={charName(view, spouse)} />
+          <Portrait
+            c={spouse}
+            view={view}
+            size={40}
+            onClick={() => openCharacter(spouse.id)}
+            title={charName(view, spouse)}
+          />
         </div>
       )}
     </div>
@@ -35,14 +70,23 @@ function FamilyTree({ view, me }: { view: GameView; me: Character }) {
   const rows: { label: string; list: Character[] }[] = [
     { label: 'Grands-parents', list: grand },
     { label: 'Parents', list: parents },
-    { label: 'Génération', list: [...siblings.filter((s) => s.birth < focus.birth), focus, ...siblings.filter((s) => s.birth >= focus.birth)] },
+    {
+      label: 'Génération',
+      list: [
+        ...siblings.filter((s) => s.birth < focus.birth),
+        focus,
+        ...siblings.filter((s) => s.birth >= focus.birth),
+      ],
+    },
     { label: 'Enfants', list: kids },
     { label: 'Petits-enfants', list: grandkids },
   ];
   return (
     <div className="family-tree">
       <div className="row spread" style={{ marginBottom: 6 }}>
-        <span className="muted">Cliquez un portrait pour recentrer l’arbre ; « fiche » ouvre le personnage.</span>
+        <span className="muted">
+          Cliquez un portrait pour recentrer l’arbre ; « fiche » ouvre le personnage.
+        </span>
         {focusId !== me.id && (
           <button className="btn btn-sm" onClick={() => setFocus(me.id)}>
             Revenir à vous
@@ -87,7 +131,8 @@ function Succession({ view, me }: { view: GameView; me: Character }) {
                 {charName(view, heir)}
               </div>
               <div className="soft">
-                {Math.floor((view.date - heir.birth) / 365)} ans · {pt ? t(`law.${view.titles[pt]?.successionLaw}`) : ''}
+                {Math.floor((view.date - heir.birth) / 365)} ans ·{' '}
+                {pt ? t(`law.${view.titles[pt]?.successionLaw}`) : ''}
               </div>
             </div>
           </>
@@ -103,10 +148,16 @@ function Succession({ view, me }: { view: GameView; me: Character }) {
               <span>
                 <CoatOfArms seed={TITLE_DEFS[tid]?.coaSeed ?? 1} size={16} /> {titleName(tid)}
               </span>
-              <span>{hid ? view.characters[hid]?.firstName : <span className="neg">sans héritier</span>}</span>
+              <span>
+                {hid ? view.characters[hid]?.firstName : <span className="neg">sans héritier</span>}
+              </span>
             </div>
           ))}
-          {plan.heirs.length > 1 && <p className="neg" style={{ fontSize: 13 }}>La loi de partage divisera votre héritage entre {plan.heirs.length} héritiers.</p>}
+          {plan.heirs.length > 1 && (
+            <p className="neg" style={{ fontSize: 13 }}>
+              La loi de partage divisera votre héritage entre {plan.heirs.length} héritiers.
+            </p>
+          )}
         </>
       )}
       {plan.election && (
@@ -124,7 +175,17 @@ function Succession({ view, me }: { view: GameView; me: Character }) {
             <div className="muted" style={{ fontSize: 12.5 }}>
               Vous pouvez soutenir un candidat :{' '}
               {plan.election.slice(0, 4).map((e) => (
-                <button key={e.candidateId} className="btn btn-sm" style={{ marginRight: 4 }} onClick={() => void act({ type: 'succession.vote', payload: { titleId: pt, candidateId: e.candidateId } }, 'Vote enregistré')}>
+                <button
+                  key={e.candidateId}
+                  className="btn btn-sm"
+                  style={{ marginRight: 4 }}
+                  onClick={() =>
+                    void act(
+                      { type: 'succession.vote', payload: { titleId: pt, candidateId: e.candidateId } },
+                      'Vote enregistré',
+                    )
+                  }
+                >
                   {view.characters[e.candidateId]?.firstName}
                 </button>
               ))}
@@ -146,7 +207,15 @@ function Succession({ view, me }: { view: GameView; me: Character }) {
             {me.nominatedHeirId === c.id ? (
               <span className="badge good">désigné</span>
             ) : (
-              <button className="btn btn-sm btn-ghost" onClick={() => void act({ type: 'character.designateHeir', payload: { heirId: c.id } }, `${c.firstName} est désigné héritier`)}>
+              <button
+                className="btn btn-sm btn-ghost"
+                onClick={() =>
+                  void act(
+                    { type: 'character.designateHeir', payload: { heirId: c.id } },
+                    `${c.firstName} est désigné héritier`,
+                  )
+                }
+              >
                 Désigner
               </button>
             )}
@@ -190,7 +259,8 @@ export function DynastyScreen({ view, me }: { view: GameView; me: Character }) {
               </div>
               <div className="narrative soft">« {house.motto} »</div>
               <div className="muted">
-                Dynastie {dynasty?.name} · renommée {fmt(dynasty?.renown ?? 0)} · {members.length} membres vivants · {dynMembers.length} dans la dynastie
+                Dynastie {dynasty?.name} · renommée {fmt(dynasty?.renown ?? 0)} · {members.length} membres
+                vivants · {dynMembers.length} dans la dynastie
               </div>
             </div>
           </div>
@@ -214,9 +284,17 @@ export function DynastyScreen({ view, me }: { view: GameView; me: Character }) {
           <div className="person-grid">
             {members.map((c) => (
               <div key={c.id} className="person-tile">
-                <Portrait c={c} view={view} size={46} onClick={() => openCharacter(c.id)} title={charName(view, c)} />
+                <Portrait
+                  c={c}
+                  view={view}
+                  size={46}
+                  onClick={() => openCharacter(c.id)}
+                  title={charName(view, c)}
+                />
                 <div className="person-tile-name">{c.firstName}</div>
-                <div className="person-tile-sub muted">{rulerTitle(c) || `${Math.floor((view.date - c.birth) / 365)} ans`}</div>
+                <div className="person-tile-sub muted">
+                  {rulerTitle(c) || `${Math.floor((view.date - c.birth) / 365)} ans`}
+                </div>
               </div>
             ))}
           </div>

@@ -3,6 +3,7 @@
  * indépendance, prisonniers, invitations, tutelle.
  */
 import { ErrorCodes, GameError, RANK_ORDER, type Character, type GameView, type SkillKey } from '@ttc/shared';
+import { hasPendingProposal } from './pending';
 import { crownAuthorityCost, maxCrownAuthority } from './politics';
 import { BALANCE } from './balance';
 import { acceptance, type Acceptance, type AcceptRow } from './acceptance';
@@ -102,6 +103,7 @@ export function proposeAlliance(ctx: Ctx, actorId: string, targetId: string, use
   const acc = evaluateAlliance(s, actorId, targetId, useHook);
   if (acc.score <= -500) throw new GameError(ErrorCodes.INVALID_TARGET, 'Alliance impossible');
   if (target.isPlayer) {
+    if (hasPendingProposal(s, 'alliance', actorId, targetId)) return { accepted: false, pending: true, acceptance: acc };
     const pid = newId(s, 'pr');
     s.proposals[pid] = { id: pid, kind: 'alliance', fromId: actorId, toId: targetId, subjects: [], createdAt: s.date, expiresAt: s.date + 30, hookId: null };
     notify(ctx, [targetId], { level: 'urgent', kind: 'proposal_alliance', vars: { from: s.characters[actorId]!.firstName }, focus: { type: 'character', id: actorId }, sound: 'notify' });
@@ -174,6 +176,7 @@ export function proposeVassalization(ctx: Ctx, actorId: string, targetId: string
   const acc = evaluateVassalization(s, actorId, targetId, useHook);
   if (acc.score <= -500) throw new GameError(ErrorCodes.INVALID_TARGET, 'Vassalisation impossible');
   if (target.isPlayer) {
+    if (hasPendingProposal(s, 'vassalize', actorId, targetId)) return { accepted: false, pending: true, acceptance: acc };
     const pid = newId(s, 'pr');
     s.proposals[pid] = { id: pid, kind: 'vassalize', fromId: actorId, toId: targetId, subjects: [], createdAt: s.date, expiresAt: s.date + 30, hookId: null };
     notify(ctx, [targetId], { level: 'urgent', kind: 'proposal_vassalize', vars: { from: s.characters[actorId]!.firstName }, focus: { type: 'character', id: actorId }, sound: 'notify' });

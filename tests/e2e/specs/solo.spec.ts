@@ -7,26 +7,45 @@ test.describe('Partie solo', () => {
     page.on('pageerror', (e) => errors.push(e.message));
 
     await register(page, 'solo');
-    await startSolo(page, 'ch852'); // Thalos d'Ithos (facile)
+    await startSolo(page, 'fra'); // Charles VI, roi de France
 
     // Barre de ressources et fiche du personnage joueur.
     await expect(page.getByTestId('res-gold')).toBeVisible();
     await page.locator('.topbar .portrait').click();
-    await expect(page.getByTestId('character-panel')).toContainText('Thalos');
+    await expect(page.getByTestId('character-panel')).toContainText('Charles');
 
     // Écrans principaux.
-    for (const s of ['council', 'realm', 'dynasty', 'intrigue', 'military', 'marriage', 'decisions', 'chronicle']) {
+    for (const s of [
+      'council',
+      'realm',
+      'dynasty',
+      'intrigue',
+      'military',
+      'marriage',
+      'decisions',
+      'chronicle',
+    ]) {
       await page.getByTestId(`nav-${s}`).click();
       await expect(page.getByTestId('screen')).toBeVisible();
     }
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('screen')).toHaveCount(0);
 
+    // Institutions : gouvernement et légitimité du souverain.
+    await page.getByTestId('nav-realm').click();
+    await page.getByRole('button', { name: 'Institutions' }).click();
+    await expect(page.getByTestId('screen')).toContainText('Monarchie');
+    await expect(page.getByTestId('legitimacy')).toHaveText(/^\d+$/);
+    await page.keyboard.press('Escape');
+
     // Conseil : changer la tâche de l'intendant.
     await page.getByTestId('nav-council').click();
     const steward = page.getByTestId('council-steward');
     await steward.getByRole('radio', { name: 'Développer un comté' }).click();
-    await expect(steward.getByRole('radio', { name: 'Développer un comté' })).toHaveAttribute('aria-checked', 'true');
+    await expect(steward.getByRole('radio', { name: 'Développer un comté' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     await page.keyboard.press('Escape');
 
     // Musique de fond : bouton rapide couper / rétablir.
@@ -40,6 +59,10 @@ test.describe('Partie solo', () => {
     // Modes de carte.
     await page.getByTestId('mapmode-culture').click();
     await expect(page.locator('.legend')).toBeVisible();
+    await page.getByTestId('mapmode-government').click();
+    await expect(page.locator('.legend')).toContainText('Monarchie');
+    await page.getByTestId('mapmode-subjects').click();
+    await expect(page.locator('.legend')).toContainText('Tributaire');
     await page.getByTestId('mapmode-political').click();
 
     // Le temps s'écoule à vitesse maximale.
@@ -79,7 +102,7 @@ test.describe('Partie solo', () => {
 
   test('un événement s’affiche et se résout', async ({ page }) => {
     await register(page, 'event');
-    await startSolo(page, 'ch1');
+    await startSolo(page, 'cas');
     await page.keyboard.press('3');
     await expect(page.getByTestId('event-modal')).toBeVisible({ timeout: 90_000 });
     const choice = page.getByTestId('event-modal').locator('.event-choice:not([disabled])').first();
@@ -87,7 +110,9 @@ test.describe('Partie solo', () => {
     await expect(page.locator('.tooltip')).toContainText('Conséquences');
     const title = await page.locator('#event-title').textContent();
     await choice.click();
-    await expect(page.locator('#event-title')).not.toHaveText(title ?? '', { timeout: 10_000 }).catch(() => undefined);
+    await expect(page.locator('#event-title'))
+      .not.toHaveText(title ?? '', { timeout: 10_000 })
+      .catch(() => undefined);
     await page.keyboard.press(' ');
   });
 });

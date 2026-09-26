@@ -27,12 +27,21 @@ describe('longitudes et antiméridien', () => {
   });
 
   it('déroule un tracé qui traverse la ligne de changement de date', () => {
-    const line = unwrapGeometry([[178, 60], [-179, 61], [-176, 62]]);
+    const line = unwrapGeometry([
+      [178, 60],
+      [-179, 61],
+      [-176, 62],
+    ]);
     expect(line.map(([l]) => l)).toEqual([178, 181, 184]);
   });
 
   it('calcule une emprise étroite pour un territoire à cheval sur l’antiméridien (Tchoukotka, Fidji)', () => {
-    const b = getWrappedBounds([[172, 64], [179.5, 66], [-178, 65], [-170, 66]])!;
+    const b = getWrappedBounds([
+      [172, 64],
+      [179.5, 66],
+      [-178, 65],
+      [-170, 66],
+    ])!;
     expect(b[0]).toBe(172);
     expect(b[2]).toBe(-170);
     expect(boundsWidth(b)).toBeCloseTo(18);
@@ -41,11 +50,19 @@ describe('longitudes et antiméridien', () => {
   });
 
   it('garde une emprise classique hors antiméridien', () => {
-    expect(getWrappedBounds([[-5, 40], [8, 51]])).toEqual([-5, 40, 8, 51]);
+    expect(
+      getWrappedBounds([
+        [-5, 40],
+        [8, 51],
+      ]),
+    ).toEqual([-5, 40, 8, 51]);
   });
 
   it('fusionne des emprises de part et d’autre de 180°', () => {
-    const m = mergeBounds([[170, -20, 179, -15], [-179, -19, -175, -16]])!;
+    const m = mergeBounds([
+      [170, -20, 179, -15],
+      [-179, -19, -175, -16],
+    ])!;
     expect(boundsWidth(m)).toBeLessThan(20);
   });
 

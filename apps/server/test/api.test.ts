@@ -1,14 +1,29 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { getScenario } from '@ttc/content';
-import { PROTOCOL_VERSION, type AckMessage, type GameView, type PatchMessage, type SnapshotMessage, type ChatMessage, type LobbyState } from '@ttc/shared';
+import {
+  PROTOCOL_VERSION,
+  type AckMessage,
+  type GameView,
+  type PatchMessage,
+  type SnapshotMessage,
+  type ChatMessage,
+  type LobbyState,
+} from '@ttc/shared';
 import { domainProvinceIds, buildOptions } from '@ttc/game-core';
 import { eq } from 'drizzle-orm';
 import { users, gameCommands } from '../src/db/schema';
 import { Client, emitAck, once, startServer, waitFor } from './helpers';
 
 const scenario = getScenario('monde_1400');
-const byName = (n: string) => scenario.recommended.find((r) => scenario.characters[r.characterId]!.firstName === n)!.characterId;
+/** Souverain recommandé d'une entité historique (ex. 'cas', 'fra'). */
+const byPolity = (id: string) => {
+  const info = scenario.polities![id]!;
+  const holder = scenario.titles[info.titleId]!.holderId!;
+  if (!scenario.recommended.some((r) => r.characterId === holder))
+    throw new Error(`Départ non recommandé : ${id}`);
+  return holder;
+};
 
 let app: FastifyInstance;
 let url: string;
@@ -50,13 +65,32 @@ describe('Authentification', () => {
   it('refuse identifiants invalides, doublons et mots de passe faibles', async () => {
     const c = new Client(url);
     const email = `dup-${Date.now()}@test.local`;
-    expect((await c.req('POST', '/api/auth/register', { email, username: `Dup${Date.now()}`, password: 'motdepasse42' })).status).toBe(201);
-    const dup = await new Client(url).req<{ error: { code: string } }>('POST', '/api/auth/register', { email, username: `Other${Date.now()}`, password: 'motdepasse42' });
+    expect(
+      (
+        await c.req('POST', '/api/auth/register', {
+          email,
+          username: `Dup${Date.now()}`,
+          password: 'motdepasse42',
+        })
+      ).status,
+    ).toBe(201);
+    const dup = await new Client(url).req<{ error: { code: string } }>('POST', '/api/auth/register', {
+      email,
+      username: `Other${Date.now()}`,
+      password: 'motdepasse42',
+    });
     expect(dup.status).toBe(409);
     expect(dup.body.error.code).toBe('EMAIL_TAKEN');
-    const weak = await new Client(url).req('POST', '/api/auth/register', { email: `w${Date.now()}@t.l`, username: `Weak${Date.now()}`, password: 'abc' });
+    const weak = await new Client(url).req('POST', '/api/auth/register', {
+      email: `w${Date.now()}@t.l`,
+      username: `Weak${Date.now()}`,
+      password: 'abc',
+    });
     expect(weak.status).toBe(400);
-    const bad = await new Client(url).req<{ error: { code: string } }>('POST', '/api/auth/login', { email, password: 'mauvais-mot-2' });
+    const bad = await new Client(url).req<{ error: { code: string } }>('POST', '/api/auth/login', {
+      email,
+      password: 'mauvais-mot-2',
+    });
     expect(bad.status).toBe(401);
     expect(bad.body.error.code).toBe('INVALID_CREDENTIALS');
     const ok = await new Client(url).req('POST', '/api/auth/login', { email, password: 'motdepasse42' });
@@ -66,14 +100,24 @@ describe('Authentification', () => {
   it('limite les tentatives de connexion', async () => {
     const email = `brute-${Date.now()}@test.local`;
     let last = 0;
-    for (let i = 0; i < 10; i++) last = (await new Client(url).req('POST', '/api/auth/login', { email, password: `x${i}yyyyyy` })).status;
+    for (let i = 0; i < 10; i++)
+      last = (await new Client(url).req('POST', '/api/auth/login', { email, password: `x${i}yyyyyy` }))
+        .status;
     expect(last).toBe(429);
   });
 
   it('refuse les requêtes mutantes sans en-tête anti-CSRF ni origine valide', async () => {
-    const res = await fetch(`${url}/api/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    const res = await fetch(`${url}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    });
     expect(res.status).toBe(403);
-    const evil = await fetch(`${url}/api/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://evil.example' }, body: '{}' });
+    const evil = await fetch(`${url}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: 'https://evil.example' },
+      body: '{}',
+    });
     expect(evil.status).toBe(403);
   });
 
@@ -97,25 +141,34 @@ describe('Partie solo', () => {
   it('crée, rejoint, joue une commande validée par le serveur et persiste', async () => {
     const c = new Client(url);
     await c.register('Solo');
-    const thalos = byName('Thalos');
-    const created = await c.req<{ id: string; status: string }>('POST', '/api/games', { name: 'Ma saga', mode: 'solo', characterId: thalos });
+    const castile = byPolity('cas');
+    const created = await c.req<{ id: string; status: string }>('POST', '/api/games', {
+      name: 'Ma saga',
+      mode: 'solo',
+      characterId: castile,
+    });
     expect(created.status).toBe(201);
     expect(created.body.status).toBe('running');
     const gameId = created.body.id;
 
     const socket = c.socket();
     const snapP = once<SnapshotMessage>(socket, 'game:snapshot');
-    const joined = await emitAck<{ ok: boolean }>(socket, 'game:join', { gameId, protocolVersion: PROTOCOL_VERSION });
+    const joined = await emitAck<{ ok: boolean }>(socket, 'game:join', {
+      gameId,
+      protocolVersion: PROTOCOL_VERSION,
+    });
     expect(joined.ok).toBe(true);
     const snap = await snapP;
-    expect(snap.you.characterId).toBe(thalos);
+    expect(snap.you.characterId).toBe(castile);
     expect('rng' in snap.view).toBe(false);
     let view: GameView = snap.view;
 
     // Commande réelle : construction.
-    const me = view.characters[thalos]!;
+    const me = view.characters[castile]!;
     const pick = domainProvinceIds(me)
-      .flatMap((p) => buildOptions({ ...view, rng: [1, 2, 3, 4] } as never, p, thalos).map((o) => ({ p, o })))
+      .flatMap((p) =>
+        buildOptions({ ...view, rng: [1, 2, 3, 4] } as never, p, castile).map((o) => ({ p, o })),
+      )
       .find((x) => x.o.available)!;
     const patchP = once<PatchMessage>(socket, 'game:patch');
     const ack = await emitAck<AckMessage>(socket, 'game:command', {
@@ -128,21 +181,27 @@ describe('Partie solo', () => {
 
     // Idempotence : même commandId ⇒ même accusé, aucune double dépense.
     const room = app.rooms.get(gameId)!;
-    const goldAfter = room.state.characters[thalos]!.gold;
+    const goldAfter = room.state.characters[castile]!.gold;
     const again = await emitAck<AckMessage>(socket, 'game:command', {
       commandId: ack.commandId,
       command: { type: 'building.construct', payload: { provinceId: pick.p, buildingId: pick.o.def.id } },
     });
     expect(again).toEqual(ack);
-    expect(room.state.characters[thalos]!.gold).toBe(goldAfter);
+    expect(room.state.characters[castile]!.gold).toBe(goldAfter);
 
     // Le client ne peut pas imposer un résultat : commande dev refusée ? (activée en test) → type inconnu refusé.
-    const forged = await emitAck<AckMessage>(socket, 'game:command', { commandId: `cmd-${Date.now()}-2`, command: { type: 'gold.set', payload: { gold: 999999 } } });
+    const forged = await emitAck<AckMessage>(socket, 'game:command', {
+      commandId: `cmd-${Date.now()}-2`,
+      command: { type: 'gold.set', payload: { gold: 999999 } },
+    });
     expect(forged.ok).toBe(false);
     expect(forged.error!.code).toBe('INVALID_COMMAND');
 
     // Refus métier : armée d'autrui.
-    const foreign = await emitAck<AckMessage>(socket, 'game:command', { commandId: `cmd-${Date.now()}-3`, command: { type: 'army.move', payload: { armyId: 'ar_nope', to: 'p001' } } });
+    const foreign = await emitAck<AckMessage>(socket, 'game:command', {
+      commandId: `cmd-${Date.now()}-3`,
+      command: { type: 'army.move', payload: { armyId: 'ar_nope', to: 'p001' } },
+    });
     expect(foreign.ok).toBe(false);
     expect(foreign.error!.code).toBe('ARMY_NOT_OWNED');
 
@@ -171,11 +230,18 @@ describe('Partie solo', () => {
   it('interdit à un autre utilisateur de rejoindre une partie privée', async () => {
     const owner = new Client(url);
     await owner.register('Owner');
-    const g = await owner.req<{ id: string }>('POST', '/api/games', { name: 'Privée', mode: 'solo', characterId: byName('Morcant') });
+    const g = await owner.req<{ id: string }>('POST', '/api/games', {
+      name: 'Privée',
+      mode: 'solo',
+      characterId: byPolity('eng'),
+    });
     const intruder = new Client(url);
     await intruder.register('Intrus');
     const s = intruder.socket();
-    const r = await emitAck<{ ok: boolean; error?: { code: string } }>(s, 'game:join', { gameId: g.body.id, protocolVersion: PROTOCOL_VERSION });
+    const r = await emitAck<{ ok: boolean; error?: { code: string } }>(s, 'game:join', {
+      gameId: g.body.id,
+      protocolVersion: PROTOCOL_VERSION,
+    });
     expect(r.ok).toBe(false);
     expect(r.error!.code).toBe('NOT_GAME_MEMBER');
     expect((await intruder.req('GET', `/api/games/${g.body.id}`)).status).toBe(403);
@@ -190,7 +256,10 @@ describe('Partie solo', () => {
     const c = new Client(url);
     await c.register('Proto');
     const s = c.socket();
-    const r = await emitAck<{ ok: boolean; error?: { code: string } }>(s, 'game:join', { gameId: crypto.randomUUID(), protocolVersion: 999 });
+    const r = await emitAck<{ ok: boolean; error?: { code: string } }>(s, 'game:join', {
+      gameId: crypto.randomUUID(),
+      protocolVersion: 999,
+    });
     expect(r.error!.code).toBe('PROTOCOL_MISMATCH');
     s.close();
   });
@@ -202,7 +271,11 @@ describe('Multijoueur', () => {
     const bob = new Client(url);
     const aliceUser = await alice.register('Alice');
     const bobUser = await bob.register('Bob');
-    const created = await alice.req<{ id: string }>('POST', '/api/games', { name: 'Caldria à deux', mode: 'multiplayer', maxPlayers: 4 });
+    const created = await alice.req<{ id: string }>('POST', '/api/games', {
+      name: 'Le monde à deux',
+      mode: 'multiplayer',
+      maxPlayers: 4,
+    });
     const gameId = created.body.id;
     const info = await alice.req<{ game: { inviteCode: string } }>('GET', `/api/games/${gameId}`);
     const code = info.body.game.inviteCode;
@@ -220,13 +293,19 @@ describe('Multijoueur', () => {
     await emitAck(bSock, 'lobby:join', { gameId });
 
     // Même souverain interdit.
-    const aelis = byName('Aélis');
-    const aldren = byName('Aldren');
-    expect((await alice.req('POST', `/api/games/${gameId}/select`, { characterId: aelis })).status).toBe(200);
-    const clash = await bob.req<{ error: { code: string } }>('POST', `/api/games/${gameId}/select`, { characterId: aelis });
+    const france = byPolity('fra');
+    const burgundy = byPolity('bur');
+    expect((await alice.req('POST', `/api/games/${gameId}/select`, { characterId: france })).status).toBe(
+      200,
+    );
+    const clash = await bob.req<{ error: { code: string } }>('POST', `/api/games/${gameId}/select`, {
+      characterId: france,
+    });
     expect(clash.status).toBe(409);
     expect(clash.body.error.code).toBe('CHARACTER_TAKEN');
-    expect((await bob.req('POST', `/api/games/${gameId}/select`, { characterId: aldren })).status).toBe(200);
+    expect((await bob.req('POST', `/api/games/${gameId}/select`, { characterId: burgundy })).status).toBe(
+      200,
+    );
 
     // Lancement refusé tant que Bob n'est pas prêt ; Bob ne peut pas lancer.
     expect((await alice.req('POST', `/api/games/${gameId}/start`)).status).toBe(409);
@@ -241,8 +320,8 @@ describe('Multijoueur', () => {
     await emitAck(aSock, 'game:join', { gameId, protocolVersion: PROTOCOL_VERSION });
     await emitAck(bSock, 'game:join', { gameId, protocolVersion: PROTOCOL_VERSION });
     const [sa, sb] = await Promise.all([aSnap, bSnap]);
-    expect(sa.you.characterId).toBe(aelis);
-    expect(sb.you.characterId).toBe(aldren);
+    expect(sa.you.characterId).toBe(france);
+    expect(sb.you.characterId).toBe(burgundy);
     expect(sa.view.date).toBe(sb.view.date);
 
     // Bob ne contrôle pas l'horloge ; Alice (hôte) oui.
@@ -255,26 +334,34 @@ describe('Multijoueur', () => {
     aSock.emit('pause:request', { gameId, paused: true });
     await waitFor(() => room.paused);
 
-    // Action d'Alice visible chez Bob : cadeau à Aldren.
+    // Action d'Alice visible chez Bob : cadeau au duc de Bourgogne.
     let bobGold = 0;
     const bPatch = new Promise<void>((resolve) => {
       bSock.on('game:patch', (p: PatchMessage) => {
-        for (const op of p.ops) if (op.path[0] === 'characters' && op.path[1] === aldren && op.path[2] === 'gold') bobGold = op.value as number;
+        for (const op of p.ops)
+          if (op.path[0] === 'characters' && op.path[1] === burgundy && op.path[2] === 'gold')
+            bobGold = op.value as number;
         if (bobGold) resolve();
       });
     });
-    const giftAck = await emitAck<AckMessage>(aSock, 'game:command', { commandId: `gift-${Date.now()}`, command: { type: 'diplomacy.gift', payload: { targetId: aldren, amount: 50 } } });
+    const giftAck = await emitAck<AckMessage>(aSock, 'game:command', {
+      commandId: `gift-${Date.now()}`,
+      command: { type: 'diplomacy.gift', payload: { targetId: burgundy, amount: 50 } },
+    });
     expect(giftAck.ok).toBe(true);
     await bPatch;
-    expect(bobGold).toBe(room.state.characters[aldren]!.gold);
+    expect(bobGold).toBe(room.state.characters[burgundy]!.gold);
 
-    // Alice ne peut pas commander pour Bob : ses commandes s'appliquent à Aélis.
-    expect(room.characterOf(aliceUser.id)).toBe(aelis);
-    expect(room.characterOf(bobUser.id)).toBe(aldren);
+    // Alice ne peut pas commander pour Bob : ses commandes s'appliquent au roi de France.
+    expect(room.characterOf(aliceUser.id)).toBe(france);
+    expect(room.characterOf(bobUser.id)).toBe(burgundy);
 
     // Chat, échappé côté client (texte brut stocké tel quel sans HTML interprété).
     const msgP = once<ChatMessage>(bSock, 'chat:message');
-    const sent = await emitAck<{ ok: boolean }>(aSock, 'chat:send', { gameId, text: '  Bonjour <b>Bob</b>\u0007 ' });
+    const sent = await emitAck<{ ok: boolean }>(aSock, 'chat:send', {
+      gameId,
+      text: '  Bonjour <b>Bob</b>\u0007 ',
+    });
     expect(sent.ok).toBe(true);
     const msg = await msgP;
     expect(msg.text).toBe('Bonjour <b>Bob</b>');
@@ -293,10 +380,10 @@ describe('Multijoueur', () => {
     const snap2P = once<SnapshotMessage>(b2, 'game:snapshot');
     await emitAck(b2, 'game:join', { gameId, protocolVersion: PROTOCOL_VERSION });
     const snap2 = await snap2P;
-    expect(snap2.you.characterId).toBe(aldren);
+    expect(snap2.you.characterId).toBe(burgundy);
     expect(snap2.view.date).toBe(room.state.date);
     expect(snap2.seq).toBe(room.seq);
-    expect(snap2.view.characters[aldren]!.gold).toBe(room.state.characters[aldren]!.gold);
+    expect(snap2.view.characters[burgundy]!.gold).toBe(room.state.characters[burgundy]!.gold);
     // Pas de contrôle dupliqué.
     expect(Object.values(snap2.view.characters).filter((c) => c.isPlayer)).toHaveLength(2);
 
@@ -313,8 +400,16 @@ describe('Multijoueur', () => {
     const b = new Client(url);
     await a.register('IsoA');
     await b.register('IsoB');
-    const ga = await a.req<{ id: string }>('POST', '/api/games', { name: 'Partie A', mode: 'solo', characterId: byName('Torvald') });
-    const gb = await b.req<{ id: string }>('POST', '/api/games', { name: 'Partie B', mode: 'solo', characterId: byName('Altani') });
+    const ga = await a.req<{ id: string }>('POST', '/api/games', {
+      name: 'Partie A',
+      mode: 'solo',
+      characterId: byPolity('ven'),
+    });
+    const gb = await b.req<{ id: string }>('POST', '/api/games', {
+      name: 'Partie B',
+      mode: 'solo',
+      characterId: byPolity('tim'),
+    });
     const sa = a.socket();
     const sb = b.socket();
     await emitAck(sa, 'game:join', { gameId: ga.body.id, protocolVersion: PROTOCOL_VERSION });

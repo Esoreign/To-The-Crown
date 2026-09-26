@@ -3,7 +3,16 @@
  * Pure : dépend uniquement de la vue de jeu et du joueur.
  */
 import { CULTURE_BY_ID, FAITH_BY_ID, GOVERNMENTS, WORLD } from '@ttc/content';
-import { PROVINCE_GEO, areAllied, atWarWith, isInRealmOf, pactsAsOverlord, pactsAsSubject, provinceTax, topLiegeId } from '@ttc/game-core';
+import {
+  PROVINCE_GEO,
+  areAllied,
+  atWarWith,
+  isInRealmOf,
+  pactsAsOverlord,
+  pactsAsSubject,
+  provinceTax,
+  topLiegeId,
+} from '@ttc/game-core';
 import type { GameView, Terrain } from '@ttc/shared';
 import type { MapMode } from '../state/ui';
 
@@ -37,7 +46,9 @@ export const hexToNum = (hex: string): number => parseInt(hex.replace('#', ''), 
 export const rgbToNum = (c: [number, number, number]): number => (c[0] << 16) | (c[1] << 8) | c[2];
 export const numToHex = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
 
-const TITLE_COLOR: Record<string, number> = Object.fromEntries(WORLD.titles.map((t) => [t.id, rgbToNum(t.color)]));
+const TITLE_COLOR: Record<string, number> = Object.fromEntries(
+  WORLD.titles.map((t) => [t.id, rgbToNum(t.color)]),
+);
 
 function lerpColor(a: number, b: number, t: number): number {
   const ar = (a >> 16) & 255;
@@ -46,7 +57,11 @@ function lerpColor(a: number, b: number, t: number): number {
   const br = (b >> 16) & 255;
   const bg = (b >> 8) & 255;
   const bb = b & 255;
-  return (Math.round(ar + (br - ar) * t) << 16) | (Math.round(ag + (bg - ag) * t) << 8) | Math.round(ab + (bb - ab) * t);
+  return (
+    (Math.round(ar + (br - ar) * t) << 16) |
+    (Math.round(ag + (bg - ag) * t) << 8) |
+    Math.round(ab + (bb - ab) * t)
+  );
 }
 
 function ramp(t: number): number {
@@ -62,7 +77,7 @@ export function realmColor(view: Pick<GameView, 'characters' | 'titles'>, provin
   if (!holder) return 0x666666;
   const top = topLiegeId(view, holder);
   const primary = view.characters[top]?.titleIds[0];
-  return primary ? TITLE_COLOR[primary] ?? 0x777777 : 0x777777;
+  return primary ? (TITLE_COLOR[primary] ?? 0x777777) : 0x777777;
 }
 
 const PROVINCES = WORLD.provinces;
@@ -102,21 +117,32 @@ const SUBJECT_COLORS: Record<string, string> = {
 };
 
 /** Garde les entrées de légende les plus représentées (la carte en compte des centaines). */
-function topLegend(counts: Map<string, number>, label: (id: string) => string, color: (id: string) => string, max = 14): LegendEntry[] {
+function topLegend(
+  counts: Map<string, number>,
+  label: (id: string) => string,
+  color: (id: string) => string,
+  max = 14,
+): LegendEntry[] {
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, max)
     .map(([id]) => ({ label: label(id), color: color(id) }));
 }
 
-export function computeColors(view: GameView, mode: MapMode, playerId: string | null): { colors: Map<string, ProvinceColor>; legend: LegendEntry[] } {
+export function computeColors(
+  view: GameView,
+  mode: MapMode,
+  playerId: string | null,
+): { colors: Map<string, ProvinceColor>; legend: LegendEntry[] } {
   const colors = new Map<string, ProvinceColor>();
   const legend: LegendEntry[] = [];
   switch (mode) {
     case 'political':
     case 'terrain': {
-      for (const p of PROVINCES) colors.set(p.id, { color: realmColor(view, p.id), alpha: mode === 'terrain' ? 0.08 : 0.62 });
-      if (mode === 'terrain') for (const [k, v] of Object.entries(TERRAIN_COLORS)) legend.push({ label: `terrain.${k}`, color: v });
+      for (const p of PROVINCES)
+        colors.set(p.id, { color: realmColor(view, p.id), alpha: mode === 'terrain' ? 0.08 : 0.62 });
+      if (mode === 'terrain')
+        for (const [k, v] of Object.entries(TERRAIN_COLORS)) legend.push({ label: `terrain.${k}`, color: v });
       break;
     }
     case 'culture': {
@@ -127,7 +153,13 @@ export function computeColors(view: GameView, mode: MapMode, playerId: string | 
         colors.set(p.id, { color: hexToNum(c?.color ?? '#777777'), alpha: 0.72 });
         if (c) counts.set(id, (counts.get(id) ?? 0) + 1);
       }
-      legend.push(...topLegend(counts, (id) => `culture.${id}`, (id) => CULTURE_BY_ID[id]!.color));
+      legend.push(
+        ...topLegend(
+          counts,
+          (id) => `culture.${id}`,
+          (id) => CULTURE_BY_ID[id]!.color,
+        ),
+      );
       break;
     }
     case 'faith': {
@@ -138,19 +170,34 @@ export function computeColors(view: GameView, mode: MapMode, playerId: string | 
         colors.set(p.id, { color: hexToNum(f?.color ?? '#777777'), alpha: 0.72 });
         if (f) counts.set(id, (counts.get(id) ?? 0) + 1);
       }
-      legend.push(...topLegend(counts, (id) => `faith.${id}`, (id) => FAITH_BY_ID[id]!.color));
+      legend.push(
+        ...topLegend(
+          counts,
+          (id) => `faith.${id}`,
+          (id) => FAITH_BY_ID[id]!.color,
+        ),
+      );
       break;
     }
     case 'economy': {
       const taxes = PROVINCES.map((p) => provinceTax(view, p.id));
       const max = Math.max(...taxes, 1);
       PROVINCES.forEach((p, i) => colors.set(p.id, { color: ramp(taxes[i]! / max), alpha: 0.78 }));
-      legend.push({ label: 'legend.low', color: '#6e2a22' }, { label: 'legend.mid', color: '#c9a24b' }, { label: 'legend.high', color: '#4f8a3c' });
+      legend.push(
+        { label: 'legend.low', color: '#6e2a22' },
+        { label: 'legend.mid', color: '#c9a24b' },
+        { label: 'legend.high', color: '#4f8a3c' },
+      );
       break;
     }
     case 'development': {
-      for (const p of PROVINCES) colors.set(p.id, { color: ramp((view.provinces[p.id]?.development ?? 0) / 50), alpha: 0.78 });
-      legend.push({ label: 'legend.low', color: '#6e2a22' }, { label: 'legend.mid', color: '#c9a24b' }, { label: 'legend.high', color: '#4f8a3c' });
+      for (const p of PROVINCES)
+        colors.set(p.id, { color: ramp((view.provinces[p.id]?.development ?? 0) / 50), alpha: 0.78 });
+      legend.push(
+        { label: 'legend.low', color: '#6e2a22' },
+        { label: 'legend.mid', color: '#c9a24b' },
+        { label: 'legend.high', color: '#4f8a3c' },
+      );
       break;
     }
     case 'control': {
@@ -159,7 +206,11 @@ export function computeColors(view: GameView, mode: MapMode, playerId: string | 
         const c = view.provinces[p.id]?.control ?? 0;
         colors.set(p.id, { color: occupied ? 0x7a1a1a : ramp((c - 40) / 60), alpha: 0.78 });
       }
-      legend.push({ label: 'legend.occupied', color: '#7a1a1a' }, { label: 'legend.low', color: '#6e2a22' }, { label: 'legend.high', color: '#4f8a3c' });
+      legend.push(
+        { label: 'legend.occupied', color: '#7a1a1a' },
+        { label: 'legend.low', color: '#6e2a22' },
+        { label: 'legend.high', color: '#4f8a3c' },
+      );
       break;
     }
     case 'diplomacy': {
@@ -202,7 +253,14 @@ export function computeColors(view: GameView, mode: MapMode, playerId: string | 
         colors.set(p.id, { color: hexToNum(GOVERNMENT_COLORS[gov] ?? '#5a544c'), alpha: gov ? 0.75 : 0.35 });
         if (gov) counts.set(gov, (counts.get(gov) ?? 0) + 1);
       }
-      legend.push(...topLegend(counts, (id) => `government.${id}`, (id) => GOVERNMENT_COLORS[id] ?? '#5a544c', GOVERNMENTS.length));
+      legend.push(
+        ...topLegend(
+          counts,
+          (id) => `government.${id}`,
+          (id) => GOVERNMENT_COLORS[id] ?? '#5a544c',
+          GOVERNMENTS.length,
+        ),
+      );
       break;
     }
     case 'subjects': {
@@ -225,10 +283,23 @@ export function computeColors(view: GameView, mode: MapMode, playerId: string | 
       for (const p of PROVINCES) {
         const holder = view.titles[p.countyTitleId]?.holderId;
         const st = holder ? status(holder) : 'sovereign';
-        colors.set(p.id, { color: hexToNum(SUBJECT_COLORS[st] ?? SUBJECT_COLORS.sovereign!), alpha: holder ? 0.75 : 0.35 });
+        colors.set(p.id, {
+          color: hexToNum(SUBJECT_COLORS[st] ?? SUBJECT_COLORS.sovereign!),
+          alpha: holder ? 0.75 : 0.35,
+        });
         counts.set(st, (counts.get(st) ?? 0) + 1);
       }
-      for (const id of Object.keys(SUBJECT_COLORS)) if (counts.has(id)) legend.push({ label: id === 'sovereign' ? 'legend.sovereign' : id === 'overlord' ? 'legend.overlord' : `subject.${id}`, color: SUBJECT_COLORS[id]! });
+      for (const id of Object.keys(SUBJECT_COLORS))
+        if (counts.has(id))
+          legend.push({
+            label:
+              id === 'sovereign'
+                ? 'legend.sovereign'
+                : id === 'overlord'
+                  ? 'legend.overlord'
+                  : `subject.${id}`,
+            color: SUBJECT_COLORS[id]!,
+          });
       break;
     }
   }

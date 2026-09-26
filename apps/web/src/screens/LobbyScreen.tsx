@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { getScenario } from '@ttc/content';
-import { capitalProvinceOf, holderOfProvince, realmProvinceIds, topLiegeOfProvince } from '@ttc/game-core';
+import {
+  TITLE_DEFS,
+  capitalProvinceOf,
+  holderOfProvince,
+  primaryTitleId,
+  realmProvinceIds,
+  topLiegeOfProvince,
+} from '@ttc/game-core';
 import type { LobbyState } from '@ttc/shared';
 import { MapView } from '../map/MapView';
 import { scenarioView } from '../map/scenarioView';
@@ -52,7 +59,9 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
 
   const me = lobby?.players.find((p) => p.userId === user.id);
   const isHost = lobby?.hostId === user.id;
-  const takenBy = new Map(lobby?.players.filter((p) => p.characterId).map((p) => [p.characterId!, p.displayName]) ?? []);
+  const takenBy = new Map(
+    lobby?.players.filter((p) => p.characterId).map((p) => [p.characterId!, p.displayName]) ?? [],
+  );
   const shown = preview ?? me?.characterId ?? scenario.recommended[0]!.characterId;
   const c = view.characters[shown];
   const realm = useMemo(() => (c ? realmProvinceIds(view, c.id) : []), [view, c]);
@@ -62,7 +71,10 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
       await api(method, `/api/games/${gameId}${path}`, body);
       return true;
     } catch (e) {
-      pushToast({ kind: 'error', text: e instanceof ApiFailure ? errorMessage(e.code, e.message) : 'Erreur inattendue' });
+      pushToast({
+        kind: 'error',
+        text: e instanceof ApiFailure ? errorMessage(e.code, e.message) : 'Erreur inattendue',
+      });
       playSound('error');
       return false;
     }
@@ -121,12 +133,19 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
               const ch = view.characters[r.characterId]!;
               const taken = takenBy.get(r.characterId);
               return (
-                <button key={r.characterId} className={`start-card${shown === r.characterId ? ' active' : ''}`} onClick={() => pick(r.characterId)}>
+                <button
+                  key={r.characterId}
+                  className={`start-card${shown === r.characterId ? ' active' : ''}`}
+                  onClick={() => pick(r.characterId)}
+                  data-polity={TITLE_DEFS[primaryTitleId(ch) ?? '']?.polityId}
+                >
                   <Portrait c={ch} view={view} size={40} />
                   <div>
                     <div className="start-name">
                       {ch.firstName}
-                      <span className={`diff-badge diff-${r.difficulty}`}>{t(`difficulty.${r.difficulty}`)}</span>
+                      <span className={`diff-badge diff-${r.difficulty}`}>
+                        {t(`difficulty.${r.difficulty}`)}
+                      </span>
                     </div>
                     <div className="start-sub">{taken ? `Choisi par ${taken}` : rulerTitle(ch)}</div>
                   </div>
@@ -148,7 +167,9 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
             >
               ← {isHost ? 'Retour' : 'Quitter'}
             </button>
-            <span className="badge gold">{lobby.players.length}/{lobby.maxPlayers}</span>
+            <span className="badge gold">
+              {lobby.players.length}/{lobby.maxPlayers}
+            </span>
           </div>
           <h2 style={{ marginTop: 10 }}>{lobby.name}</h2>
           <div className="row" style={{ gap: 10, marginTop: 8 }}>
@@ -189,9 +210,16 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
                     </div>
                   </div>
                   <div className="row" style={{ gap: 6 }}>
-                    <span className={`badge ${p.ready ? 'good' : ''}`}>{p.ready ? 'Prêt' : 'En attente'}</span>
+                    <span className={`badge ${p.ready ? 'good' : ''}`}>
+                      {p.ready ? 'Prêt' : 'En attente'}
+                    </span>
                     {isHost && !p.isHost && (
-                      <button className="icon-btn" title="Expulser" aria-label={`Expulser ${p.displayName}`} onClick={() => call('POST', '/kick', { userId: p.userId })}>
+                      <button
+                        className="icon-btn"
+                        title="Expulser"
+                        aria-label={`Expulser ${p.displayName}`}
+                        onClick={() => call('POST', '/kick', { userId: p.userId })}
+                      >
                         ✕
                       </button>
                     )}
@@ -203,7 +231,12 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
           {c && (
             <>
               <div className="divider" />
-              <RulerSheet view={view} c={c} rec={scenario.recommended.find((r) => r.characterId === c.id)} onPick={pick} />
+              <RulerSheet
+                view={view}
+                c={c}
+                rec={scenario.recommended.find((r) => r.characterId === c.id)}
+                onPick={pick}
+              />
             </>
           )}
         </div>
@@ -239,7 +272,9 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
             {chat.length === 0 && <span className="muted">Aucun message.</span>}
             {chat.map((m) => (
               <div key={m.id} className="chat-msg">
-                <span className="when">{new Date(m.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="when">
+                  {new Date(m.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                </span>
                 <span className="who">{m.displayName}</span>
                 {m.text}
               </div>
@@ -247,7 +282,14 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
             <div ref={chatEnd} />
           </div>
           <form className="row" style={{ gap: 6 }} onSubmit={sendMsg}>
-            <input className="input grow" aria-label="Message" maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Écrire aux autres joueurs…" />
+            <input
+              className="input grow"
+              aria-label="Message"
+              maxLength={500}
+              value={msg}
+              onChange={(e) => setMsg(e.target.value)}
+              placeholder="Écrire aux autres joueurs…"
+            />
             <button className="btn btn-sm">Envoyer</button>
           </form>
           <div className="row" style={{ gap: 8 }}>
@@ -255,7 +297,9 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
               <button
                 className="btn grow"
                 disabled={!!takenOther || !!me?.ready}
-                onClick={() => call('POST', '/select', { characterId: c.id }).then((ok) => ok && playSound('confirm'))}
+                onClick={() =>
+                  call('POST', '/select', { characterId: c.id }).then((ok) => ok && playSound('confirm'))
+                }
                 data-testid="lobby-select"
               >
                 {takenOther ? `Choisi par ${takenBy.get(c.id)}` : `Choisir ${c.firstName}`}
@@ -271,7 +315,12 @@ export function LobbyScreen({ gameId }: { gameId: string }) {
             </button>
           </div>
           {isHost && (
-            <button className="btn btn-primary btn-lg btn-block" disabled={!allReady} onClick={() => call('POST', '/start')} data-testid="lobby-start">
+            <button
+              className="btn btn-primary btn-lg btn-block"
+              disabled={!allReady}
+              onClick={() => call('POST', '/start')}
+              data-testid="lobby-start"
+            >
               {allReady ? 'Lancer la partie' : 'En attente des joueurs…'}
             </button>
           )}

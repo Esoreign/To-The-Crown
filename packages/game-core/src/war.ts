@@ -2,6 +2,7 @@
  * Guerres : casus belli, déclaration, alliés, score de guerre, paix.
  */
 import { ErrorCodes, GameError, type CasusBelli, type GameState, type GameView, type War } from '@ttc/shared';
+import { hasPendingProposal } from './pending';
 import { BALANCE } from './balance';
 import { allowsVassalWars, endPactsBetween, isExternalPact, pactsAsSubject } from './politics';
 import { acceptance, type Acceptance, type AcceptRow } from './acceptance';
@@ -219,6 +220,7 @@ export function evaluateCallToArms(state: GameView, war: War, callerId: string, 
 }
 
 function requestAllyProposal(ctx: Ctx, war: War, callerId: string, allyId: string): void {
+  if (hasPendingProposal(ctx.s, 'war_call', callerId, allyId, [war.id])) return;
   const pid = newId(ctx.s, 'pr');
   ctx.s.proposals[pid] = { id: pid, kind: 'war_call', fromId: callerId, toId: allyId, subjects: [war.id], createdAt: ctx.s.date, expiresAt: ctx.s.date + 20, hookId: null };
   notify(ctx, [allyId], { level: 'urgent', kind: 'proposal_war_call', vars: { from: ctx.s.characters[callerId]!.firstName }, focus: { type: 'war', id: war.id }, sound: 'war' });
@@ -338,6 +340,9 @@ export function offerPeace(ctx: Ctx, actorId: string, warId: string, kind: 'enfo
   const otherLeader = side === 'attacker' ? war.defenderId : war.attackerId;
   const acc = evaluatePeace(s, war, actorId, 'white');
   if (s.characters[otherLeader]?.isPlayer) {
+    // Pas de nouvelle offre tant que la précédente attend (ni avant la fin du délai).
+    s.characters[actorId]!.cooldowns[`peace_${warId}`] = s.date + 60;
+    if (hasPendingProposal(s, 'white_peace', actorId, otherLeader, [warId])) return { accepted: false, pending: true, acceptance: acc };
     const pid = newId(s, 'pr');
     s.proposals[pid] = { id: pid, kind: 'white_peace', fromId: actorId, toId: otherLeader, subjects: [warId], createdAt: s.date, expiresAt: s.date + 20, hookId: null };
     notify(ctx, [otherLeader], { level: 'urgent', kind: 'proposal_white_peace', vars: { from: s.characters[actorId]!.firstName }, focus: { type: 'war', id: warId }, sound: 'notify' });

@@ -1,5 +1,5 @@
 /**
- * Étape 5 — monde de jeu 1400 à partir des provinces physiques :
+ * Étape 6 — monde de jeu 1400 à partir des provinces physiques :
  *  1. cultures et confessions des populations (zones d'ancrage, Dijkstra) ;
  *  2. territoires des entités politiques de 1400 (ancrages, portée, poids) ;
  *  3. peuples non listés regroupés en entités « approximation de jeu » ;
@@ -90,7 +90,18 @@ for (const p of raw.provinces) {
 // ---------------------------------------------------------------------------
 
 const TERRAIN_COST: Record<string, number> = {
-  plains: 1, farmlands: 1, steppe: 0.9, savanna: 1, forest: 1.2, hills: 1.3, jungle: 1.6, marsh: 1.5, mountains: 1.9, desert: 1.5, tundra: 1.3, ice: 3,
+  plains: 1,
+  farmlands: 1,
+  steppe: 0.9,
+  savanna: 1,
+  forest: 1.2,
+  hills: 1.3,
+  jungle: 1.6,
+  marsh: 1.5,
+  mountains: 1.9,
+  desert: 1.5,
+  tundra: 1.3,
+  ice: 3,
 };
 type Edge = [number, number]; // voisin, coût (km pondérés)
 const landAdj: Edge[][] = Array.from({ length: P }, () => []);
@@ -99,7 +110,8 @@ const km = (a: number, b: number) => kmBetween(prov[a]!.lon, prov[a]!.lat, prov[
 for (const p of raw.provinces) {
   for (const n of p.neighbors) {
     if (!prov[n]) continue;
-    const cost = km(p.i, n) * ((TERRAIN_COST[p.terrain] ?? 1.2) + (TERRAIN_COST[prov[n]!.terrain] ?? 1.2)) / 2;
+    const cost =
+      (km(p.i, n) * ((TERRAIN_COST[p.terrain] ?? 1.2) + (TERRAIN_COST[prov[n]!.terrain] ?? 1.2))) / 2;
     landAdj[p.i]!.push([n, cost]);
   }
 }
@@ -113,7 +125,8 @@ for (const s of raw.straits) {
 }
 // Sauts maritimes : provinces côtières d'une même zone de mer.
 const seaCoasts = new Map<number, number[]>();
-for (const p of raw.provinces) for (const s of p.seas) (seaCoasts.get(s) ?? seaCoasts.set(s, []).get(s)!).push(p.i);
+for (const p of raw.provinces)
+  for (const s of p.seas) (seaCoasts.get(s) ?? seaCoasts.set(s, []).get(s)!).push(p.i);
 for (const list of seaCoasts.values()) {
   for (let x = 0; x < list.length; x++) {
     for (let y = x + 1; y < list.length; y++) {
@@ -128,7 +141,10 @@ for (const list of seaCoasts.values()) {
 }
 
 /** Dijkstra multi-sources ; `limit` borne le coût. Renvoie coût et source. */
-function dijkstra(sources: { p: number; cost: number; tag: number }[], opts: { sea: boolean; limit?: number; allowed?: (p: number) => boolean }) {
+function dijkstra(
+  sources: { p: number; cost: number; tag: number }[],
+  opts: { sea: boolean; limit?: number; allowed?: (p: number) => boolean },
+) {
   const dist = new Float64Array(P).fill(Infinity);
   const tag = new Int32Array(P).fill(-1);
   const done = new Uint8Array(P);
@@ -256,7 +272,13 @@ interface Polity {
   capital: number;
   provinces: number[];
 }
-const polities: Polity[] = POLITIES_1400.map((spec) => ({ spec, filler: false, seeds: [], capital: -1, provinces: [] }));
+const polities: Polity[] = POLITIES_1400.map((spec) => ({
+  spec,
+  filler: false,
+  seeds: [],
+  capital: -1,
+  provinces: [],
+}));
 const byId = new Map(polities.map((p, k) => [p.spec.id, k]));
 if (byId.size !== polities.length) throw new Error('Identifiants d’entités en double');
 for (const pol of polities) {
@@ -270,17 +292,28 @@ for (const pol of polities) {
 const specOf0 = (id: string) => polities[byId.get(id) ?? -1]?.spec;
 // Capitales : les entités de faible portée se servent d'abord.
 const capitalOf = new Map<number, number>(); // province → entité
-const order = polities.map((_, k) => k).sort((a, b) => (polities[a]!.spec.reach ?? 350) - (polities[b]!.spec.reach ?? 350));
+const order = polities
+  .map((_, k) => k)
+  .sort((a, b) => (polities[a]!.spec.reach ?? 350) - (polities[b]!.spec.reach ?? 350));
 for (const k of order) {
   const pol = polities[k]!;
   const partner = pol.spec.union ? specOf0(pol.spec.union) : undefined;
-  if (partner && !pol.spec.at?.length && partner.cap[0] === pol.spec.cap[0] && partner.cap[1] === pol.spec.cap[1]) continue;
+  if (
+    partner &&
+    !pol.spec.at?.length &&
+    partner.cap[0] === pol.spec.cap[0] &&
+    partner.cap[1] === pol.spec.cap[1]
+  )
+    continue;
   const [lon, lat] = pol.spec.cap;
   let p = provinceAt(lon, lat);
   if (p < 0) continue;
   if (capitalOf.has(p)) {
     const free = landAdj[p]!.map(([v]) => v).filter((v) => !capitalOf.has(v) && !WASTE.has(v));
-    free.sort((a, b) => kmBetween(lon, lat, prov[a]!.lon, prov[a]!.lat) - kmBetween(lon, lat, prov[b]!.lon, prov[b]!.lat));
+    free.sort(
+      (a, b) =>
+        kmBetween(lon, lat, prov[a]!.lon, prov[a]!.lat) - kmBetween(lon, lat, prov[b]!.lon, prov[b]!.lat),
+    );
     if (!free.length) {
       console.warn(`Capitale sans province libre : ${pol.spec.id}`);
       continue;
@@ -305,7 +338,11 @@ const bestScore = new Float64Array(P).fill(Infinity);
 for (const [k, pol] of polities.entries()) {
   const w = pol.spec.w ?? 1;
   for (const s of pol.seeds) {
-    const r = dijkstra([{ p: s.p, cost: 0, tag: 0 }], { sea: true, limit: s.reach, allowed: (v) => !WASTE.has(v) });
+    const r = dijkstra([{ p: s.p, cost: 0, tag: 0 }], {
+      sea: true,
+      limit: s.reach,
+      allowed: (v) => !WASTE.has(v),
+    });
     for (const i of ids) {
       const d = r.dist[i]!;
       if (d === Infinity) continue;
@@ -473,10 +510,16 @@ const riverNamed = new Set<number>();
     for (const poly of polys) {
       const ring = poly[0]!;
       let a = 0;
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) a += (ring[j]![0]! + ring[i]![0]!) * (ring[j]![1]! - ring[i]![1]!);
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++)
+        a += (ring[j]![0]! + ring[i]![0]!) * (ring[j]![1]! - ring[i]![1]!);
       area += Math.abs(a / 2);
     }
-    physical.push({ name: cap1(name), island: pr.FEATURECLA === 'Island' || pr.FEATURECLA === 'Island group', area, rings: polys });
+    physical.push({
+      name: cap1(name),
+      island: pr.FEATURECLA === 'Island' || pr.FEATURECLA === 'Island group',
+      area,
+      rings: polys,
+    });
   }
   physical.sort((a, b) => a.area - b.area);
   const inRing = (lon: number, lat: number, ring: Position[]) => {
@@ -513,8 +556,7 @@ const riverNamed = new Set<number>();
     else if (river) {
       provName[i] = river[0];
       riverNamed.add(i);
-    }
-    else provName[i] = REGIONS.find((r) => r.id === p.region)?.name ?? MACRO_NAMES[p.macro];
+    } else provName[i] = REGIONS.find((r) => r.id === p.region)?.name ?? MACRO_NAMES[p.macro];
   }
 }
 // Grandes régions génériques (« Deccan » ×26…) : dans les régions où les
@@ -523,7 +565,9 @@ const riverNamed = new Set<number>();
   const places = readGeo(path.join(NE_DIR, 'ne_10m_populated_places_simple.geojson'))
     .features.map((f) => {
       const pr = f.properties as { name: string; featurecla: string };
-      const name = Object.prototype.hasOwnProperty.call(PLACE_RENAMES, pr.name) ? PLACE_RENAMES[pr.name]! : pr.name;
+      const name = Object.prototype.hasOwnProperty.call(PLACE_RENAMES, pr.name)
+        ? PLACE_RENAMES[pr.name]!
+        : pr.name;
       const [lon, lat] = (f.geometry as GeoPoint).coordinates as [number, number];
       return { name, lon, lat, ok: !/Station/.test(pr.featurecla) };
     })
@@ -591,14 +635,66 @@ const riverNamed = new Set<number>();
 
 const STEPPE = new Set(['kipchak', 'kazakh', 'mongol', 'oirat', 'turkmen']);
 const TRIBAL = new Set([
-  'siberian', 'inuit', 'sami', 'aboriginal', 'khoisan', 'amazonian', 'athabaskan', 'papuan', 'dayak', 'pacific_nw', 'algonquian', 'plains', 'puebloan',
-  'ainu', 'nilotic', 'oromo', 'tupi', 'carib', 'mapuche', 'maori', 'polynesian', 'micronesian', 'arab_bedouin', 'berber', 'tuareg', 'afghan', 'iroquoian',
-  'mississippian', 'taino', 'jurchen', 'circassian', 'kurdish', 'somali',
+  'siberian',
+  'inuit',
+  'sami',
+  'aboriginal',
+  'khoisan',
+  'amazonian',
+  'athabaskan',
+  'papuan',
+  'dayak',
+  'pacific_nw',
+  'algonquian',
+  'plains',
+  'puebloan',
+  'ainu',
+  'nilotic',
+  'oromo',
+  'tupi',
+  'carib',
+  'mapuche',
+  'maori',
+  'polynesian',
+  'micronesian',
+  'arab_bedouin',
+  'berber',
+  'tuareg',
+  'afghan',
+  'iroquoian',
+  'mississippian',
+  'taino',
+  'jurchen',
+  'circassian',
+  'kurdish',
+  'somali',
 ]);
 function fillerGov(culture: string, size: number): GovernmentId {
   if (STEPPE.has(culture)) return 'steppe_confederation';
   if (TRIBAL.has(culture)) return size >= 6 ? 'tribal_confederation' : 'chiefdom';
-  if (['kongo', 'luba', 'shona', 'nguni', 'great_lakes', 'malagasy', 'mossi', 'akan', 'yoruba', 'igbo', 'edo', 'hausa', 'mande', 'soninke', 'wolof', 'songhai', 'kanuri', 'swahili'].includes(culture)) return 'chiefdom';
+  if (
+    [
+      'kongo',
+      'luba',
+      'shona',
+      'nguni',
+      'great_lakes',
+      'malagasy',
+      'mossi',
+      'akan',
+      'yoruba',
+      'igbo',
+      'edo',
+      'hausa',
+      'mande',
+      'soninke',
+      'wolof',
+      'songhai',
+      'kanuri',
+      'swahili',
+    ].includes(culture)
+  )
+    return 'chiefdom';
   return 'clan_realm';
 }
 const FILLER_LABEL: Partial<Record<GovernmentId, string>> = {
@@ -629,8 +725,14 @@ const CULTURE_BY = new Map(CULTURES_1400.map((c) => [c.id, c]));
     }
     const culture = provCulture[seed]!;
     const target = prov[seed]!.density < 0.3 ? 14 : 9;
-    const r = dijkstra([{ p: seed, cost: 0, tag: 0 }], { sea: false, allowed: (v) => free.has(v) && provCulture[v] === culture });
-    const cluster = ids.filter((i) => r.dist[i]! < Infinity && free.has(i)).sort((a, b) => r.dist[a]! - r.dist[b]!).slice(0, target);
+    const r = dijkstra([{ p: seed, cost: 0, tag: 0 }], {
+      sea: false,
+      allowed: (v) => free.has(v) && provCulture[v] === culture,
+    });
+    const cluster = ids
+      .filter((i) => r.dist[i]! < Infinity && free.has(i))
+      .sort((a, b) => r.dist[a]! - r.dist[b]!)
+      .slice(0, target);
     for (const c of cluster) free.delete(c);
     const size = cluster.length;
     const gov = fillerGov(culture, size);
@@ -692,16 +794,41 @@ for (const i of ids) {
 const capitalProvinces = new Set(polities.map((p) => p.capital).filter((c) => c > 0));
 
 const DIV_LABEL: Record<GovernmentId, string> = {
-  feudal_monarchy: 'Duché', centralized_monarchy: 'Bailliage', imperial_bureaucracy: 'Province', mamluk_sultanate: 'Niyaba', iqta_realm: 'Iqta',
-  steppe_confederation: 'Oulous', tribal_confederation: 'Terres', warrior_shogunate: 'Province', clan_realm: 'Seigneurie', city_republic: 'Contado',
-  merchant_republic: 'Contado', theocracy: 'Diocèse', holy_order: 'Commanderie', elective_monarchy: 'Duché', tributary_empire: 'Province tributaire',
-  mandala_kingdom: 'Mandala', city_state: 'Territoire', chiefdom: 'Terres',
+  feudal_monarchy: 'Duché',
+  centralized_monarchy: 'Bailliage',
+  imperial_bureaucracy: 'Province',
+  mamluk_sultanate: 'Niyaba',
+  iqta_realm: 'Iqta',
+  steppe_confederation: 'Oulous',
+  tribal_confederation: 'Terres',
+  warrior_shogunate: 'Province',
+  clan_realm: 'Seigneurie',
+  city_republic: 'Contado',
+  merchant_republic: 'Contado',
+  theocracy: 'Diocèse',
+  holy_order: 'Commanderie',
+  elective_monarchy: 'Duché',
+  tributary_empire: 'Province tributaire',
+  mandala_kingdom: 'Mandala',
+  city_state: 'Territoire',
+  chiefdom: 'Terres',
 };
 const REALM_LABEL: Partial<Record<GovernmentId, string>> = {
-  imperial_bureaucracy: 'Grand gouvernement', mamluk_sultanate: 'Vice-royauté', iqta_realm: 'Province', steppe_confederation: 'Grand oulous',
-  tributary_empire: 'Seigneurie tributaire', mandala_kingdom: 'Royaume vassal', warrior_shogunate: 'Région',
+  imperial_bureaucracy: 'Grand gouvernement',
+  mamluk_sultanate: 'Vice-royauté',
+  iqta_realm: 'Province',
+  steppe_confederation: 'Grand oulous',
+  tributary_empire: 'Seigneurie tributaire',
+  mandala_kingdom: 'Royaume vassal',
+  warrior_shogunate: 'Région',
 };
-const DIV_SIZE: Partial<Record<GovernmentId, number>> = { imperial_bureaucracy: 9, steppe_confederation: 9, tributary_empire: 8, feudal_monarchy: 6, elective_monarchy: 6 };
+const DIV_SIZE: Partial<Record<GovernmentId, number>> = {
+  imperial_bureaucracy: 9,
+  steppe_confederation: 9,
+  tributary_empire: 8,
+  feudal_monarchy: 6,
+  elective_monarchy: 6,
+};
 
 interface TitleOut {
   id: string;
@@ -740,7 +867,8 @@ for (const pol of polities) {
 }
 function lawOf(spec: PolitySpec): string {
   const gov = GOVERNMENT_BY_ID[spec.gov]!;
-  if (spec.gov === 'feudal_monarchy' || spec.gov === 'clan_realm') return CULTURE_BY.get(spec.culture)?.succession ?? gov.succession;
+  if (spec.gov === 'feudal_monarchy' || spec.gov === 'clan_realm')
+    return CULTURE_BY.get(spec.culture)?.succession ?? gov.succession;
   return gov.succession;
 }
 
@@ -750,7 +878,10 @@ function partition(list: number[], k: number, first: number): number[][] {
   const inSet = new Set(list);
   const seedsP = [first];
   while (seedsP.length < k) {
-    const r = dijkstra(seedsP.map((p) => ({ p, cost: 0, tag: 0 })), { sea: true, allowed: (v) => inSet.has(v) });
+    const r = dijkstra(
+      seedsP.map((p) => ({ p, cost: 0, tag: 0 })),
+      { sea: true, allowed: (v) => inSet.has(v) },
+    );
     let far = -1;
     let farD = -1;
     for (const p of list) {
@@ -763,7 +894,10 @@ function partition(list: number[], k: number, first: number): number[][] {
     if (far < 0 || seedsP.includes(far)) break;
     seedsP.push(far);
   }
-  const r = dijkstra(seedsP.map((p, t) => ({ p, cost: 0, tag: t })), { sea: true, allowed: (v) => inSet.has(v) });
+  const r = dijkstra(
+    seedsP.map((p, t) => ({ p, cost: 0, tag: t })),
+    { sea: true, allowed: (v) => inSet.has(v) },
+  );
   const groups: number[][] = seedsP.map(() => []);
   for (const p of list) {
     let t = r.tag[p]!;
@@ -781,7 +915,10 @@ function partition(list: number[], k: number, first: number): number[][] {
   }
   return groups.filter((g) => g.length);
 }
-const seatOf = (group: number[]) => group.reduce((a, b) => (provImportance[b]! + provDev[b]! / 10 > provImportance[a]! + provDev[a]! / 10 ? b : a));
+const seatOf = (group: number[]) =>
+  group.reduce((a, b) =>
+    provImportance[b]! + provDev[b]! / 10 > provImportance[a]! + provDev[a]! / 10 ? b : a,
+  );
 
 interface DivisionOut {
   id: string;
@@ -810,7 +947,12 @@ for (const pol of polities) {
   }
   // Groupe de la capitale en premier.
   groups.sort((a, b) => Number(b.includes(pol.capital)) - Number(a.includes(pol.capital)));
-  const list: DivisionOut[] = groups.map((g, n) => ({ id: n === 0 ? `d_${s.id}` : `d_${s.id}_${n}`, polity: s.id, provinces: g, seat: n === 0 && g.includes(pol.capital) ? pol.capital : seatOf(g) }));
+  const list: DivisionOut[] = groups.map((g, n) => ({
+    id: n === 0 ? `d_${s.id}` : `d_${s.id}_${n}`,
+    polity: s.id,
+    provinces: g,
+    seat: n === 0 && g.includes(pol.capital) ? pol.capital : seatOf(g),
+  }));
   polityDivisions.set(s.id, list);
   divisions.push(...list);
 }
@@ -830,8 +972,15 @@ function chain(id: string): PolitySpec[] {
 }
 const DEJURE_EMPIRE: Record<string, string> = { yan: 'ming' };
 const MACRO_EMPIRE: Record<MacroRegion, string> = {
-  europe: 'Empire d’Europe', mena: 'Empire du Levant et de l’Iran', ssa: 'Empire d’Afrique', india: 'Empire des Indes', eastasia: 'Empire d’Asie orientale',
-  northasia: 'Empire du Nord', seasia: 'Empire des mers du Sud', americas: 'Empire des Amériques', oceania: 'Empire du Pacifique',
+  europe: 'Empire d’Europe',
+  mena: 'Empire du Levant et de l’Iran',
+  ssa: 'Empire d’Afrique',
+  india: 'Empire des Indes',
+  eastasia: 'Empire d’Asie orientale',
+  northasia: 'Empire du Nord',
+  seasia: 'Empire des mers du Sud',
+  americas: 'Empire des Amériques',
+  oceania: 'Empire du Pacifique',
 };
 const REGION_KINGDOM: Record<string, [string, string]> = {
   germany: ['k_germania', 'Royaume de Germanie'],
@@ -844,8 +993,32 @@ for (const pol of polities) {
   const s = pol.spec;
   const law = lawOf(s);
   const capital = pol.capital > 0 ? pol.capital : (pol.provinces[0] ?? provinceAt(s.cap[0], s.cap[1]));
-  if (s.rank === 'empire') titles.set(`e_${s.id}`, { id: `e_${s.id}`, name: s.name, rank: 'empire', color: s.color, parent: null, capital, law, short: s.short, polity: s.id, adj: s.adj });
-  if (s.rank === 'kingdom') titles.set(`k_${s.id}`, { id: `k_${s.id}`, name: s.name, rank: 'kingdom', color: s.color, parent: null, capital, law, short: s.short, polity: s.id, adj: s.adj });
+  if (s.rank === 'empire')
+    titles.set(`e_${s.id}`, {
+      id: `e_${s.id}`,
+      name: s.name,
+      rank: 'empire',
+      color: s.color,
+      parent: null,
+      capital,
+      law,
+      short: s.short,
+      polity: s.id,
+      adj: s.adj,
+    });
+  if (s.rank === 'kingdom')
+    titles.set(`k_${s.id}`, {
+      id: `k_${s.id}`,
+      name: s.name,
+      rank: 'kingdom',
+      color: s.color,
+      parent: null,
+      capital,
+      law,
+      short: s.short,
+      polity: s.id,
+      adj: s.adj,
+    });
 }
 function ensureTitle(t: TitleOut): TitleOut {
   if (!titles.has(t.id)) titles.set(t.id, t);
@@ -858,7 +1031,8 @@ for (const pol of polities) {
   if (!divs.length) continue;
   const law = lawOf(s);
   const ch = chain(s.id);
-  const empireSpec = ch.find((c) => c.rank === 'empire') ?? (DEJURE_EMPIRE[s.id] ? specOf(DEJURE_EMPIRE[s.id]!) : undefined);
+  const empireSpec =
+    ch.find((c) => c.rank === 'empire') ?? (DEJURE_EMPIRE[s.id] ? specOf(DEJURE_EMPIRE[s.id]!) : undefined);
   const kingdomSpec = ch.find((c) => c.rank === 'kingdom');
   // Empires : royaumes internes de ~5 divisions (sauf entités qui sont elles-mêmes empire sans royaume propre).
   let kingdomFor: (d: DivisionOut) => string;
@@ -871,7 +1045,16 @@ for (const pol of polities) {
       const seat = g.includes(divs[0]!.seat) ? divs[0]!.seat : g[0]!;
       const id = `k_${s.id}_${n}`;
       const label = REALM_LABEL[s.gov] ?? 'Royaume';
-      ensureTitle({ id, name: `${label} ${deName(provName[seat]!.replace(/ \(.*\)$/, ''))}`, rank: 'kingdom', color: jitter(s.color, n + 7, 22), parent: `e_${s.id}`, capital: seat, law, polity: s.id });
+      ensureTitle({
+        id,
+        name: `${label} ${deName(provName[seat]!.replace(/ \(.*\)$/, ''))}`,
+        rank: 'kingdom',
+        color: jitter(s.color, n + 7, 22),
+        parent: `e_${s.id}`,
+        capital: seat,
+        law,
+        polity: s.id,
+      });
       for (const p of g) map.set(p, id);
     });
     kingdomFor = (d) => map.get(d.seat)!;
@@ -885,7 +1068,15 @@ for (const pol of polities) {
       const special = REGION_KINGDOM[reg];
       const regName = REGIONS.find((r) => r.id === reg)?.name ?? reg;
       const [id, name] = special ?? [`k_r_${reg}`, `Couronne ${deName(regName)}`];
-      ensureTitle({ id, name, rank: 'kingdom', color: jitter('#8a8070', hashStr(id), 30), parent: null, capital: d.seat, law: 'elective' });
+      ensureTitle({
+        id,
+        name,
+        rank: 'kingdom',
+        color: jitter('#8a8070', hashStr(id), 30),
+        parent: null,
+        capital: d.seat,
+        law: 'elective',
+      });
       return id;
     };
   }
@@ -898,7 +1089,15 @@ for (const pol of polities) {
     else {
       const macro = prov[seat]!.macro;
       eid = `e_m_${macro}`;
-      ensureTitle({ id: eid, name: MACRO_EMPIRE[macro], rank: 'empire', color: jitter('#7a6a5a', hashStr(eid), 30), parent: null, capital: seat, law: 'elective' });
+      ensureTitle({
+        id: eid,
+        name: MACRO_EMPIRE[macro],
+        rank: 'empire',
+        color: jitter('#7a6a5a', hashStr(eid), 30),
+        parent: null,
+        capital: seat,
+        law: 'elective',
+      });
     }
     own.parent = eid;
     return eid;
@@ -932,9 +1131,33 @@ for (const i of ids) {
   const did = `d_w_${reg}`;
   const kid = `k_w_${prov[i]!.macro}`;
   const eid = `e_m_${prov[i]!.macro}`;
-  ensureTitle({ id: eid, name: MACRO_EMPIRE[prov[i]!.macro], rank: 'empire', color: '#7a6a5a', parent: null, capital: i, law: 'elective' });
-  ensureTitle({ id: kid, name: `Terres sauvages — ${MACRO_NAMES[prov[i]!.macro]}`, rank: 'kingdom', color: '#9aa0a6', parent: eid, capital: i, law: 'elective' });
-  ensureTitle({ id: did, name: `Étendues ${deName(REGIONS.find((r) => r.id === reg)?.name ?? reg)}`, rank: 'duchy', color: '#b0b4b8', parent: kid, capital: i, law: 'elective' });
+  ensureTitle({
+    id: eid,
+    name: MACRO_EMPIRE[prov[i]!.macro],
+    rank: 'empire',
+    color: '#7a6a5a',
+    parent: null,
+    capital: i,
+    law: 'elective',
+  });
+  ensureTitle({
+    id: kid,
+    name: `Terres sauvages — ${MACRO_NAMES[prov[i]!.macro]}`,
+    rank: 'kingdom',
+    color: '#9aa0a6',
+    parent: eid,
+    capital: i,
+    law: 'elective',
+  });
+  ensureTitle({
+    id: did,
+    name: `Étendues ${deName(REGIONS.find((r) => r.id === reg)?.name ?? reg)}`,
+    rank: 'duchy',
+    color: '#b0b4b8',
+    parent: kid,
+    capital: i,
+    law: 'elective',
+  });
   provDuchy[i] = did;
   provKingdom[i] = kid;
   provEmpire[i] = eid;
@@ -960,7 +1183,21 @@ for (const i of ids) {
 // 6. Sorties
 // ---------------------------------------------------------------------------
 
-const TERRAINS = ['plains', 'farmlands', 'hills', 'mountains', 'forest', 'marsh', 'steppe', 'coast_cliffs', 'jungle', 'desert', 'savanna', 'tundra', 'ice'];
+const TERRAINS = [
+  'plains',
+  'farmlands',
+  'hills',
+  'mountains',
+  'forest',
+  'marsh',
+  'steppe',
+  'coast_cliffs',
+  'jungle',
+  'desert',
+  'savanna',
+  'tundra',
+  'ice',
+];
 const LAWS = ['partition', 'primogeniture', 'elective', 'seniority'];
 const cultureList = [...new Set(ids.map((i) => provCulture[i]!))].sort();
 const faithList = [...new Set(ids.map((i) => provFaith[i]!))].sort();
@@ -992,7 +1229,13 @@ const world = {
     terrain: ids.map((i) => TERRAINS.indexOf(prov[i]!.terrain)),
     coastal: ids.map((i) => (prov[i]!.coastal ? 1 : 0)),
     neighbors: ids.map((i) => prov[i]!.neighbors.filter((n) => prov[n])),
-    straits: ids.map((i) => [...new Set(landAdj[i]!.map(([v]) => v).filter((v) => straitSet.has(`${Math.min(i, v)}:${Math.max(i, v)}`) && !prov[i]!.neighbors.includes(v)))]),
+    straits: ids.map((i) => [
+      ...new Set(
+        landAdj[i]!.map(([v]) => v).filter(
+          (v) => straitSet.has(`${Math.min(i, v)}:${Math.max(i, v)}`) && !prov[i]!.neighbors.includes(v),
+        ),
+      ),
+    ]),
     seas: ids.map((i) => prov[i]!.seas),
     culture: ids.map((i) => cultureList.indexOf(provCulture[i]!)),
     faith: ids.map((i) => faithList.indexOf(provFaith[i]!)),
@@ -1003,7 +1246,18 @@ const world = {
     waste: ids.map((i) => (WASTE.has(i) ? 1 : 0)),
   },
   seas: raw.seas.map((s) => ({ i: s.i, lon: s.lon, lat: s.lat, neighbors: s.neighbors, deep: s.deep })),
-  titles: titleList.map((t) => [t.id, t.name, t.rank, t.color, t.parent ? titleIdx.get(t.parent)! : -1, t.capital, LAWS.indexOf(t.law), t.short ?? '', t.polity ?? '', t.adj ?? '']),
+  titles: titleList.map((t) => [
+    t.id,
+    t.name,
+    t.rank,
+    t.color,
+    t.parent ? titleIdx.get(t.parent)! : -1,
+    t.capital,
+    LAWS.indexOf(t.law),
+    t.short ?? '',
+    t.polity ?? '',
+    t.adj ?? '',
+  ]),
 };
 
 const fillerSpecs = polities.filter((p) => p.filler).map((p) => p.spec);
@@ -1019,7 +1273,11 @@ const start = {
       ...(p.spec.title ? { title: p.spec.title } : {}),
       capital: p.capital > 0 ? p.capital : provinceAt(p.spec.cap[0], p.spec.cap[1]),
       provinces: p.provinces,
-      divisions: (polityDivisions.get(p.spec.id) ?? []).map((d) => ({ id: d.id, provinces: d.provinces, seat: d.seat })),
+      divisions: (polityDivisions.get(p.spec.id) ?? []).map((d) => ({
+        id: d.id,
+        provinces: d.provinces,
+        seat: d.seat,
+      })),
     })),
 };
 
@@ -1028,13 +1286,29 @@ fs.writeFileSync(path.join(CONTENT_DATA, 'world.json'), JSON.stringify(world));
 fs.writeFileSync(path.join(CONTENT_DATA, 'start.json'), JSON.stringify(start));
 
 // Statistiques et contrôles.
-const lost = polities.filter((p) => !p.filler && !p.provinces.length && !p.spec.union && p.spec.id !== 'hre').map((p) => p.spec.id);
+const lost = polities
+  .filter((p) => !p.filler && !p.provinces.length && !p.spec.union && p.spec.id !== 'hre')
+  .map((p) => p.spec.id);
 if (lost.length) console.warn(`Entités sans territoire : ${lost.join(', ')}`);
-const counts = polities.filter((p) => !p.filler).map((p) => [p.spec.id, p.provinces.length] as const).sort((a, b) => b[1] - a[1]);
-console.log(`Entités historiques : ${counts.length}, de remplissage : ${fillerSpecs.length}, terres désolées : ${WASTE.size}`);
-console.log(`Plus grandes : ${counts.slice(0, 20).map(([id, n]) => `${id}:${n}`).join(' ')}`);
-console.log(`Titres : ${titleList.length} (divisions ${divisions.length}), cultures ${cultureList.length}, confessions ${faithList.length}`);
-console.log(`world.json ${(fs.statSync(path.join(CONTENT_DATA, 'world.json')).size / 1e6).toFixed(2)} Mo, start.json ${(fs.statSync(path.join(CONTENT_DATA, 'start.json')).size / 1e6).toFixed(2)} Mo`);
+const counts = polities
+  .filter((p) => !p.filler)
+  .map((p) => [p.spec.id, p.provinces.length] as const)
+  .sort((a, b) => b[1] - a[1]);
+console.log(
+  `Entités historiques : ${counts.length}, de remplissage : ${fillerSpecs.length}, terres désolées : ${WASTE.size}`,
+);
+console.log(
+  `Plus grandes : ${counts
+    .slice(0, 20)
+    .map(([id, n]) => `${id}:${n}`)
+    .join(' ')}`,
+);
+console.log(
+  `Titres : ${titleList.length} (divisions ${divisions.length}), cultures ${cultureList.length}, confessions ${faithList.length}`,
+);
+console.log(
+  `world.json ${(fs.statSync(path.join(CONTENT_DATA, 'world.json')).size / 1e6).toFixed(2)} Mo, start.json ${(fs.statSync(path.join(CONTENT_DATA, 'start.json')).size / 1e6).toFixed(2)} Mo`,
+);
 
 // Aperçu politique (équirectangulaire, 1/2 résolution).
 {
@@ -1049,7 +1323,11 @@ console.log(`world.json ${(fs.statSync(path.join(CONTENT_DATA, 'world.json')).si
       const s = polities[k]!.spec;
       let top = s;
       // Les vassaux prennent une nuance de la couleur du suzerain direct.
-      if (s.liege && (s.subject === 'direct_vassal' || s.subject === 'autonomous_vassal' || s.subject === 'personal_union')) top = specOf(s.liege) ?? s;
+      if (
+        s.liege &&
+        (s.subject === 'direct_vassal' || s.subject === 'autonomous_vassal' || s.subject === 'personal_union')
+      )
+        top = specOf(s.liege) ?? s;
       c = hexToRgb(top.id === s.id ? s.color : jitter(top.color, hashStr(s.id), 18));
     }
     colorOf[i] = c;
@@ -1078,7 +1356,9 @@ console.log(`world.json ${(fs.statSync(path.join(CONTENT_DATA, 'world.json')).si
       }
     }
   }
-  await sharp(img, { raw: { width: w2, height: h2, channels: 3 } }).png().toFile(path.join(WORK, 'political.png'));
+  await sharp(img, { raw: { width: w2, height: h2, channels: 3 } })
+    .png()
+    .toFile(path.join(WORK, 'political.png'));
   console.log('Aperçu : .cache/worldgen/political.png');
 }
 void ({} as Feature);

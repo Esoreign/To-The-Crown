@@ -12,6 +12,7 @@ import {
   directVassals,
   domainIncome,
   armyUpkeep,
+  capitalProvinceOf,
 } from '@ttc/game-core';
 import type { Character, DecisionId, GameView } from '@ttc/shared';
 import { fmt, t, tOr } from '../../lib/i18n';
@@ -23,7 +24,13 @@ import { useUi } from '../../state/ui';
 import { ScreenFrame } from './ScreenHost';
 
 // ---------------------------------------------------------------- Décisions
-const DECISION_ICON: Record<DecisionId, string> = { feast: '♨', pilgrimage: '✝', hunt: '➶', tournament: '⚔', seclusion: '☾' };
+const DECISION_ICON: Record<DecisionId, string> = {
+  feast: '♨',
+  pilgrimage: '✝',
+  hunt: '➶',
+  tournament: '⚔',
+  seclusion: '☾',
+};
 
 export function DecisionsScreen({ view, me }: { view: GameView; me: Character }) {
   return (
@@ -32,7 +39,13 @@ export function DecisionsScreen({ view, me }: { view: GameView; me: Character })
         {(Object.keys(DECISIONS) as DecisionId[]).map((id) => {
           const cost = decisionCost(view, me.id, id);
           const why = decisionBlocker(view, me.id, id);
-          const costText = [cost.gold ? `${fmt(cost.gold)} or` : '', cost.prestige ? `${fmt(cost.prestige)} prestige` : '', cost.fervor ? `${fmt(cost.fervor)} ferveur` : ''].filter(Boolean).join(', ');
+          const costText = [
+            cost.gold ? `${fmt(cost.gold)} or` : '',
+            cost.prestige ? `${fmt(cost.prestige)} prestige` : '',
+            cost.fervor ? `${fmt(cost.fervor)} ferveur` : '',
+          ]
+            .filter(Boolean)
+            .join(', ');
           return (
             <div key={id} className="decision-card" data-testid={`decision-${id}`}>
               <span className="decision-icon" aria-hidden="true">
@@ -48,12 +61,21 @@ export function DecisionsScreen({ view, me }: { view: GameView; me: Character })
                   {why && (
                     <span className="neg">
                       {' '}
-                      · {why === 'cooldown' ? `disponible le ${formatDateFr(me.cooldowns[`decision_${id}`] ?? view.date)}` : tOr(`reason.${why}`, why)}
+                      ·{' '}
+                      {why === 'cooldown'
+                        ? `disponible le ${formatDateFr(me.cooldowns[`decision_${id}`] ?? view.date)}`
+                        : tOr(`reason.${why}`, why)}
                     </span>
                   )}
                 </div>
               </div>
-              <ActionButton className="btn-primary btn-sm" disabled={!!why} onClick={() => act({ type: 'decision.take', payload: { decision: id } }, undefined, 'confirm')}>
+              <ActionButton
+                className="btn-primary btn-sm"
+                disabled={!!why}
+                onClick={() =>
+                  act({ type: 'decision.take', payload: { decision: id } }, undefined, 'confirm')
+                }
+              >
                 Décider
               </ActionButton>
             </div>
@@ -68,7 +90,10 @@ export function DecisionsScreen({ view, me }: { view: GameView; me: Character })
 export function ChronicleScreen({ view, me }: { view: GameView; me: Character }) {
   const [filter, setFilter] = useState<'all' | 'house'>('all');
   const entries = useMemo(() => {
-    const list = filter === 'house' && me.houseId ? view.chronicle.filter((e) => e.houseIds.includes(me.houseId!)) : view.chronicle;
+    const list =
+      filter === 'house' && me.houseId
+        ? view.chronicle.filter((e) => e.houseIds.includes(me.houseId!))
+        : view.chronicle;
     return [...list].reverse();
   }, [view.chronicle, filter, me.houseId]);
   const byYear = new Map<number, typeof entries>();
@@ -100,7 +125,13 @@ export function ChronicleScreen({ view, me }: { view: GameView; me: Character })
                 <p className="chronicle-text narrative">{chronicleText(view, e)}</p>
                 <div className="row" style={{ gap: 4 }}>
                   {e.characterIds.slice(0, 4).map((id) => (
-                    <Portrait key={id} c={view.characters[id]} view={view} size={26} onClick={() => openCharacter(id)} />
+                    <Portrait
+                      key={id}
+                      c={view.characters[id]}
+                      view={view}
+                      size={26}
+                      onClick={() => openCharacter(id)}
+                    />
                   ))}
                 </div>
               </div>
@@ -158,7 +189,11 @@ export function LedgerScreen({ view, me }: { view: GameView; me: Character }) {
               {fmt(upkeep.levies, 1)} / {fmt(upkeep.maa, 1)}
             </span>
           </div>
-          {me.gold < 0 && <p className="neg">Vous êtes endetté : prestige et opinion des vassaux en pâtissent chaque mois.</p>}
+          {me.gold < 0 && (
+            <p className="neg">
+              Vous êtes endetté : prestige et opinion des vassaux en pâtissent chaque mois.
+            </p>
+          )}
         </section>
         <section>
           <h3 className="section-title" style={{ marginTop: 0 }}>
@@ -189,10 +224,7 @@ export function LedgerScreen({ view, me }: { view: GameView; me: Character }) {
 
 // ---------------------------------------------------------------- Recherche
 function norm(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase();
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
 export function SearchScreen({ view }: { view: GameView }) {
@@ -201,7 +233,11 @@ export function SearchScreen({ view }: { view: GameView }) {
     const n = norm(q.trim());
     if (n.length < 2) return { chars: [], provs: [], titles: [] };
     const chars = Object.values(view.characters)
-      .filter((c) => c.death === null && norm(`${c.firstName} ${c.houseId ? (view.houses[c.houseId]?.name ?? '') : ''}`).includes(n))
+      .filter(
+        (c) =>
+          c.death === null &&
+          norm(`${c.firstName} ${c.houseId ? (view.houses[c.houseId]?.name ?? '') : ''}`).includes(n),
+      )
       .sort((a, b) => b.titleIds.length - a.titleIds.length)
       .slice(0, 12);
     const provs = WORLD.provinces.filter((p) => norm(p.name).includes(n)).slice(0, 8);
@@ -211,7 +247,16 @@ export function SearchScreen({ view }: { view: GameView }) {
   const close = () => useUi.getState().openScreen(null);
   return (
     <ScreenFrame title="Rechercher" icon="⌕">
-      <input className="input" autoFocus placeholder="Personnage, maison, comté, royaume…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Recherche" data-testid="search-input" style={{ width: '100%', marginBottom: 10 }} />
+      <input
+        className="input"
+        autoFocus
+        placeholder="Personnage, maison, comté, royaume…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        aria-label="Recherche"
+        data-testid="search-input"
+        style={{ width: '100%', marginBottom: 10 }}
+      />
       {results.chars.length > 0 && <h3 className="section-title">Personnages</h3>}
       {results.chars.map((c) => (
         <button
@@ -219,6 +264,9 @@ export function SearchScreen({ view }: { view: GameView }) {
           className="title-row"
           onClick={() => {
             openCharacter(c.id);
+            // Un souverain : la carte rejoint ses terres.
+            const cap = capitalProvinceOf(c);
+            if (cap) useUi.getState().focusRealm(c.id, cap);
             close();
           }}
         >
@@ -249,6 +297,10 @@ export function SearchScreen({ view }: { view: GameView }) {
           className="title-row"
           onClick={() => {
             openTitle(tt.id);
+            // Cadre la carte sur le royaume du détenteur (ou sur la capitale du titre).
+            const holder = view.titles[tt.id]?.holderId;
+            if (holder) useUi.getState().focusRealm(holder, tt.capitalProvinceId);
+            else useUi.getState().focusProvince(tt.capitalProvinceId);
             close();
           }}
         >
@@ -256,13 +308,23 @@ export function SearchScreen({ view }: { view: GameView }) {
           <span className="grow">{titleFullName(tt.id)}</span>
         </button>
       ))}
-      {q.trim().length >= 2 && !results.chars.length && !results.provs.length && !results.titles.length && <p className="muted">Aucun résultat.</p>}
+      {q.trim().length >= 2 && !results.chars.length && !results.provs.length && !results.titles.length && (
+        <p className="muted">Aucun résultat.</p>
+      )}
     </ScreenFrame>
   );
 }
 
 // ---------------------------------------------------------------- Propositions
-export function ProposalScreen({ view, me, proposalId }: { view: GameView; me: Character; proposalId: string | null }) {
+export function ProposalScreen({
+  view,
+  me,
+  proposalId,
+}: {
+  view: GameView;
+  me: Character;
+  proposalId: string | null;
+}) {
   const incoming = Object.values(view.proposals).filter((p) => p.toId === me.id);
   const list = proposalId ? incoming.filter((p) => p.id === proposalId) : incoming;
   return (
@@ -307,10 +369,27 @@ export function ProposalScreen({ view, me, proposalId }: { view: GameView; me: C
               </div>
             </div>
             <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
-              <ActionButton className="btn-ghost" onClick={() => act({ type: 'proposal.respond', payload: { proposalId: p.id, accept: false } }, 'Proposition refusée')}>
+              <ActionButton
+                className="btn-ghost"
+                onClick={() =>
+                  act(
+                    { type: 'proposal.respond', payload: { proposalId: p.id, accept: false } },
+                    'Proposition refusée',
+                  )
+                }
+              >
                 Refuser
               </ActionButton>
-              <ActionButton className="btn-primary" onClick={() => act({ type: 'proposal.respond', payload: { proposalId: p.id, accept: true } }, 'Proposition acceptée', null)}>
+              <ActionButton
+                className="btn-primary"
+                onClick={() =>
+                  act(
+                    { type: 'proposal.respond', payload: { proposalId: p.id, accept: true } },
+                    'Proposition acceptée',
+                    null,
+                  )
+                }
+              >
                 Accepter
               </ActionButton>
             </div>

@@ -10,7 +10,7 @@ export type Bounds = [number, number, number, number];
 
 /** Ramène une longitude dans [-180, 180). */
 export function normalizeLongitude(lon: number): number {
-  const x = (((lon + 180) % 360) + 360) % 360 - 180;
+  const x = ((((lon + 180) % 360) + 360) % 360) - 180;
   return x === 180 ? -180 : x;
 }
 

@@ -46,7 +46,9 @@ export const WORLD_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/world`
 export function loadWorldGeometry(): Promise<WorldGeometry> {
   pending ??= (async () => {
     const [topo, seaTopo, rivers, lakes, rawArcs, coasts] = await Promise.all([
-      fetchJson<Topology<{ provinces: GeometryCollection<{ i: number }> }>>(`${WORLD_BASE}/provinces.topo.json`),
+      fetchJson<Topology<{ provinces: GeometryCollection<{ i: number }> }>>(
+        `${WORLD_BASE}/provinces.topo.json`,
+      ),
       fetchJson<Topology<{ seas: GeometryCollection<{ i: number }> }>>(`${WORLD_BASE}/seas.topo.json`),
       fetchJson<WorldGeometry['rivers']>(`${WORLD_BASE}/rivers.geojson`),
       fetchJson<WorldGeometry['lakes']>(`${WORLD_BASE}/lakes.geojson`),

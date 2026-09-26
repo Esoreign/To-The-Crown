@@ -9,9 +9,26 @@ import { MilitaryScreen } from './MilitaryScreen';
 import { MarriageScreen } from './MarriageScreen';
 import { ChronicleScreen, DecisionsScreen, LedgerScreen, ProposalScreen, SearchScreen } from './MiscScreens';
 
-export function ScreenFrame({ title, icon, children, wide, actions }: { title: string; icon?: string; children: ReactNode; wide?: boolean; actions?: ReactNode }) {
+export function ScreenFrame({
+  title,
+  icon,
+  children,
+  wide,
+  actions,
+}: {
+  title: string;
+  icon?: string;
+  children: ReactNode;
+  wide?: boolean;
+  actions?: ReactNode;
+}) {
   return (
-    <section className={`screen panel${wide ? ' wide' : ''}`} role="dialog" aria-label={title} data-testid="screen">
+    <section
+      className={`screen panel${wide ? ' wide' : ''}`}
+      role="dialog"
+      aria-label={title}
+      data-testid="screen"
+    >
       <div className="panel-header">
         {icon && (
           <span className="screen-icon" aria-hidden="true">
@@ -21,7 +38,12 @@ export function ScreenFrame({ title, icon, children, wide, actions }: { title: s
         <div className="panel-title">{title}</div>
         <span className="grow" />
         {actions}
-        <button className="icon-btn" onClick={() => useUi.getState().openScreen(null)} aria-label="Fermer (Échap)" title="Fermer (Échap)">
+        <button
+          className="icon-btn"
+          onClick={() => useUi.getState().openScreen(null)}
+          aria-label="Fermer (Échap)"
+          title="Fermer (Échap)"
+        >
           ✕
         </button>
       </div>
@@ -55,7 +77,9 @@ export function ScreenHost({ view, me }: { view: GameView; me: Character }) {
     case 'search':
       return <SearchScreen view={view} />;
     case 'diplomacy':
-      return <ProposalScreen view={view} me={me} proposalId={arg?.startsWith('proposal:') ? arg.slice(9) : null} />;
+      return (
+        <ProposalScreen view={view} me={me} proposalId={arg?.startsWith('proposal:') ? arg.slice(9) : null} />
+      );
     default:
       return null;
   }

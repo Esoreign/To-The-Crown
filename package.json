@@ -21,7 +21,6 @@
     "test": "pnpm -r run test",
     "test:e2e": "pnpm --filter @ttc/e2e e2e",
     "test:e2e:supabase": "pnpm --filter @ttc/e2e e2e:supabase",
-    "world:generate": "pnpm --filter @ttc/content world:generate",
     "world:validate": "pnpm --filter @ttc/content world:validate",
     "simulate": "pnpm --filter @ttc/game-core simulate",
     "db:generate": "pnpm --filter @ttc/server db:generate",

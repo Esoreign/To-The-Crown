@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { GameError, type GameState } from '@ttc/shared';
 import { runCommand, simulateDaysMutable } from '../src/engine';
+import { offerPeace } from '../src/war';
 import { ledgerOf } from '../src/economy';
 import { opinionOf } from '../src/opinion';
 import { BALANCE } from '../src/balance';
 import { governmentOf, isExternalPact, legitimacyOf, legitimacyTarget, pactsAsOverlord, pactsAsSubject } from '../src/politics';
-import { newState, rulerOf, scenario } from './helpers';
+import { ctxFor, newState, rulerOf, scenario } from './helpers';
 
 function pactOf(s: GameState, subjectPolity: string) {
   const info = scenario.polities![subjectPolity]!;
@@ -91,5 +92,18 @@ describe('Légitimité', () => {
     const c = s.characters[id]!;
     expect(legitimacyOf(c)).toBeGreaterThan(0);
     expect(legitimacyOf(c)).toBeLessThanOrEqual(100);
+  });
+});
+
+describe('Propositions aux joueurs', () => {
+  it('une offre de paix blanche en attente n’est pas renvoyée en double', () => {
+    const ott = rulerOf('ott');
+    const s = newState(5, [{ userId: 'u1', displayName: 'Joueur', characterId: ott }]);
+    const war = Object.values(s.wars).find((w) => w.attackerId === ott || w.defenderId === ott)!;
+    const other = war.attackerId === ott ? war.defenderId : war.attackerId;
+    const ctx = ctxFor(s);
+    expect(offerPeace(ctx, other, war.id, 'white').pending).toBe(true);
+    expect(offerPeace(ctx, other, war.id, 'white').pending).toBe(true);
+    expect(Object.values(s.proposals).filter((p) => p.kind === 'white_peace' && p.toId === ott)).toHaveLength(1);
   });
 });

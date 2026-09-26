@@ -35,7 +35,10 @@ export class LabelOverlay {
   private places: PlaceLabel[] = [];
   private raf = 0;
 
-  constructor(private readonly map: MlMap, private readonly parchment: boolean) {
+  constructor(
+    private readonly map: MlMap,
+    private readonly parchment: boolean,
+  ) {
     this.canvas.className = 'map-labels';
     this.canvas.setAttribute('aria-hidden', 'true');
     map.getContainer().appendChild(this.canvas);
@@ -110,18 +113,35 @@ export class LabelOverlay {
     for (const o of realms) {
       const minor = !!o.r.minor;
       const text = minor ? o.r.text : o.r.text.toUpperCase();
-      const size = Math.min(minor ? 14 : 34, (o.width * 0.8) / Math.max(4, text.length * 0.78), o.height * 0.45 + 6);
+      const size = Math.min(
+        minor ? 14 : 34,
+        (o.width * 0.8) / Math.max(4, text.length * 0.78),
+        o.height * 0.45 + 6,
+      );
       if (size < (minor ? 10 : 8.5)) continue;
-      ctx.font = minor ? `italic ${PLACE_FONT.replace('{size}', size.toFixed(1))}` : REALM_FONT.replace('{size}', size.toFixed(1));
+      ctx.font = minor
+        ? `italic ${PLACE_FONT.replace('{size}', size.toFixed(1))}`
+        : REALM_FONT.replace('{size}', size.toFixed(1));
       const spacing = minor ? 0 : Math.min(size * 0.35, 8);
       const tw = ctx.measureText(text).width + spacing * text.length;
-      const box: [number, number, number, number] = [o.x - tw / 2, o.y - size / 2, o.x + tw / 2, o.y + size / 2];
+      const box: [number, number, number, number] = [
+        o.x - tw / 2,
+        o.y - size / 2,
+        o.x + tw / 2,
+        o.y + size / 2,
+      ];
       if (collides(...box)) continue;
       placed.push(box);
       ctx.letterSpacing = `${spacing}px`;
       ctx.lineWidth = Math.max(2, size / 6);
       ctx.strokeStyle = this.parchment ? 'rgba(250, 240, 214, 0.75)' : 'rgba(18, 16, 12, 0.72)';
-      ctx.fillStyle = o.r.mine ? '#f3d27a' : this.parchment ? '#3a2a18' : minor ? 'rgba(232, 222, 198, 0.78)' : 'rgba(246, 236, 212, 0.94)';
+      ctx.fillStyle = o.r.mine
+        ? '#f3d27a'
+        : this.parchment
+          ? '#3a2a18'
+          : minor
+            ? 'rgba(232, 222, 198, 0.78)'
+            : 'rgba(246, 236, 212, 0.94)';
       ctx.strokeText(text, o.x, o.y);
       ctx.fillText(text, o.x, o.y);
     }
