@@ -22,9 +22,11 @@
 - **Chronique** du monde et fin de partie avec score dynastique.
 - **Multijoueur** autoritaire : salon avec code d'invitation, choix des souverains, reconnexion, vues privées par joueur (secrets, complots, événements), discussion.
 
-| Choix du souverain                           | Événement                           | Fiche et interactions                    |
-| -------------------------------------------- | ----------------------------------- | ---------------------------------------- |
-| ![Nouvelle partie](docs/images/new-game.jpg) | ![Événement](docs/images/event.jpg) | ![Personnage](docs/images/character.jpg) |
+| Choix du souverain (Mali)                    | Carte du monde (Ming)                        |
+| -------------------------------------------- | -------------------------------------------- |
+| ![Nouvelle partie](docs/images/new-game.jpg) | ![Carte du monde](docs/images/world-map.jpg) |
+| **Sujets et tributs**                        | **Mode de carte « Sujétions »**              |
+| ![Sujets](docs/images/subjects.jpg)          | ![Sujétions](docs/images/map-subjects.jpg)   |
 
 ## Démarrage rapide (développement)
 

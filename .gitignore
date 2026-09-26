@@ -21,3 +21,6 @@ volumes/
 *.tsbuildinfo
 .eslintcache
 .cache/
+
+# Redis local
+*.rdb
