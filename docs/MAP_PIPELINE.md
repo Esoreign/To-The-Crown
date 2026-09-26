@@ -32,7 +32,7 @@ Les sources brutes sont téléchargées dans `.cache/` (non versionné, ré-tél
 
 ### Géométries et frontières (étape 4)
 
-Les polygones sont lissés puis découpés par les terres Natural Earth pour obtenir des côtes nettes. Les frontières ne sont **pas** tirées des polygones découpés (des arcs internes y deviendraient orphelins) : `borders.json` contient les arcs communs exacts de la topologie lissée, densifiés (≤ 0,02°), réduits aux terres, avec les deux provinces voisines `a` et `b` (coordonnées en millidegrés, codage différentiel). Le client compose ainsi n'importe quelle frontière par un filtre : `clé(a) ≠ clé(b)` (royaume, vassal, province) ou `dedans(a) ≠ dedans(b)` (liseré du royaume du joueur).
+Les contours tracés gardent un sommet à chaque nœud de la grille (`traceLabels(…, true)`) : sans cela, un bord droit partagé n'aurait pas les mêmes sommets des deux côtés et la topologie ne le reconnaîtrait pas comme frontière commune (traits manquants, lissages divergents). Les arcs partagés sont ensuite simplifiés et lissés (Chaikin, deux passes). Les polygones sont lissés puis découpés par les terres Natural Earth pour obtenir des côtes nettes. Les frontières ne sont **pas** tirées des polygones découpés (des arcs internes y deviendraient orphelins) : `borders.json` contient les arcs communs exacts de la topologie lissée, densifiés (≤ 0,02°), réduits aux terres, avec les deux provinces voisines `a` et `b` (coordonnées en millidegrés, codage différentiel). Le client compose ainsi n'importe quelle frontière par un filtre : `clé(a) ≠ clé(b)` (royaume, vassal, province) ou `dedans(a) ≠ dedans(b)` (liseré du royaume du joueur).
 
 ### Monde 1400 (étape 6)
 
@@ -47,6 +47,9 @@ Les polygones sont lissés puis découpés par les terres Natural Earth pour obt
 `apps/web/src/map/WorldMap.ts` (MapLibre GL, projection Mercator avec copies du monde) :
 
 - couches : relief raster, zones maritimes, remplissage des provinces piloté par `feature-state` (couleur, opacité, survol, sélection), lacs, fleuves, côtes, frontières de provinces / vassaux / royaumes, liseré et halo dorés du royaume du joueur, itinéraires, capitales ;
+- zoom maximal 6,6 : au-delà, une province remplit l'écran et la grille de 5 km devient visible ;
+- couleurs politiques : couleur du royaume indépendant, terres des vassaux éclaircies (nuance par grand vassal) pour distinguer le domaine du souverain ;
+- le worker MapLibre est empaqueté par Vite (`?worker&url`) : le fichier brut importe un module partagé absent du site publié ;
 - niveaux de détail : opacités et épaisseurs interpolées au zoom, étiquettes de royaumes proportionnelles à l'emprise à l'écran (canevas superposé, `labels.ts`), noms de provinces au-delà du zoom 4,2 ;
 - antiméridien (`geo.ts`) : `normalizeLongitude`, `unwrapGeometry`, `getWrappedBounds` (plus petite emprise déroulée), `fitFeatureSafely` ; un royaume à cheval sur ±180° (Tonga, Tchoukotka) est cadré sans dézoomer sur la planète ;
 - navigation : H (royaume), Maj+H (capitale), Ctrl+F (recherche), Ctrl+1…5 / Maj+Ctrl+1…5 (signets), Alt+←/→ (historique), mini-carte cliquable, indicateur du royaume hors écran.

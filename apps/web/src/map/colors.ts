@@ -82,6 +82,52 @@ export function realmColor(view: Pick<GameView, 'characters' | 'titles'>, provin
 
 const PROVINCES = WORLD.provinces;
 
+function hashId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+/**
+ * Couleurs politiques : couleur du royaume indépendant ; les terres tenues par
+ * un vassal sont éclaircies (nuance propre à chaque grand vassal), si bien que
+ * le domaine personnel du souverain se distingue d'un coup d'œil.
+ */
+function politicalColors(view: GameView): Map<string, number> {
+  const out = new Map<string, number>();
+  const branchOf = new Map<string, { top: string; branch: string }>();
+  const resolve = (holder: string) => {
+    const known = branchOf.get(holder);
+    if (known) return known;
+    let branch = holder;
+    let cur = view.characters[holder];
+    let guard = 0;
+    while (cur?.liegeId && guard++ < 12) {
+      const liege = view.characters[cur.liegeId];
+      if (!liege) break;
+      if (!liege.liegeId) break;
+      branch = liege.id;
+      cur = liege;
+    }
+    const top = cur?.liegeId ?? holder;
+    const r = { top: view.characters[top] ? top : holder, branch: cur?.liegeId ? branch : holder };
+    branchOf.set(holder, r);
+    return r;
+  };
+  for (const p of PROVINCES) {
+    const holder = view.titles[p.countyTitleId]?.holderId;
+    if (!holder) {
+      out.set(p.id, 0x666666);
+      continue;
+    }
+    const { top, branch } = resolve(holder);
+    const primary = view.characters[top]?.titleIds[0];
+    const base = primary ? (TITLE_COLOR[primary] ?? 0x777777) : 0x777777;
+    out.set(p.id, branch === top ? base : lerpColor(base, 0xf4ecd8, 0.16 + (hashId(branch) % 3) * 0.07));
+  }
+  return out;
+}
+
 /** Teintes des formes de gouvernement (regroupées par familles voisines). */
 const GOVERNMENT_COLORS: Record<string, string> = {
   feudal_monarchy: '#8a5a3c',
@@ -137,12 +183,13 @@ export function computeColors(
   const colors = new Map<string, ProvinceColor>();
   const legend: LegendEntry[] = [];
   switch (mode) {
-    case 'political':
+    case 'political': {
+      for (const [id, color] of politicalColors(view)) colors.set(id, { color, alpha: 0.62 });
+      break;
+    }
     case 'terrain': {
-      for (const p of PROVINCES)
-        colors.set(p.id, { color: realmColor(view, p.id), alpha: mode === 'terrain' ? 0.08 : 0.62 });
-      if (mode === 'terrain')
-        for (const [k, v] of Object.entries(TERRAIN_COLORS)) legend.push({ label: `terrain.${k}`, color: v });
+      for (const p of PROVINCES) colors.set(p.id, { color: realmColor(view, p.id), alpha: 0.08 });
+      for (const [k, v] of Object.entries(TERRAIN_COLORS)) legend.push({ label: `terrain.${k}`, color: v });
       break;
     }
     case 'culture': {

@@ -15,7 +15,8 @@
 import * as maplibregl from 'maplibre-gl';
 import type { GeoJSONSource, Map as MlMap, MapGeoJSONFeature } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
+// Worker empaqueté par Vite en un seul module (le fichier brut importe maplibre-gl-shared.mjs).
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import type { FeatureCollection, Geometry } from 'geojson';
 import { WORLD } from '@ttc/content';
 import {
@@ -123,7 +124,8 @@ export class WorldMap {
       center: [20, 35],
       zoom: 1.6,
       minZoom: 0.8,
-      maxZoom: 9,
+      // Au-delà, une province occupe l'écran et la grille de 5 km du monde devient visible.
+      maxZoom: 6.6,
       renderWorldCopies: true,
       interactive,
       attributionControl: false,
@@ -203,6 +205,8 @@ export class WorldMap {
       source: 'terrain',
       paint: {
         'raster-fade-duration': 0,
+        // Les tuiles de relief s'arrêtent au zoom 5 : on les estompe de près pour éviter le flou.
+        'raster-opacity': ['interpolate', ['linear'], ['zoom'], 5, 1, 6.6, 0.8],
         'raster-saturation': this.style === 'parchment' ? -0.55 : -0.1,
         'raster-contrast': this.style === 'parchment' ? -0.15 : 0.05,
       },
@@ -236,7 +240,7 @@ export class WorldMap {
           4,
           ['*', 0.95, base],
           7,
-          ['*', 0.7, base],
+          ['*', 1.05, base],
         ])([
           '*',
           ['coalesce', ['feature-state', 'a'], 0],
@@ -295,9 +299,9 @@ export class WorldMap {
       source: 'prov-borders',
       minzoom: 3,
       paint: {
-        'line-color': '#241d14',
-        'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0, 4, 0.35, 7, 0.55],
-        'line-width': 0.6,
+        'line-color': '#1f180f',
+        'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.15, 4, 0.45, 6, 0.65],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.5, 5, 0.9, 6.6, 1.3],
       },
     });
     m.addSource('vassal-borders', { type: 'geojson', data: empty, tolerance: 0.3 });
@@ -308,10 +312,10 @@ export class WorldMap {
       minzoom: 2.3,
       paint: {
         'line-color': '#1c160e',
-        'line-opacity': ['interpolate', ['linear'], ['zoom'], 2.3, 0, 3.5, 0.6],
-        'line-width': ['interpolate', ['linear'], ['zoom'], 2.3, 0.6, 7, 1.6],
-        'line-dasharray': [2, 1.5],
+        'line-opacity': ['interpolate', ['linear'], ['zoom'], 2.3, 0, 3.5, 0.75],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 2.3, 0.8, 5, 1.6, 8, 2.6],
       },
+      layout: { 'line-join': 'round' },
     });
     m.addSource('realm-borders', { type: 'geojson', data: empty, tolerance: 0.3 });
     m.addLayer({
@@ -321,7 +325,7 @@ export class WorldMap {
       paint: {
         'line-color': '#140f09',
         'line-opacity': 0.85,
-        'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.8, 4, 1.8, 7, 3],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.8, 4, 2, 8, 4.2],
       },
       layout: { 'line-join': 'round' },
     });
@@ -342,7 +346,10 @@ export class WorldMap {
       id: 'mine',
       type: 'line',
       source: 'mine',
-      paint: { 'line-color': '#f2c95b', 'line-width': ['interpolate', ['linear'], ['zoom'], 1, 1.4, 6, 3] },
+      paint: {
+        'line-color': '#f2c95b',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 1, 1.4, 6, 3, 8, 4],
+      },
       layout: { 'line-join': 'round' },
     });
     m.addLayer({

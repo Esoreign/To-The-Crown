@@ -10,7 +10,19 @@ import path from 'node:path';
 import sharp from 'sharp';
 import type { LineString, MultiLineString, Position } from 'geojson';
 import { DEM_ZOOM, NE_DIR, TERRARIUM_DIR } from './paths';
-import { H, W, cellLat, cellLon, latToY, lonToX, polygonsOf, rasterizePolygon, readGeo, ringCenter, saveGrid } from './raster';
+import {
+  H,
+  W,
+  cellLat,
+  cellLon,
+  latToY,
+  lonToX,
+  polygonsOf,
+  rasterizePolygon,
+  readGeo,
+  ringCenter,
+  saveGrid,
+} from './raster';
 
 async function buildElevation(): Promise<Int16Array> {
   const n = 2 ** DEM_ZOOM;
@@ -131,7 +143,8 @@ function buildRivers(): Uint8Array {
     const geom = f.geometry as LineString | MultiLineString | null;
     if (!geom) continue;
     const lines = geom.type === 'LineString' ? [geom.coordinates] : geom.coordinates;
-    for (const line of lines) for (let i = 0; i + 1 < line.length; i++) drawLine(g, line[i]!, line[i + 1]!, value);
+    for (const line of lines)
+      for (let i = 0; i + 1 < line.length; i++) drawLine(g, line[i]!, line[i + 1]!, value);
   }
   return g;
 }
@@ -149,10 +162,16 @@ async function main(): Promise<void> {
   saveGrid('rivers', buildRivers());
   let n = 0;
   for (const v of land) if (v === 1) n++;
-  const probe = (lon: number, lat: number) => `${land[Math.floor(latToY(lat)) * W + Math.floor(lonToX(lon))]}/${elev[Math.floor(latToY(lat)) * W + Math.floor(lonToX(lon))]}m`;
+  const probe = (lon: number, lat: number) =>
+    `${land[Math.floor(latToY(lat)) * W + Math.floor(lonToX(lon))]}/${elev[Math.floor(latToY(lat)) * W + Math.floor(lonToX(lon))]}m`;
   console.log(`Grille ${W}×${H}, cellules de terre : ${n}`);
-  console.log(`Sondes (terre/altitude) : Paris ${probe(2.35, 48.85)} · Everest ${probe(86.92, 27.99)} · Caspienne ${probe(50.5, 42)} · Pacifique ${probe(-150, 0)} · Mont Blanc ${probe(6.86, 45.83)}`);
-  fs.writeFileSync(path.join(path.dirname(TERRARIUM_DIR), 'worldgen', 'grid.json'), JSON.stringify({ width: W, height: H }));
+  console.log(
+    `Sondes (terre/altitude) : Paris ${probe(2.35, 48.85)} · Everest ${probe(86.92, 27.99)} · Caspienne ${probe(50.5, 42)} · Pacifique ${probe(-150, 0)} · Mont Blanc ${probe(6.86, 45.83)}`,
+  );
+  fs.writeFileSync(
+    path.join(path.dirname(TERRARIUM_DIR), 'worldgen', 'grid.json'),
+    JSON.stringify({ width: W, height: H }),
+  );
 }
 
 await main();

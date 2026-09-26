@@ -202,7 +202,7 @@ function main(): void {
 
   // --- Provinces : tracé, topologie, lissage -------------------------------
   console.time('tracé provinces');
-  const rings = traceLabels(bandLabels(label, land));
+  const rings = traceLabels(bandLabels(label, land), true);
   const fc: FeatureCollection<MultiPolygon> = { type: 'FeatureCollection', features: [] };
   for (const [l, r] of rings)
     fc.features.push({ type: 'Feature', id: l, properties: { i: l }, geometry: ringsToMultiPolygon(r) });
@@ -211,7 +211,7 @@ function main(): void {
   let topo = topology({ f: fc }) as unknown as Topo;
   topo = presimplify(topo) as Topo;
   topo = simplify(topo, 0.0016) as Topo;
-  smoothArcs(topo, 0.018, 1);
+  smoothArcs(topo, 0.018, 2);
   const smoothed = toFeatures(topo);
   console.timeEnd('topologie');
   writeBorderArcs(topo, land);
@@ -377,7 +377,7 @@ function main(): void {
 
   // --- Zones maritimes -------------------------------------------------------
   console.time('mers');
-  const seaRings = traceLabels(seaLabel);
+  const seaRings = traceLabels(seaLabel, true);
   const seaFc: FeatureCollection<MultiPolygon> = { type: 'FeatureCollection', features: [] };
   for (const [l, r] of seaRings)
     seaFc.features.push({ type: 'Feature', id: l, properties: { i: l }, geometry: ringsToMultiPolygon(r) });

@@ -34,11 +34,15 @@ async function loadMercatorElevation(): Promise<Float32Array> {
   const elev = new Float32Array(SIZE * SIZE);
   for (let tx = 0; tx < n; tx++) {
     for (let ty = 0; ty < n; ty++) {
-      const { data, info } = await sharp(path.join(TERRARIUM_DIR, `${DEM_ZOOM}`, `${tx}`, `${ty}.png`)).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+      const { data, info } = await sharp(path.join(TERRARIUM_DIR, `${DEM_ZOOM}`, `${tx}`, `${ty}.png`))
+        .removeAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
       for (let py = 0; py < info.height; py++) {
         for (let px = 0; px < info.width; px++) {
           const o = (py * info.width + px) * 3;
-          elev[(ty * 256 + py) * SIZE + tx * 256 + px] = data[o]! * 256 + data[o + 1]! + data[o + 2]! / 256 - 32768;
+          elev[(ty * 256 + py) * SIZE + tx * 256 + px] =
+            data[o]! * 256 + data[o + 1]! + data[o + 2]! / 256 - 32768;
         }
       }
     }
@@ -46,11 +50,40 @@ async function loadMercatorElevation(): Promise<Float32Array> {
   return elev;
 }
 
+/**
+ * Flou en boîte séparable (3 passes ≈ gaussien) d'un champ de la grille : les
+ * zones climatiques régionales ont des bords droits qui dessineraient sinon des
+ * rectangles visibles sur le relief. N'affecte que le rendu des tuiles.
+ */
+function blurField(src: Float32Array, radius: number): Float32Array {
+  const a = Float32Array.from(src);
+  const b = new Float32Array(src.length);
+  const pass = (from: Float32Array, to: Float32Array, horizontal: boolean) => {
+    const n = horizontal ? W : H;
+    const m = horizontal ? H : W;
+    for (let j = 0; j < m; j++) {
+      const at = (i: number) =>
+        horizontal ? j * W + ((i + W) % W) : Math.max(0, Math.min(H - 1, i)) * W + j;
+      let sum = 0;
+      for (let i = -radius; i <= radius; i++) sum += from[at(i)]!;
+      for (let i = 0; i < n; i++) {
+        to[horizontal ? j * W + i : i * W + j] = sum / (2 * radius + 1);
+        sum += from[at(i + radius + 1)]! - from[at(i - radius)]!;
+      }
+    }
+  };
+  for (let it = 0; it < 3; it++) {
+    pass(a, b, true);
+    pass(b, a, false);
+  }
+  return a;
+}
+
 async function main(): Promise<void> {
   const biome = loadGridU8('biome');
   const land = loadGridU8('land');
-  const temp = loadGridF32('temp');
-  const moist = loadGridF32('moist');
+  const temp = blurField(loadGridF32('temp'), 3);
+  const moist = blurField(loadGridF32('moist'), 6);
   void biome;
   console.time('altitude mercator');
   const elev = await loadMercatorElevation();
@@ -59,7 +92,8 @@ async function main(): Promise<void> {
   // Image mondiale pleine résolution (z5) en RGB.
   console.time('peinture');
   const rgb = new Uint8Array(SIZE * SIZE * 3);
-  const latOf = (py: number) => (Math.atan(Math.sinh(Math.PI * (1 - (2 * (py + 0.5)) / SIZE))) * 180) / Math.PI;
+  const latOf = (py: number) =>
+    (Math.atan(Math.sinh(Math.PI * (1 - (2 * (py + 0.5)) / SIZE))) * 180) / Math.PI;
   for (let py = 0; py < SIZE; py++) {
     const lat = latOf(py);
     const gy = Math.floor((GRID.north - lat) / GRID.res);
@@ -82,7 +116,13 @@ async function main(): Promise<void> {
       let b: number;
       if (isLand) {
         const greenlandIce = lat > 59 && e > 900 && lon > -75 && lon < -10;
-        const base: [number, number, number] = greenlandIce ? [...PALETTE[B.ice]!] : inGrid ? climateColor(temp[gk]!, moist[gk]!) : lat < -60 || lat > 80 ? [...PALETTE[B.ice]!] : [...PALETTE[B.tundra]!];
+        const base: [number, number, number] = greenlandIce
+          ? [...PALETTE[B.ice]!]
+          : inGrid
+            ? climateColor(temp[gk]!, moist[gk]!)
+            : lat < -60 || lat > 80
+              ? [...PALETTE[B.ice]!]
+              : [...PALETTE[B.tundra]!];
         // Variation douce de teinte (taches de végétation).
         const v = (fbm(px / 40, py / 40, 21) - 0.5) * 18;
         base[0] += v * 0.8;
@@ -124,11 +164,17 @@ async function main(): Promise<void> {
   console.time('tuiles');
   const base = path.join(PUBLIC_WORLD, 'terrain');
   fs.rmSync(base, { recursive: true, force: true });
-  const full = sharp(Buffer.from(rgb.buffer), { raw: { width: SIZE, height: SIZE, channels: 3 }, limitInputPixels: false });
+  const full = sharp(Buffer.from(rgb.buffer), {
+    raw: { width: SIZE, height: SIZE, channels: 3 },
+    limitInputPixels: false,
+  });
   let bytes = 0;
   for (let z = 0; z <= MAXZ; z++) {
     const dim = 2 ** z * 256;
-    const level = z === MAXZ ? Buffer.from(rgb.buffer) : await full.clone().resize(dim, dim, { kernel: 'lanczos3' }).raw().toBuffer();
+    const level =
+      z === MAXZ
+        ? Buffer.from(rgb.buffer)
+        : await full.clone().resize(dim, dim, { kernel: 'lanczos3' }).raw().toBuffer();
     const n = 2 ** z;
     for (let tx = 0; tx < n; tx++) {
       for (let ty = 0; ty < n; ty++) {

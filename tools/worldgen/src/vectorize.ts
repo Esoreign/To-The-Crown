@@ -24,7 +24,12 @@ function vy(v: number): number {
  * Orientation : sens horaire à l'écran (y vers le bas) pour l'extérieur,
  * soit anti-horaire en lon/lat (conforme RFC 7946).
  */
-export function traceLabels(label: Int32Array): Map<number, Ring[]> {
+/**
+ * `keepCollinear` garde un sommet à chaque nœud de la grille : indispensable
+ * avant une topologie, sinon un bord droit partagé n'a pas les mêmes sommets
+ * des deux côtés et n'est pas reconnu comme frontière commune.
+ */
+export function traceLabels(label: Int32Array, keepCollinear = false): Map<number, Ring[]> {
   // Arêtes orientées regroupées par étiquette : départ → liste d'arrivées.
   const edges = new Map<number, Map<number, number[]>>();
   const add = (l: number, a: number, b: number) => {
@@ -82,7 +87,7 @@ export function traceLabels(label: Int32Array): Map<number, Ring[]> {
           prev = cur;
           cur = nxt;
         }
-        rings.push(simplifyCollinear(ring));
+        rings.push(keepCollinear ? ring : simplifyCollinear(ring));
       }
     }
     out.set(l, rings);
@@ -110,7 +115,8 @@ export function vertexLonLat(v: number): [number, number] {
 
 function signedArea(ring: Position[]): number {
   let s = 0;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) s += (ring[j]![0]! - ring[i]![0]!) * (ring[j]![1]! + ring[i]![1]!);
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++)
+    s += (ring[j]![0]! - ring[i]![0]!) * (ring[j]![1]! + ring[i]![1]!);
   return s / 2;
 }
 

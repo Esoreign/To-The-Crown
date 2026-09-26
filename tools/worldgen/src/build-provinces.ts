@@ -20,8 +20,28 @@ import path from 'node:path';
 import { MinHeap } from './heap';
 import { classifyBiomes, climate, B, BIOMES } from './biome';
 import { NE_DIR, WORK } from './paths';
-import { H, W, cellLat, cellLon, kmBetween, latToY, loadGridI16, loadGridU8, lonToX, readGeo, saveGrid } from './raster';
-import { HISTORIC_HOTSPOTS, MACRO_TARGETS, REGION_DENSITY, REGIONS, macroRegion, regionOf, type MacroRegion } from './regions';
+import {
+  H,
+  W,
+  cellLat,
+  cellLon,
+  kmBetween,
+  latToY,
+  loadGridI16,
+  loadGridU8,
+  lonToX,
+  readGeo,
+  saveGrid,
+} from './raster';
+import {
+  HISTORIC_HOTSPOTS,
+  MACRO_TARGETS,
+  REGION_DENSITY,
+  REGIONS,
+  macroRegion,
+  regionOf,
+  type MacroRegion,
+} from './regions';
 
 const MACROS = Object.keys(MACRO_TARGETS) as MacroRegion[];
 const N = W * H;
@@ -67,7 +87,7 @@ function neighbors8(k: number, out: Int32Array): number {
 function stepKm(a: number, b: number): number {
   const ya = (a / W) | 0;
   const yb = (b / W) | 0;
-  const dx = (a - ya * W) !== (b - yb * W) ? 1 : 0;
+  const dx = a - ya * W !== b - yb * W ? 1 : 0;
   const dy = ya !== yb ? 1 : 0;
   const kx = dx * RES_KM * cosLat[(ya + yb) >> 1]!;
   const ky = dy * RES_KM;
@@ -84,7 +104,11 @@ interface Grids {
  * Dijkstra multi-sources : `label[k]` = indice de graine (≥ 1). `allowed(k)`
  * limite l'expansion ; `costFn(a, b)` donne le coût d'un pas.
  */
-function flood(seeds: Int32Array, allowed: (k: number) => boolean, costFn: (a: number, b: number) => number): Int32Array {
+function flood(
+  seeds: Int32Array,
+  allowed: (k: number) => boolean,
+  costFn: (a: number, b: number) => number,
+): Int32Array {
   const label = new Int32Array(N);
   const dist = new Float32Array(N).fill(Infinity);
   const heap = new MinHeap(1 << 22);
@@ -250,7 +274,9 @@ function main(): void {
   const deserts = loadGridU8('deserts');
   console.time('macro-régions');
   const macro = new Uint8Array(N);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g.land[y * W + x] === 1) macro[y * W + x] = MACROS.indexOf(macroRegion(cellLon(x), cellLat(y))) + 1;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++)
+      if (g.land[y * W + x] === 1) macro[y * W + x] = MACROS.indexOf(macroRegion(cellLon(x), cellLat(y))) + 1;
   console.timeEnd('macro-régions');
   console.time('poids');
   const weight = computeWeights(g, macro);
@@ -379,7 +405,9 @@ function main(): void {
       nearest = Math.min(nearest, kmBetween(lon, lat, plon, plat));
     }
     const arctic = Math.abs(lat) > 58;
-    const notable = arctic ? size >= 1500 : size >= 200 || (size >= 55 && nearest > 60) || nearest > 220 || (size >= 8 && nearest > 110);
+    const notable = arctic
+      ? size >= 1500
+      : size >= 200 || (size >= 55 && nearest > 60) || nearest > 220 || (size >= 8 && nearest > 110);
     if (notable) {
       // Graine : cellule de l'île la plus proche du centre.
       let bestK = -1;
@@ -745,7 +773,9 @@ function main(): void {
     if (share(B.mountains) > 0.4) terrain = 'mountains';
     else if (share(B.farmlands) > 0.35 && terrain !== 'mountains') terrain = 'farmlands';
     if (terrain === 'water') terrain = 'plains';
-    const nbs = [...(landNb.get(l) ?? new Map<number, number>()).entries()].filter(([, c]) => c >= 1).map(([m]) => m);
+    const nbs = [...(landNb.get(l) ?? new Map<number, number>()).entries()]
+      .filter(([, c]) => c >= 1)
+      .map(([m]) => m);
     provinces.push({
       i: l,
       lon: +plon.toFixed(3),
@@ -756,7 +786,11 @@ function main(): void {
       elevation: Math.round(a.elev / a.cells),
       density: +(a.wsum / a.cells).toFixed(3),
       terrain,
-      biomeShares: Object.fromEntries(a.biomes.map((c, i) => [BIOMES[i], +(c / a.cells).toFixed(2)]).filter(([, v]) => (v as number) > 0.05)),
+      biomeShares: Object.fromEntries(
+        a.biomes
+          .map((c, i) => [BIOMES[i], +(c / a.cells).toFixed(2)])
+          .filter(([, v]) => (v as number) > 0.05),
+      ),
       coastal: a.coastal,
       macro: MACROS[mIdx - 1] ?? reg.macro,
       region: reg.id,
@@ -777,11 +811,19 @@ function main(): void {
   }));
   saveGrid('provinces', label);
   saveGrid('seas', seaLabel);
-  fs.writeFileSync(path.join(WORK, 'provinces.json'), JSON.stringify({ provinces, straits: straitList, seas }));
+  fs.writeFileSync(
+    path.join(WORK, 'provinces.json'),
+    JSON.stringify({ provinces, straits: straitList, seas }),
+  );
   const perMacro: Record<string, number> = {};
   for (const p of provinces) perMacro[p.macro] = (perMacro[p.macro] ?? 0) + 1;
   console.log('par macro-région', perMacro);
-  console.log('détroits', straitList.length, '· provinces côtières', provinces.filter((p) => p.coastal).length);
+  console.log(
+    'détroits',
+    straitList.length,
+    '· provinces côtières',
+    provinces.filter((p) => p.coastal).length,
+  );
 }
 
 main();

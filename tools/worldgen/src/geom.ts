@@ -56,7 +56,13 @@ export function chaikin(points: Position[], iterations = 1): Position[] {
 }
 
 /** Découpe d'un anneau par un rectangle (Sutherland–Hodgman). */
-export function clipRing(ring: Position[], minX: number, minY: number, maxX: number, maxY: number): Position[] {
+export function clipRing(
+  ring: Position[],
+  minX: number,
+  minY: number,
+  maxX: number,
+  maxY: number,
+): Position[] {
   let pts = ring;
   const edges: [(p: Position) => boolean, (a: Position, b: Position) => Position][] = [
     [(p) => p[0]! >= minX, (a, b) => [minX, a[1]! + ((b[1]! - a[1]!) * (minX - a[0]!)) / (b[0]! - a[0]!)]],
@@ -79,13 +85,15 @@ export function clipRing(ring: Position[], minX: number, minY: number, maxX: num
     }
     pts = out;
   }
-  if (pts.length && (pts[0]![0] !== pts[pts.length - 1]![0] || pts[0]![1] !== pts[pts.length - 1]![1])) pts.push(pts[0]!);
+  if (pts.length && (pts[0]![0] !== pts[pts.length - 1]![0] || pts[0]![1] !== pts[pts.length - 1]![1]))
+    pts.push(pts[0]!);
   return pts.length >= 4 ? pts : [];
 }
 
 export function ringArea(ring: Position[]): number {
   let s = 0;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) s += (ring[j]![0]! - ring[i]![0]!) * (ring[j]![1]! + ring[i]![1]!);
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++)
+    s += (ring[j]![0]! - ring[i]![0]!) * (ring[j]![1]! + ring[i]![1]!);
   return s / 2;
 }
 

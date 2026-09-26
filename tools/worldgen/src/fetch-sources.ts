@@ -61,10 +61,20 @@ async function main(): Promise<void> {
   for (let x = 0; x < n; x++) for (let y = 0; y < n; y++) tiles.push([x, y]);
   let done = 0;
   await pool(tiles, 16, async ([x, y]) => {
-    await download(`${TERRARIUM_BASE}${DEM_ZOOM}/${x}/${y}.png`, path.join(TERRARIUM_DIR, `${DEM_ZOOM}`, `${x}`, `${y}.png`));
+    await download(
+      `${TERRARIUM_BASE}${DEM_ZOOM}/${x}/${y}.png`,
+      path.join(TERRARIUM_DIR, `${DEM_ZOOM}`, `${x}`, `${y}.png`),
+    );
     if (++done % 128 === 0) console.log(`Terrarium z${DEM_ZOOM}: ${done}/${tiles.length}`);
   });
-  fs.writeFileSync(path.join(CACHE, 'sources.json'), JSON.stringify({ accessed: new Date().toISOString().slice(0, 10), naturalEarth: NE_FILES, terrariumZoom: DEM_ZOOM }, null, 2));
+  fs.writeFileSync(
+    path.join(CACHE, 'sources.json'),
+    JSON.stringify(
+      { accessed: new Date().toISOString().slice(0, 10), naturalEarth: NE_FILES, terrariumZoom: DEM_ZOOM },
+      null,
+      2,
+    ),
+  );
   console.log('Sources prêtes.');
 }
 

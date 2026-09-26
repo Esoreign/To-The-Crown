@@ -70,7 +70,11 @@ export function rasterizePolygon(rings: Position[][], set: (x: number, y: number
   const y0 = Math.max(0, Math.floor(minY - 0.5));
   const y1 = Math.min(H - 1, Math.ceil(maxY + 0.5));
   // Arêtes triées par ymin pour un balayage efficace.
-  const sorted = edges.map(([ax, ay, bx, by]) => (ay < by ? { y0: ay, y1: by, x0: ax, dx: (bx - ax) / (by - ay) } : { y0: by, y1: ay, x0: bx, dx: (ax - bx) / (ay - by) }));
+  const sorted = edges.map(([ax, ay, bx, by]) =>
+    ay < by
+      ? { y0: ay, y1: by, x0: ax, dx: (bx - ax) / (by - ay) }
+      : { y0: by, y1: ay, x0: bx, dx: (ax - bx) / (ay - by) },
+  );
   sorted.sort((p, q) => p.y0 - q.y0);
   let next = 0;
   let active: typeof sorted = [];
@@ -112,7 +116,10 @@ export function ringCenter(ring: Position[]): [number, number] {
 
 export function saveGrid(name: string, data: ArrayBufferView): void {
   fs.mkdirSync(WORK, { recursive: true });
-  fs.writeFileSync(path.join(WORK, `${name}.bin`), Buffer.from(data.buffer, data.byteOffset, data.byteLength));
+  fs.writeFileSync(
+    path.join(WORK, `${name}.bin`),
+    Buffer.from(data.buffer, data.byteOffset, data.byteLength),
+  );
 }
 
 export function loadGridI16(name: string): Int16Array {

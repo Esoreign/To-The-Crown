@@ -10,9 +10,26 @@
  */
 import { H, W, cellLat, cellLon } from './raster';
 
-export const BIOMES = ['water', 'plains', 'farmlands', 'hills', 'mountains', 'forest', 'jungle', 'marsh', 'steppe', 'desert', 'savanna', 'tundra', 'ice'] as const;
+export const BIOMES = [
+  'water',
+  'plains',
+  'farmlands',
+  'hills',
+  'mountains',
+  'forest',
+  'jungle',
+  'marsh',
+  'steppe',
+  'desert',
+  'savanna',
+  'tundra',
+  'ice',
+] as const;
 export type Biome = (typeof BIOMES)[number];
-export const B: Record<Biome, number> = Object.fromEntries(BIOMES.map((b, i) => [b, i])) as Record<Biome, number>;
+export const B: Record<Biome, number> = Object.fromEntries(BIOMES.map((b, i) => [b, i])) as Record<
+  Biome,
+  number
+>;
 
 export function hash2(x: number, y: number): number {
   let h = (x * 374761393 + y * 668265263) | 0;
@@ -31,7 +48,11 @@ function valueNoise(x: number, y: number, seed: number): number {
   return top * (1 - s(fy)) + bot * s(fy);
 }
 export function fbm(x: number, y: number, seed: number): number {
-  return valueNoise(x, y, seed) * 0.55 + valueNoise(x * 2.1, y * 2.1, seed + 1) * 0.3 + valueNoise(x * 4.3, y * 4.3, seed + 2) * 0.15;
+  return (
+    valueNoise(x, y, seed) * 0.55 +
+    valueNoise(x * 2.1, y * 2.1, seed + 1) * 0.3 +
+    valueNoise(x * 4.3, y * 4.3, seed + 2) * 0.15
+  );
 }
 
 /** Flou boîte séparable (3 passes ≈ gaussienne), bouclé en longitude. */
@@ -101,7 +122,8 @@ function boxMask(boxes: [number, number, number, number, number][]): Float32Arra
     for (let x = 0; x < W; x++) {
       const lon = cellLon(x);
       let v = 0;
-      for (const [w, s, e, n, p] of boxes) if (lon >= w && lon <= e && lat >= s && lat <= n) v = Math.max(v, p);
+      for (const [w, s, e, n, p] of boxes)
+        if (lon >= w && lon <= e && lat >= s && lat <= n) v = Math.max(v, p);
       m[y * W + x] = v;
     }
   }
@@ -141,7 +163,18 @@ export function climate(land: Uint8Array, elev: Int16Array, deserts: Uint8Array)
     const lat = cellLat(y);
     const alat = Math.abs(lat);
     // Ceintures d'humidité selon la latitude.
-    const belt = alat < 8 ? 0.95 : alat < 18 ? 0.95 - ((alat - 8) / 10) * 0.45 : alat < 30 ? 0.5 - ((alat - 18) / 12) * 0.35 : alat < 45 ? 0.15 + ((alat - 30) / 15) * 0.5 : alat < 62 ? 0.65 : 0.65 - Math.min(0.3, (alat - 62) / 30);
+    const belt =
+      alat < 8
+        ? 0.95
+        : alat < 18
+          ? 0.95 - ((alat - 8) / 10) * 0.45
+          : alat < 30
+            ? 0.5 - ((alat - 18) / 12) * 0.35
+            : alat < 45
+              ? 0.15 + ((alat - 30) / 15) * 0.5
+              : alat < 62
+                ? 0.65
+                : 0.65 - Math.min(0.3, (alat - 62) / 30);
     for (let x = 0; x < W; x++) {
       const k = y * W + x;
       if (land[k] !== 1) continue;
@@ -150,14 +183,24 @@ export function climate(land: Uint8Array, elev: Int16Array, deserts: Uint8Array)
       const e = Math.max(0, elev[k]!);
       temp[k] = 29 - 0.35 * alat - Math.max(0, alat - 40) * 0.25 - (4.5 * e) / 1000 - cont * 4;
       const noise = (fbm(x / 100, y / 100, 7) - 0.5) * 0.32;
-      moist[k] = Math.max(0, Math.min(1, belt - cont * 0.35 + wet[k]! - dry[k]! - desertBlur[k]! * 0.8 + noise));
+      moist[k] = Math.max(
+        0,
+        Math.min(1, belt - cont * 0.35 + wet[k]! - dry[k]! - desertBlur[k]! * 0.8 + noise),
+      );
     }
   }
   return { temp, moist };
 }
 
 /** Classement discret (terrain de jeu) à partir des champs climatiques et du relief. */
-export function classifyBiomes(land: Uint8Array, elev: Int16Array, deserts: Uint8Array, rivers: Uint8Array, weight: Float32Array | null, fields?: ClimateFields): Uint8Array {
+export function classifyBiomes(
+  land: Uint8Array,
+  elev: Int16Array,
+  deserts: Uint8Array,
+  rivers: Uint8Array,
+  weight: Float32Array | null,
+  fields?: ClimateFields,
+): Uint8Array {
   const { temp, moist } = fields ?? climate(land, elev, deserts);
   const biome = new Uint8Array(W * H);
   const R = 3;
@@ -211,14 +254,20 @@ export function classifyBiomes(land: Uint8Array, elev: Int16Array, deserts: Uint
     }
   }
   for (let k = 0; k < W * H; k++) {
-    if (land[k] === 1 && rivers[k]! > 150 && (biome[k] === B.desert || biome[k] === B.steppe || biome[k] === B.savanna)) biome[k] = B.farmlands;
+    if (
+      land[k] === 1 &&
+      rivers[k]! > 150 &&
+      (biome[k] === B.desert || biome[k] === B.steppe || biome[k] === B.savanna)
+    )
+      biome[k] = B.farmlands;
   }
   return biome;
 }
 
 /** Couleur « atlas » continue d'un couple (T, M). */
 export function climateColor(T: number, M: number): [number, number, number] {
-  const mix = (a: number[], b: number[], t: number) => a.map((v, i) => v + (b[i]! - v) * Math.max(0, Math.min(1, t))) as [number, number, number];
+  const mix = (a: number[], b: number[], t: number) =>
+    a.map((v, i) => v + (b[i]! - v) * Math.max(0, Math.min(1, t))) as [number, number, number];
   const desert = [214, 192, 148];
   const semiArid = [198, 182, 128];
   const grass = [166, 166, 110];
