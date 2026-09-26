@@ -37,6 +37,8 @@ import type { HostSave, HostStep } from './hostRoom';
 import type { ChannelMessage, WirePatch, WorkerIn, WorkerOut } from './protocol';
 
 const FLUSH_MS = 400;
+/** Délai laissé à un lot en retard avant de réclamer un instantané complet. */
+const GAP_GRACE_MS = 1500;
 /** Taille maximale d'un message Realtime (limite Supabase gratuite : 256 Ko). */
 const MAX_MESSAGE = 180_000;
 const COMMAND_TIMEOUT = 10_000;
@@ -116,6 +118,7 @@ export class BrowserSession {
   // Invité
   private hostEpoch: string | null = null;
   private buffer: Batch[] = [];
+  private gapTimer: ReturnType<typeof setTimeout> | null = null;
   private loading = false;
   private lastHello = 0;
   private readonly guestAcks = new Map<string, (ack: AckMessage) => void>();
@@ -521,9 +524,7 @@ export class BrowserSession {
       devTools: false,
     });
     this.refreshPresence();
-    const pending = this.buffer;
-    this.buffer = [];
-    for (const b of pending) if (b.epoch === this.hostEpoch) this.applyBatch(b);
+    this.drainBuffer();
   }
 
   private async reload(): Promise<void> {
@@ -550,6 +551,7 @@ export class BrowserSession {
           return;
         }
         this.applyBatch(msg);
+        this.drainBuffer();
         break;
       case 'snap': {
         this.hostClock = msg.clock;
@@ -576,6 +578,25 @@ export class BrowserSession {
     }
   }
 
+  /** Lots en attente dont le premier patch utile ne suit pas l'état courant. */
+  private hasGap(): boolean {
+    const cur = useGame.getState().seq;
+    return this.buffer.some((b) => b.epoch === this.hostEpoch && b.patches.some((p) => p.seq > cur));
+  }
+
+  /** Applique, dans l'ordre, les lots tamponnés qui prolongent l'état courant. */
+  private drainBuffer(): void {
+    for (;;) {
+      const cur = useGame.getState().seq;
+      this.buffer = this.buffer.filter((b) => b.epoch === this.hostEpoch && b.patches.some((p) => p.seq > cur));
+      const next = this.buffer.find((b) => b.patches.find((p) => p.seq > cur)?.seq === cur + 1);
+      if (!next) return;
+      this.buffer.splice(this.buffer.indexOf(next), 1);
+      this.applyBatch(next);
+      if (useGame.getState().seq === cur) return;
+    }
+  }
+
   private applyBatch(b: Batch): void {
     const store = useGame.getState();
     const mine = b.priv[this.userId];
@@ -589,7 +610,12 @@ export class BrowserSession {
       });
       if (res === 'gap') {
         this.buffer.push({ ...b, patches: b.patches.slice(i) });
-        this.sendHello();
+        // Les messages peuvent arriver dans le désordre (repli HTTP du temps réel) :
+        // on laisse au lot manquant le temps d'arriver avant de demander un instantané.
+        this.gapTimer ??= setTimeout(() => {
+          this.gapTimer = null;
+          if (this.hasGap()) this.sendHello(true);
+        }, GAP_GRACE_MS);
         return;
       }
     }
@@ -667,6 +693,8 @@ export class BrowserSession {
     this.closed = true;
     for (const off of this.listeners) off();
     if (this.flushTimer) clearTimeout(this.flushTimer);
+    if (this.gapTimer) clearTimeout(this.gapTimer);
+    this.gapTimer = null;
     this.flush();
     for (const [, resolve] of this.localAcks) resolve(fail(ErrorCodes.INTERNAL, 'Partie quittée'));
     for (const [, resolve] of this.guestAcks) resolve(fail(ErrorCodes.INTERNAL, 'Partie quittée'));

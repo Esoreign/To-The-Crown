@@ -60,13 +60,15 @@ Version compilée avec `vite build --mode supabase` (`apps/web/.env.supabase`) :
 
 - L'interface ne change pas : `net/api.ts` traduit les chemins REST en RPC, `net/socket.ts` délègue à `net/browser/session.ts`.
 - L'hôte applique ses propres patches comme s'ils venaient d'un serveur et diffuse aux invités des **lots** (toutes les 400 ms) : patches publics numérotés, vues privées modifiées, notifications, horloge. Un lot trop gros (> 180 Ko, limite Realtime 256 Ko) est découpé.
-- Arrivée d'un invité, trou de séquence ou nouvel hôte (« époque ») : l'invité envoie `hello`, l'hôte enregistre l'état (`ttc_save`, avec `seq` et époque) et l'annonce (`snap`) ; l'invité le recharge puis applique les lots reçus entre-temps.
+- Les lots arrivés dans le désordre (repli HTTP du temps réel) sont remis en ordre par l'invité ; un trou qui persiste plus de 1,5 s est traité comme une perte.
+- Arrivée d'un invité, trou de séquence persistant ou nouvel hôte (« époque ») : l'invité envoie `hello`, l'hôte enregistre l'état (`ttc_save`, avec `seq` et époque) et l'annonce (`snap`) ; l'invité le recharge puis applique les lots reçus entre-temps.
 - Commandes des invités : message `cmd` → exécutées par le worker de l'hôte (validation zod + moteur, idempotence, débit limité) → accusé `ack`.
 - Salon : sondage `ttc_lobby` toutes les 1,5 s (état, discussion, présence).
 - Sauvegardes : début de partie, 1er du mois, toutes les 2 min de jeu, 2 s après une pause ou une commande en pause, onglet masqué, départ de la partie. Les 4 dernières sont conservées.
 
 Limites assumées (partie entre amis) :
 
+- Un état du monde 1400 pèse ~7 Mo : fermer brutalement l'onglet de l'hôte peut perdre les toutes dernières secondes ; « Sauvegarder et quitter » attend la fin de l'envoi.
 - **La page de l'hôte doit rester ouverte** ; sinon la partie est en pause (« En attente de l'hôte ») et les invités ne peuvent pas agir.
 - L'hôte détient l'état complet : un joueur technique pourrait tricher ou lire les secrets depuis son navigateur ; les invités reçoivent les vues privées de tous. Le mode serveur reste la référence pour un jeu public.
 - Mots de passe en bcrypt (pgcrypto) au lieu d'Argon2id ; jeton de session dans le stockage local du navigateur.

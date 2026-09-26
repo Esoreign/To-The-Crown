@@ -51,8 +51,12 @@ test('hôte navigateur : commande d’un invité, départ et retour de l’hôte
   await guest.keyboard.press('Escape');
   await expect(guest.getByTestId('outliner-army').first()).toBeVisible({ timeout: 20_000 });
 
-  // L'hôte quitte : l'invité voit la partie en attente, et ses commandes sont refusées proprement.
-  await host.goto('/');
+  // L'hôte quitte (sauvegarder et quitter) : l'invité voit la partie en attente.
+  await host.bringToFront();
+  await resolveEvents(host);
+  await host.getByTestId('game-menu').click();
+  await host.getByTestId('save-quit').click();
+  await expect(host.getByRole('button', { name: /Continuer/ })).toBeVisible({ timeout: 60_000 });
   await guest.bringToFront();
   await expect(guest.getByTestId('clock')).toContainText('En attente de l’hôte', { timeout: 30_000 });
 
